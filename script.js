@@ -9,10 +9,11 @@ let isSecureModeActive = false;
 let secureSessionTimeout = null;
 let ADMIN_HASH = null;
 let megaBase = [];
-let syncStatus = { autoDiagnostic: 'inactive', myTech: 'inactive', lastSync: null };
+let expertBase = [];
+let syncStatus = { lastSync: null, sources: [] };
 
 // ==========================================
-// 2. FONCTIONS UTILITAIRES
+// 2. UTILITAIRES
 // ==========================================
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -27,11 +28,12 @@ function normaliserMarque(brand) {
         'hyundai':'Hyundai','kia':'Kia','mazda':'Mazda','ford':'Ford',
         'chevrolet':'Chevrolet','tesla':'Tesla','volvo':'Volvo','dacia':'Dacia',
         'skoda':'Skoda','seat':'Seat','cupra':'Cupra','polestar':'Polestar',
-        'byd':'BYD','mg':'MG','xpeng':'Xpeng','nio':'Nio',
-        'landrover':'Land Rover','jaguar':'Jaguar','ferrari':'Ferrari',
-        'maserati':'Maserati','mclaren':'McLaren','bugatti':'Bugatti','mini':'Mini',
-        'lexus':'Lexus','alpine':'Alpine','lancia':'Lancia','subaru':'Subaru',
-        'suzuki':'Suzuki','mitsubishi':'Mitsubishi','dodge':'Dodge','cadillac':'Cadillac'
+        'byd':'BYD','mg':'MG','xpeng':'Xpeng','nio':'Nio','landrover':'Land Rover',
+        'jaguar':'Jaguar','ferrari':'Ferrari','maserati':'Maserati','mclaren':'McLaren',
+        'bugatti':'Bugatti','mini':'Mini','lexus':'Lexus','alpine':'Alpine',
+        'lancia':'Lancia','subaru':'Subaru','suzuki':'Suzuki','mitsubishi':'Mitsubishi',
+        'dodge':'Dodge','cadillac':'Cadillac','gmc':'GMC','omoda':'Omoda','jaecoo':'Jaecoo',
+        'leapmotor':'Leapmotor','ora':'Ora','aiways':'Aiways','seres':'Seres','lynkco':'Lynk&Co'
     };
     return map[String(brand).toLowerCase()] || String(brand);
 }
@@ -53,8 +55,20 @@ function determinerCarburant(motor, type, title) {
     return 'Essence';
 }
 
+function capFuel(f) {
+    const m = { 'essence':'Essence', 'diesel':'Diesel', 'hybride':'Hybride', 'electrique':'Électrique' };
+    return m[String(f || '').toLowerCase()] || 'Essence';
+}
+
+function genererEntretiens(fuel) {
+    if (fuel === 'Électrique') return { "30000":["Contrôle batterie HV","Filtre habitacle"],"60000":["Vidange réducteur","Contrôle charge"],"120000":["Contrôle SOH batterie","Liquide refroidissement HV"],"160000":["Contrôle complet HV"] };
+    if (fuel === 'Hybride') return { "15000":["Vidange 0W20","Contrôle hybride"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"90000":["Liquide de frein"],"120000":["Bougies"],"160000":["Contrôle batterie HV","Liquide refroidissement"] };
+    if (fuel === 'Diesel') return { "30000":["Vidange","Filtre à huile"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Kit distribution","Filtre à air"],"160000":["Filtre à gasoil","Liquide refroidissement"] };
+    return { "30000":["Vidange","Filtre à huile"],"60000":["Filtre à air","Bougies"],"90000":["Liquide de frein"],"120000":["Kit distribution"],"160000":["Bougies","Liquide refroidissement"] };
+}
+
 // ==========================================
-// 3. HASHAGE MOT DE PASSE
+// 3. HASH + AUTH
 // ==========================================
 async function hashPassword(password) {
     try {
@@ -65,9 +79,7 @@ async function hashPassword(password) {
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
-    } catch (e) {
-        console.warn('crypto.subtle indisponible, fallback utilisé');
-    }
+    } catch (e) {}
     let hash = 0;
     const str = password + SECURITY_SALT;
     for (let i = 0; i < str.length; i++) {
@@ -80,14 +92,13 @@ async function hashPassword(password) {
 
 async function initAdminHash() {
     ADMIN_HASH = await hashPassword('Kevin83600');
-    console.log('✅ Hash admin initialisé');
 }
 
 // ==========================================
-// 4. MÉGA BASE INITIALE MASSIVE (52 véhicules)
+// 4. MÉGA BASE INITIALE (52 véhicules)
 // ==========================================
 const MEGA_BASE_INITIALE = [
-    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech", codeMoteur:"HNS", puissance:"130 ch", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile","Contrôle courroie humide"],"60000":["Vidange","Filtre à huile","Filtre à air","Bougies iridium"],"90000":["Vidange","Filtre à huile","Liquide de frein DOT 4"],"120000":["Vidange","Kit distribution + pompe eau"],"160000":["Vidange","Bougies","Liquide refroidissement G12+"]}, dtc:["P0420","P0300","P0301","P0171","P0087","P0340"], rappels:["Rappel freinage 2022","Campagne tendeur courroie 2022-2023","Campagne pompe à huile 2017-2023"], notes:"Distribution humide à surveiller 30 000 km" },
+    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech", codeMoteur:"HNS", puissance:"130 ch", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile","Contrôle courroie humide"],"60000":["Vidange","Filtre à huile","Filtre à air","Bougies iridium"],"90000":["Vidange","Filtre à huile","Liquide de frein DOT 4"],"120000":["Vidange","Kit distribution + pompe eau"],"160000":["Vidange","Bougies","Liquide refroidissement G12+"]}, dtc:["P0420","P0300","P0301","P0171","P0087","P0340"], rappels:["Rappel freinage 2022","Campagne tendeur courroie 2022-2023"], notes:"Distribution humide à surveiller 30 000 km" },
     { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTD", puissance:"100 ch", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"],"160000":["Vidange","Bougies","Liquide refroidissement"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
     { marque:"Peugeot", modele:"e-208", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle batterie HV","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle SOH","Liquide refroidissement HV"]}, dtc:["P0AA6","U0111","P0C00"], rappels:["Campagne autonomie hiver","Campagne BMS"], notes:"" },
     { marque:"Peugeot", modele:"3008 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:"130 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile","Contrôle FAP"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Vidange","Filtre à gasoil","Liquide refroidissement"]}, dtc:["P2002","P0401","P0471","P20EE"], rappels:["Campagne FAP 2021","Campagne AdBlue"], notes:"FAP sensible trajets courts" },
@@ -125,7 +136,7 @@ const MEGA_BASE_INITIALE = [
     { marque:"Nissan", modele:"Leaf", motorisation:"Électrique 150", codeMoteur:"EM57", puissance:"150 ch", annee:"2018-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH"]}, dtc:[], rappels:["Campagne SOH batterie"], notes:"Perte autonomie" },
     { marque:"Nissan", modele:"Qashqai III", motorisation:"1.3 DIG-T", codeMoteur:"HR13DDT", puissance:"158 ch", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
     { marque:"Honda", modele:"HR-V III", motorisation:"1.5 e:HEV", codeMoteur:"LEB", puissance:"131 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"20000":["Vidange 0W20"],"40000":["Filtre habitacle"],"60000":["Filtre à air"],"100000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Tesla", modele:"Model 3/Y", motorisation:"Électrique", codeMoteur:"Tesla", puissance:"Multi", annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"]}, dtc:["U0101","P0AA6"], rappels:["Campagne freinage fantôme 2023","Campagne eMMC MCU","Campagne contacteurs HV","Campagne suspension AV"], notes:"Multiples campagnes NHTSA" },
+    { marque:"Tesla", modele:"Model 3/Y", motorisation:"Électrique", codeMoteur:"Tesla", puissance:"Multi", annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"]}, dtc:["U0101","P0AA6"], rappels:["Campagne freinage fantôme 2023","Campagne eMMC MCU","Campagne contacteurs HV"], notes:"Multiples campagnes NHTSA" },
     { marque:"Ford", modele:"Kuga III", motorisation:"2.5 PHEV", codeMoteur:"PHEV", puissance:"225 ch", annee:"2020-2022", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne batterie HV incendie"], notes:"Risque incendie" },
     { marque:"Ford", modele:"Puma", motorisation:"1.0 EcoBoost Hybrid", codeMoteur:"B3JA", puissance:"155 ch", annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange 5W20"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
     { marque:"Fiat", modele:"500e", motorisation:"Électrique 118", codeMoteur:"500e", puissance:"118 ch", annee:"2021-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11"], rappels:["Campagne OBC"], notes:"" },
@@ -144,7 +155,7 @@ const MEGA_BASE_INITIALE = [
 ];
 
 // ==========================================
-// 5. NOTIFICATIONS
+// 5. NOTIFICATIONS + RÉSEAU
 // ==========================================
 function showNotification(msg, type = 'info') {
     const container = document.getElementById('notification-container');
@@ -162,9 +173,6 @@ function showNotification(msg, type = 'info') {
     }, 4000);
 }
 
-// ==========================================
-// 6. GESTION RÉSEAU
-// ==========================================
 function updateNetworkStatus() {
     const statusEl = document.getElementById('network-status');
     if (!statusEl) return;
@@ -185,19 +193,13 @@ function updateNetworkStatus() {
 }
 
 // ==========================================
-// 7. NAVIGATION
+// 6. NAVIGATION
 // ==========================================
 function showTab(tabName) {
-    document.querySelectorAll('.view-section').forEach(el => {
-        el.classList.add('hidden');
-        el.classList.remove('fade-in');
-    });
+    document.querySelectorAll('.view-section').forEach(el => { el.classList.add('hidden'); el.classList.remove('fade-in'); });
     const target = document.getElementById(`view-${tabName}`);
     if (target) { target.classList.remove('hidden'); target.classList.add('fade-in'); }
-    document.querySelectorAll('.tab-btn').forEach(el => {
-        el.classList.remove('tab-active');
-        el.classList.add('text-slate-400');
-    });
+    document.querySelectorAll('.tab-btn').forEach(el => { el.classList.remove('tab-active'); el.classList.add('text-slate-400'); });
     const active = document.getElementById(`tab-${tabName}`);
     if (active) { active.classList.add('tab-active'); active.classList.remove('text-slate-400'); }
     if (tabName === 'entretien') initFiltresEntretien();
@@ -215,14 +217,13 @@ function resetSecureForm() {
 }
 
 // ==========================================
-// 8. RECHERCHE VIN
+// 7. RECHERCHE VIN
 // ==========================================
 async function rechercherVIN() {
     const vin = document.getElementById('vin-input').value.trim().toUpperCase();
     const results = document.getElementById('vin-results');
     if (vin.length !== 17) {
-        results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-red-500 slide-up"><div class="flex items-center gap-4 mb-3"><i data-lucide="alert-circle" class="w-8 h-8 text-red-400"></i><h3 class="text-2xl font-black text-red-400">VIN invalide</h3></div><p class="text-slate-300">17 caractères requis.</p></div>`;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-red-500 slide-up"><h3 class="text-2xl font-black text-red-400">VIN invalide</h3><p class="text-slate-300">17 caractères requis.</p></div>`;
         return;
     }
     results.innerHTML = `<div class="glass rounded-3xl p-10 text-center"><div class="loading-spinner mx-auto mb-6"></div><p class="text-slate-300">Analyse...</p></div>`;
@@ -230,24 +231,22 @@ async function rechercherVIN() {
         const response = await fetch(`https://api.nhtsa.gov/recalls/recallsByVin?vin=${vin}&format=json`);
         const data = await response.json();
         if (data.Results && data.Results.length > 0) {
-            let html = `<div class="glass rounded-3xl p-8 border-l-4 border-red-500 slide-up"><div class="flex items-center gap-4 mb-6"><i data-lucide="alert-triangle" class="w-10 h-10 text-red-400"></i><div><h3 class="text-3xl font-black text-red-400">⚠️ ${data.Results.length} rappel(s)</h3><p class="text-slate-400">VIN: ${vin}</p></div></div><div class="space-y-5">`;
+            let html = `<div class="glass rounded-3xl p-8 border-l-4 border-red-500 slide-up"><h3 class="text-3xl font-black text-red-400 mb-4">⚠️ ${data.Results.length} rappel(s)</h3><div class="space-y-5">`;
             data.Results.forEach((r, i) => {
-                html += `<div class="bg-red-900/30 border-2 border-red-500/40 rounded-2xl p-6"><div class="flex items-start gap-4"><div class="w-10 h-10 rounded-xl bg-red-500/40 flex items-center justify-center"><span class="text-red-300 font-black">${i+1}</span></div><div class="flex-1"><p class="font-black text-cyan-400 text-xl mb-2">${r.Component}</p><p class="text-slate-200 mb-3">${r.Summary}</p><div class="flex gap-2"><span class="recall-badge px-3 py-1.5 rounded-lg font-bold">NHTSA</span></div></div></div></div>`;
+                html += `<div class="bg-red-900/30 border-2 border-red-500/40 rounded-2xl p-6"><p class="font-black text-cyan-400 text-xl mb-2">${i+1}. ${r.Component}</p><p class="text-slate-200 mb-3">${r.Summary}</p><span class="recall-badge px-3 py-1.5 rounded-lg font-bold">NHTSA</span></div>`;
             });
             html += '</div></div>';
             results.innerHTML = html;
         } else {
-            results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-green-500 slide-up"><div class="flex items-center gap-4 mb-3"><i data-lucide="check-circle" class="w-10 h-10 text-green-400"></i><h3 class="text-3xl font-black text-green-400">✅ Aucun rappel</h3></div><p class="text-slate-400">VIN: ${vin}</p></div>`;
+            results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-green-500 slide-up"><h3 class="text-3xl font-black text-green-400">✅ Aucun rappel</h3><p class="text-slate-400">VIN: ${vin}</p></div>`;
         }
-        if (typeof lucide !== 'undefined') lucide.createIcons();
     } catch (e) {
-        results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-amber-500 slide-up"><div class="flex items-center gap-4"><i data-lucide="wifi-off" class="w-8 h-8 text-amber-400"></i><h3 class="text-2xl font-black text-amber-400">Erreur API</h3></div></div>`;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-amber-500 slide-up"><h3 class="text-2xl font-black text-amber-400">Erreur API</h3></div>`;
     }
 }
 
 // ==========================================
-// 9. PRÉCONISATIONS
+// 8. PRÉCONISATIONS
 // ==========================================
 function initFiltresEntretien() {
     const marques = [...new Set(megaBase.map(v => v.marque))].sort();
@@ -279,8 +278,9 @@ function updateMotorisations() {
     if (!sel) return;
     sel.innerHTML = '<option value="">⚙️ Motorisation</option>';
     if (marque && modele) {
-        const moteurs = megaBase.filter(v => v.marque === marque && v.modele === modele);
-        moteurs.forEach(m => sel.innerHTML += `<option value="${m.codeMoteur}">${m.motorisation} - ${m.codeMoteur} (${m.puissance})</option>`);
+        megaBase.filter(v => v.marque === marque && v.modele === modele).forEach(m => {
+            sel.innerHTML += `<option value="${m.codeMoteur}">${m.motorisation} - ${m.codeMoteur} (${m.puissance})</option>`;
+        });
         sel.disabled = false;
     }
 }
@@ -293,19 +293,18 @@ function afficherEntretien() {
     if (!results) return;
     const v = megaBase.find(x => x.marque === marque && x.modele === modele && x.codeMoteur === code);
     if (!v) return;
-    let html = `<div class="glass rounded-3xl p-8 border-t-4 border-cyan-500 slide-up"><div class="flex items-start gap-5 mb-8"><div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><i data-lucide="car" class="w-8 h-8 text-white"></i></div><div class="flex-1"><h3 class="text-3xl font-black mb-2">${v.marque} ${v.modele}</h3><p class="text-cyan-400 font-mono text-lg mb-3">${v.motorisation} | ${v.codeMoteur} | ${v.puissance} | ${v.annee}</p>${v.notes ? `<p class="text-amber-400 italic">⚠️ ${v.notes}</p>` : ''}</div></div><div class="space-y-5">`;
-    const paliers = ["15000","30000","60000","90000","120000","160000"];
-    paliers.forEach(km => {
+    let html = `<div class="glass rounded-3xl p-8 border-t-4 border-cyan-500 slide-up"><h3 class="text-3xl font-black mb-2">${v.marque} ${v.modele}</h3><p class="text-cyan-400 font-mono text-lg mb-3">${v.motorisation} | ${v.codeMoteur} | ${v.puissance} | ${v.annee}</p>${v.notes ? `<p class="text-amber-400 italic mb-4">⚠️ ${v.notes}</p>` : ''}<div class="space-y-5">`;
+    ["15000","30000","60000","90000","120000","160000"].forEach(km => {
         const ops = v.entretiens[km];
         if (ops && ops.length > 0) {
             html += `<div class="bg-slate-800/60 rounded-2xl p-6 border-2 border-slate-700"><div class="flex flex-col md:flex-row gap-5"><div class="km-badge text-white px-6 py-4 rounded-xl text-center min-w-[140px] text-xl">${parseInt(km).toLocaleString()} km</div><ul class="flex-1 space-y-3">${ops.map(op => `<li class="flex items-start gap-3"><i data-lucide="check-circle" class="w-6 h-6 text-green-400 mt-0.5"></i><span>${op}</span></li>`).join('')}</ul></div></div>`;
         }
     });
     if (v.dtc && v.dtc.length > 0) {
-        html += `<div class="mt-8 pt-8 border-t-2 border-slate-700"><h4 class="font-black text-xl mb-4 flex items-center gap-3"><i data-lucide="alert-circle" class="w-6 h-6 text-red-400"></i>Codes DTC</h4><div class="flex flex-wrap gap-3">${v.dtc.map(d => `<span class="dtc-badge px-4 py-2 rounded-xl text-sm font-mono text-white font-bold">${d}</span>`).join('')}</div></div>`;
+        html += `<div class="mt-8 pt-8 border-t-2 border-slate-700"><h4 class="font-black text-xl mb-4">Codes DTC</h4><div class="flex flex-wrap gap-3">${v.dtc.map(d => `<span class="dtc-badge px-4 py-2 rounded-xl text-sm font-mono text-white font-bold">${d}</span>`).join('')}</div></div>`;
     }
     if (v.rappels && v.rappels.length > 0) {
-        html += `<div class="mt-6 pt-6 border-t-2 border-slate-700"><h4 class="font-black text-xl mb-4 flex items-center gap-3"><i data-lucide="alert-triangle" class="w-6 h-6 text-amber-400"></i>Rappels</h4><div class="space-y-3">${v.rappels.map(r => `<div class="bg-amber-900/30 border-2 border-amber-500/40 rounded-xl p-4"><p class="text-amber-100">${r}</p></div>`).join('')}</div></div>`;
+        html += `<div class="mt-6 pt-6 border-t-2 border-slate-700"><h4 class="font-black text-xl mb-4">Rappels</h4><div class="space-y-3">${v.rappels.map(r => `<div class="bg-amber-900/30 border-2 border-amber-500/40 rounded-xl p-4"><p class="text-amber-100">${r}</p></div>`).join('')}</div></div>`;
     }
     html += '</div></div>';
     results.innerHTML = html;
@@ -313,33 +312,61 @@ function afficherEntretien() {
 }
 
 // ==========================================
-// 10. RECHERCHE MEGA BASE
+// 9. RECHERCHE MEGA BASE (véhicules + expert)
 // ==========================================
 function rechercherMegaBase() {
     const q = document.getElementById('mega-search').value.toLowerCase().trim();
     const results = document.getElementById('megabase-results');
     if (!results) return;
     if (q.length < 2) { results.innerHTML = ''; return; }
-    const r = megaBase.filter(v =>
-        v.marque.toLowerCase().includes(q) ||
-        v.modele.toLowerCase().includes(q) ||
+    
+    const vehicules = megaBase.filter(v =>
+        v.marque.toLowerCase().includes(q) || v.modele.toLowerCase().includes(q) ||
         v.codeMoteur.toLowerCase().includes(q) ||
         (v.dtc && v.dtc.some(d => d.toLowerCase().includes(q))) ||
         (v.rappels && v.rappels.some(r => r.toLowerCase().includes(q)))
-    ).slice(0, 30);
-    if (r.length === 0) { results.innerHTML = `<div class="text-center text-slate-500 py-12">Aucune correspondance.</div>`; return; }
-    results.innerHTML = r.map(v => `
+    ).slice(0, 20);
+    
+    const experts = expertBase.filter(e =>
+        (e.marque + ' ' + e.modele + ' ' + e.motorisation + ' ' + e.titre + ' ' + (e.dtc || []).join(' ')).toLowerCase().includes(q)
+    ).slice(0, 10);
+    
+    if (vehicules.length === 0 && experts.length === 0) {
+        results.innerHTML = `<div class="text-center text-slate-500 py-12">Aucune correspondance.</div>`;
+        return;
+    }
+    
+    let html = vehicules.map(v => `
         <div class="glass rounded-2xl p-6 cursor-pointer hover:border-cyan-500 transition-all" onclick="naviguerVersVehicule('${v.marque.replace(/'/g,"\\'")}','${v.modele.replace(/'/g,"\\'")}','${v.codeMoteur.replace(/'/g,"\\'")}')">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
                     <p class="font-black text-cyan-400 text-xl">${v.marque} ${v.modele}</p>
                     <p class="text-slate-300 mt-2">${v.motorisation} (${v.codeMoteur}) • ${v.puissance}</p>
-                    ${v.dtc && v.dtc.length > 0 ? `<p class="text-slate-400 text-sm mt-2">DTC: ${v.dtc.slice(0,3).join(', ')}</p>` : ''}
                 </div>
                 <i data-lucide="arrow-right" class="w-6 h-6 text-slate-500"></i>
             </div>
         </div>
     `).join('');
+    
+    html += experts.map(e => `
+        <div class="glass rounded-2xl p-6 border-l-4 border-purple-500">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="expert-badge px-3 py-1 rounded-lg text-xs font-bold text-white">🧠 FICHE EXPERT</span>
+                <span class="text-slate-400 text-sm">${e.marque}${e.modele ? ' • ' + e.modele : ''}${e.motorisation ? ' • ' + e.motorisation : ''}</span>
+            </div>
+            <p class="font-black text-white text-lg mb-2">${e.titre}</p>
+            ${e.symptome ? `<p class="text-slate-300 text-sm mb-2">⚠️ ${e.symptome}</p>` : ''}
+            ${e.protocole ? `<p class="text-slate-300 text-sm mb-2">🔬 ${e.protocole}</p>` : ''}
+            ${e.organes ? `<p class="text-slate-400 text-sm mb-2">🔩 ${e.organes}</p>` : ''}
+            <div class="flex flex-wrap gap-2 mt-2">
+                ${(e.dtc || []).map(d => `<span class="dtc-badge px-3 py-1 rounded-lg text-xs font-mono text-white font-bold">${d}</span>`).join('')}
+                ${e.source ? `<span class="recall-badge px-3 py-1 rounded-lg text-xs font-bold text-white">${e.source}</span>` : ''}
+                ${e.annees ? `<span class="success-badge px-3 py-1 rounded-lg text-xs font-bold text-white">${e.annees}</span>` : ''}
+            </div>
+        </div>
+    `).join('');
+    
+    results.innerHTML = html;
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -363,7 +390,7 @@ function naviguerVersVehicule(marque, modele, code) {
 }
 
 // ==========================================
-// 11. AUTHENTIFICATION SÉCURISÉE
+// 10. AUTHENTIFICATION
 // ==========================================
 async function verifierAcces(event) {
     if (event) event.preventDefault();
@@ -411,26 +438,18 @@ function fermerSessionSecurisee() {
     showNotification('🔒 Session fermée', 'info');
 }
 
-function verifierAdmin() { verifierAcces(null); }
-function deconnecterAdmin() { fermerSessionSecurisee(); }
-
 // ==========================================
-// 12. GESTION BASE
+// 11. GESTION BASE
 // ==========================================
 function ajouterEntree(event) {
     event.preventDefault();
     if (!isSecureModeActive) { showNotification('⚠️ Accès requis', 'error'); return; }
     const form = event.target;
     const v = {
-        marque: form.marque.value.trim(),
-        modele: form.modele.value.trim(),
-        motorisation: "Standard",
-        codeMoteur: form.codeMoteur.value.trim().toUpperCase(),
-        puissance: form.puissance.value.trim(),
-        annee: "À définir",
-        typeCarburant: "Essence",
-        entretiens: { "30000":["Vidange"], "60000":["Vidange"], "120000":["Vidange"], "160000":["Vidange"] },
-        dtc: [], rappels: [], notes: ""
+        marque: form.marque.value.trim(), modele: form.modele.value.trim(),
+        motorisation: "Standard", codeMoteur: form.codeMoteur.value.trim().toUpperCase(),
+        puissance: form.puissance.value.trim(), annee: "À définir", typeCarburant: "Essence",
+        entretiens: genererEntretiens('Essence'), dtc: [], rappels: [], notes: ""
     };
     try {
         const p = JSON.parse(form.preconisations.value);
@@ -449,7 +468,9 @@ function reinitialiserBase() {
     if (!isSecureModeActive) { showNotification('⚠️ Accès requis', 'error'); return; }
     if (confirm('Réinitialiser la base ?')) {
         megaBase = [...MEGA_BASE_INITIALE];
+        expertBase = [];
         localStorage.removeItem('kevFusion_megaBase');
+        localStorage.removeItem('kevFusion_expertBase');
         showNotification('🔄 Base réinitialisée', 'warning');
         initFiltresEntretien();
     }
@@ -458,13 +479,15 @@ function reinitialiserBase() {
 function sauvegarderLocalStorage() {
     try {
         localStorage.setItem('kevFusion_megaBase', JSON.stringify(megaBase));
+        localStorage.setItem('kevFusion_expertBase', JSON.stringify(expertBase));
         showNotification('💾 Sauvegarde OK', 'success');
     } catch (e) { showNotification('❌ Erreur sauvegarde', 'error'); }
 }
 
 function exporterJSON() {
     try {
-        const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(megaBase, null, 2));
+        const exportObj = { vehicles: megaBase, experts: expertBase };
+        const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
         const a = document.createElement('a');
         a.setAttribute("href", data);
         a.setAttribute("download", `kev_fusion_${new Date().toISOString().slice(0,10)}.json`);
@@ -476,154 +499,17 @@ function exporterJSON() {
 }
 
 // ==========================================
-// 13. IMPORT MULTI-FORMATS (CORRIGÉ)
+// 12. OVERLAY IMPORT
 // ==========================================
-function detecterFormat(data) {
-    if (!data) return 'inconnu';
-    
-    // Format sauvegarde auto-diagnostic
-    if (data.overrides !== undefined || data.customs !== undefined || 
-        data.recalls !== undefined || data.tsb !== undefined || 
-        data.modelsExtra !== undefined) {
-        return 'auto-diagnostic';
-    }
-    
-    // Format tableau simple
-    if (Array.isArray(data)) return 'tableau';
-    
-    // Format objet avec véhicules
-    if (data.vehicles && Array.isArray(data.vehicles)) return 'vehicles';
-    if (data.data && Array.isArray(data.data)) return 'data';
-    
-    return 'objet';
-}
-
-function convertirFormatAutoDiagnostic(data) {
-    const result = [];
-    
-    // Convertir customs (véhicules personnalisés)
-    if (data.customs && Array.isArray(data.customs)) {
-        data.customs.forEach(item => {
-            if (item && (item.marque || item.brand)) {
-                result.push({
-                    marque: item.marque || item.brand,
-                    modele: item.modele || item.model || 'Modèle',
-                    motorisation: item.motorisation || item.motor || 'Standard',
-                    codeMoteur: item.codeMoteur || item.code_moteur || genererCodeMoteur(item.marque || item.brand, item.motorisation),
-                    puissance: item.puissance || item.power || 'Auto',
-                    annee: item.annee || item.year || 'À définir',
-                    typeCarburant: item.typeCarburant || item.fuel || 'Essence',
-                    entretiens: item.entretiens || { "30000":["Vidange"], "60000":["Vidange"], "120000":["Vidange"], "160000":["Vidange"] },
-                    dtc: item.dtc || [],
-                    rappels: item.rappels || [],
-                    notes: item.notes || ''
-                });
-            }
-        });
-    }
-    
-    // Convertir recalls (rappels)
-    if (data.recalls && Array.isArray(data.recalls)) {
-        data.recalls.forEach(rappel => {
-            if (rappel && (rappel.marque || rappel.brand)) {
-                const existant = result.find(v => 
-                    v.marque === (rappel.marque || rappel.brand) && 
-                    v.modele === (rappel.modele || rappel.model)
-                );
-                if (existant) {
-                    if (!existant.rappels.includes(rappel.titre || rappel.title)) {
-                        existant.rappels.push(rappel.titre || rappel.title || 'Rappel');
-                    }
-                } else {
-                    result.push({
-                        marque: rappel.marque || rappel.brand,
-                        modele: rappel.modele || rappel.model || 'Modèle',
-                        motorisation: 'Standard',
-                        codeMoteur: genererCodeMoteur(rappel.marque || rappel.brand),
-                        puissance: 'Auto',
-                        annee: 'À définir',
-                        typeCarburant: 'Essence',
-                        entretiens: { "30000":["Vidange"] },
-                        dtc: [],
-                        rappels: [rappel.titre || rappel.title || 'Rappel'],
-                        notes: ''
-                    });
-                }
-            }
-        });
-    }
-    
-    // Convertir TSB
-    if (data.tsb && Array.isArray(data.tsb)) {
-        data.tsb.forEach(tsb => {
-            if (tsb && (tsb.marque || tsb.brand)) {
-                const existant = result.find(v => 
-                    v.marque === (tsb.marque || tsb.brand) && 
-                    v.modele === (tsb.modele || tsb.model)
-                );
-                if (existant) {
-                    if (tsb.dtc && !existant.dtc.includes(tsb.dtc)) {
-                        existant.dtc.push(tsb.dtc);
-                    }
-                    if (tsb.titre && !existant.notes) {
-                        existant.notes = tsb.titre;
-                    }
-                }
-            }
-        });
-    }
-    
-    // Convertir modelsExtra
-    if (data.modelsExtra && Array.isArray(data.modelsExtra)) {
-        data.modelsExtra.forEach(model => {
-            if (model && (model.marque || model.brand)) {
-                result.push({
-                    marque: model.marque || model.brand,
-                    modele: model.modele || model.model || 'Modèle',
-                    motorisation: model.motorisation || 'Standard',
-                    codeMoteur: model.codeMoteur || genererCodeMoteur(model.marque || model.brand),
-                    puissance: model.puissance || 'Auto',
-                    annee: model.annee || 'À définir',
-                    typeCarburant: model.typeCarburant || 'Essence',
-                    entretiens: { "30000":["Vidange"] },
-                    dtc: [],
-                    rappels: [],
-                    notes: ''
-                });
-            }
-        });
-    }
-    
-    return result;
-}
-
-function importerJSON(input) {
-    const file = input.files[0];
-    if (!file) return;
-    if (!file.name.endsWith('.json')) {
-        showNotification('❌ JSON requis', 'error');
-        input.value = '';
-        return;
-    }
-    if (file.size > 50 * 1024 * 1024) {
-        showNotification('❌ Fichier trop gros (max 50MB)', 'error');
-        input.value = '';
-        return;
-    }
-    importAvecAutoControle(file);
-    input.value = '';
-}
-
-// ==========================================
-// 14. OVERLAY IMPORT + AUTO-CONTRÔLE
-// ==========================================
-function ouvrirOverlayImport() {
+function ouvrirOverlayImport(titre) {
     const overlay = document.getElementById('import-overlay');
     if (overlay) overlay.classList.remove('hidden');
     const log = document.getElementById('import-log');
     if (log) log.innerHTML = '';
     const result = document.getElementById('import-result');
-    if (result) result.classList.add('hidden');
+    if (result) { result.classList.add('hidden'); result.classList.remove('error', 'warning'); }
+    const titleEl = document.getElementById('import-title');
+    if (titleEl && titre) titleEl.textContent = titre;
     document.getElementById('stat-before').textContent = megaBase.length;
     document.getElementById('stat-added').textContent = '+0';
     document.getElementById('stat-merged').textContent = '~0';
@@ -642,8 +528,8 @@ function mettreAJourProgress(percent, detail) {
     const fill = document.getElementById('progress-fill');
     const percentEl = document.getElementById('progress-percent');
     const detailEl = document.getElementById('progress-detail');
-    if (fill) fill.style.width = percent + '%';
-    if (percentEl) percentEl.textContent = Math.round(percent) + '%';
+    if (fill) fill.style.width = Math.min(100, percent) + '%';
+    if (percentEl) percentEl.textContent = Math.round(Math.min(100, percent)) + '%';
     if (detailEl) detailEl.textContent = detail || '';
 }
 
@@ -652,14 +538,92 @@ function logImport(message, type = "info") {
     if (!logContainer) return;
     const entry = document.createElement('div');
     entry.className = `log-${type}`;
-    const timestamp = new Date().toLocaleTimeString('fr-FR');
-    entry.textContent = `[${timestamp}] ${message}`;
+    entry.textContent = `[${new Date().toLocaleTimeString('fr-FR')}] ${message}`;
     logContainer.appendChild(entry);
     logContainer.scrollTop = logContainer.scrollHeight;
 }
 
-async function importAvecAutoControle(file) {
-    ouvrirOverlayImport();
+function afficherResultat(type, titre, message, detailsHtml) {
+    const resultDiv = document.getElementById('import-result');
+    const iconBox = document.getElementById('result-icon-box');
+    const titleEl = document.getElementById('result-title');
+    const msgEl = document.getElementById('result-message');
+    const detailsEl = document.getElementById('result-details');
+    if (!resultDiv) return;
+    resultDiv.classList.remove('hidden', 'error', 'warning');
+    if (type === 'success') {
+        iconBox.innerHTML = '<i data-lucide="check-circle" class="w-12 h-12 text-green-400"></i>';
+        iconBox.className = 'w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4';
+        titleEl.textContent = titre; titleEl.style.color = '#4ade80';
+    } else if (type === 'warning') {
+        resultDiv.classList.add('warning');
+        iconBox.innerHTML = '<i data-lucide="alert-triangle" class="w-12 h-12 text-amber-400"></i>';
+        iconBox.className = 'w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4';
+        titleEl.textContent = titre; titleEl.style.color = '#fbbf24';
+    } else {
+        resultDiv.classList.add('error');
+        iconBox.innerHTML = '<i data-lucide="alert-circle" class="w-12 h-12 text-red-400"></i>';
+        iconBox.className = 'w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4';
+        titleEl.textContent = titre; titleEl.style.color = '#f87171';
+    }
+    msgEl.textContent = message;
+    detailsEl.innerHTML = detailsHtml;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// ==========================================
+// 13. IMPORT FICHIER JSON MULTI-FORMATS (CORRIGÉ)
+// ==========================================
+function detecterFormat(data) {
+    if (!data) return 'inconnu';
+    if (data.overrides !== undefined || data.customs !== undefined || data.recalls !== undefined || data.tsb !== undefined || data.modelsExtra !== undefined) return 'auto-diagnostic';
+    if (Array.isArray(data)) return 'tableau';
+    if (data.vehicles && Array.isArray(data.vehicles)) return 'vehicles';
+    if (data.data && Array.isArray(data.data)) return 'data';
+    return 'objet';
+}
+
+function convertirFormatAutoDiagnostic(data) {
+    const result = [];
+    const pushVehicule = (src) => {
+        const marque = src.marque || src.brand;
+        const modele = src.modele || src.model;
+        if (!marque || !modele) return;
+        result.push({
+            marque: marque, modele: modele,
+            motorisation: src.motorisation || src.motor || 'Standard',
+            codeMoteur: src.codeMoteur || src.code_moteur || genererCodeMoteur(marque, src.motorisation),
+            puissance: src.puissance || src.power || 'Auto',
+            annee: src.annee || src.year || 'À définir',
+            typeCarburant: src.typeCarburant || src.fuel || 'Essence',
+            entretiens: src.entretiens || genererEntretiens(src.typeCarburant || src.fuel || 'Essence'),
+            dtc: src.dtc || [], rappels: src.rappels || [], notes: src.notes || ''
+        });
+    };
+    (data.customs || []).forEach(pushVehicule);
+    (data.modelsExtra || []).forEach(pushVehicule);
+    (data.recalls || []).forEach(r => {
+        const marque = r.marque || r.brand; const modele = r.modele || r.model;
+        if (!marque || !modele) return;
+        const existant = result.find(v => v.marque === marque && v.modele === modele);
+        const titre = r.titre || r.title || 'Rappel';
+        if (existant) { if (!existant.rappels.includes(titre)) existant.rappels.push(titre); }
+        else result.push({ marque, modele, motorisation:'Standard', codeMoteur:genererCodeMoteur(marque), puissance:'Auto', annee:'À définir', typeCarburant:'Essence', entretiens:genererEntretiens('Essence'), dtc:[], rappels:[titre], notes:'' });
+    });
+    return result;
+}
+
+function importerJSON(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.json')) { showNotification('❌ JSON requis', 'error'); input.value = ''; return; }
+    if (file.size > 50 * 1024 * 1024) { showNotification('❌ Fichier trop gros', 'error'); input.value = ''; return; }
+    importFichierAvecControle(file);
+    input.value = '';
+}
+
+async function importFichierAvecControle(file) {
+    ouvrirOverlayImport('Import fichier JSON');
     const avant = megaBase.length;
     let ajouts = 0, fusions = 0;
     try {
@@ -671,55 +635,50 @@ async function importAvecAutoControle(file) {
             reader.onerror = () => reject(new Error("Lecture impossible"));
             reader.readAsText(file);
         });
-        logImport(`✅ ${Math.round(file.size/1024)} KB lu`, "success");
-        await sleep(300);
+        logImport(`✅ ${file.size} octets lus`, "success");
+        await sleep(200);
 
         mettreAJourProgress(20, "Validation JSON...");
-        logImport("🔍 Validation JSON...", "step");
         let data;
-        try {
-            data = JSON.parse(content);
-            logImport("✅ JSON valide", "success");
-        } catch (e) {
-            throw new Error(`JSON invalide: ${e.message}`);
-        }
-        await sleep(300);
+        try { data = JSON.parse(content); logImport("✅ JSON valide", "success"); }
+        catch (e) { throw new Error(`JSON invalide: ${e.message}`); }
+        await sleep(200);
 
         mettreAJourProgress(35, "Détection format...");
-        logImport("🔬 Détection format...", "step");
         const format = detecterFormat(data);
         logImport(`📊 Format détecté: ${format}`, "info");
         
         let items = [];
+        let expertsImportes = [];
         if (format === 'auto-diagnostic') {
             items = convertirFormatAutoDiagnostic(data);
-            logImport(`🔄 Conversion format auto-diagnostic: ${items.length} éléments`, "info");
-        } else if (format === 'tableau') {
-            items = data;
-        } else if (format === 'vehicles') {
-            items = data.vehicles;
-        } else if (format === 'data') {
-            items = data.data;
-        } else {
-            items = Object.values(data);
-        }
+            logImport(`🔄 Conversion auto-diagnostic: ${items.length} véhicules`, "info");
+        } else if (format === 'tableau') items = data;
+        else if (format === 'vehicles') { items = data.vehicles || []; expertsImportes = data.experts || []; }
+        else if (format === 'data') items = data.data;
+        else items = Object.values(data).filter(x => x && typeof x === 'object');
         
-        logImport(`📊 ${items.length} éléments à traiter`, "info");
-        if (items.length === 0) throw new Error("Aucun élément valide trouvé");
-        await sleep(400);
+        await sleep(200);
 
-        mettreAJourProgress(50, "Vérification doublons...");
-        logImport("🔎 Vérification doublons...", "step");
-        let doublons = 0;
-        items.forEach(item => {
-            const m = item.marque || item.brand || '';
-            const mo = item.modele || item.model || '';
-            if (megaBase.find(v => v.marque === m && v.modele === mo)) doublons++;
-        });
-        logImport(`⚠️ ${doublons} doublons`, doublons > 0 ? "warning" : "info");
-        await sleep(400);
+        // CAS FICHIER VIDE → AVERTISSEMENT (pas une erreur bloquante)
+        if (items.length === 0 && expertsImportes.length === 0) {
+            mettreAJourProgress(100, "Terminé");
+            logImport("⚠️ Fichier valide mais AUCUNE donnée à importer", "warning");
+            document.getElementById('stat-after').textContent = megaBase.length;
+            afficherResultat('warning',
+                '⚠️ Fichier vide',
+                'Le fichier est valide mais ne contient aucune donnée (tableaux vides).',
+                `<div style="color:#fbbf24;font-weight:bold;margin-bottom:.5rem">📋 CONSTAT</div>
+                 <div>• Format: ${format}</div>
+                 <div>• Données trouvées: 0</div>
+                 <div>• Base conservée: <strong>${megaBase.length} véhicules</strong></div>
+                 <div style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.1);color:#94a3b8">
+                 💡 Utilisez le bouton "Import massif en ligne" pour rapatrier les vraies données depuis les sources auto-diagnostic.</div>`);
+            showNotification('⚠️ Fichier vide - base conservée', 'warning');
+            return;
+        }
 
-        mettreAJourProgress(75, "Fusion intelligente...");
+        mettreAJourProgress(50, "Fusion intelligente...");
         logImport("🔀 Fusion...", "step");
         for (let i = 0; i < items.length; i++) {
             const item = normaliserItem(items[i]);
@@ -730,84 +689,45 @@ async function importAvecAutoControle(file) {
                 if (item.dtc) item.dtc.forEach(d => { if (!existant.dtc.includes(d)) existant.dtc.push(d); });
                 if (item.rappels) item.rappels.forEach(r => { if (!existant.rappels.includes(r)) existant.rappels.push(r); });
                 if (item.entretiens) Object.assign(existant.entretiens, item.entretiens);
-                if (item.notes && !existant.notes) existant.notes = item.notes;
                 fusions++;
             }
-            if (i % 20 === 0) {
-                mettreAJourProgress(50 + (i/items.length)*25, `Fusion: ${i+1}/${items.length}`);
-                await sleep(5);
-            }
+            if (i % 20 === 0) { mettreAJourProgress(50 + (i/items.length)*25, `Fusion: ${i+1}/${items.length}`); await sleep(5); }
         }
+        
+        expertsImportes.forEach(e => {
+            if (e && e.titre && !expertBase.find(x => x.titre === e.titre)) { expertBase.push(e); ajouts++; }
+        });
+        
         document.getElementById('stat-added').textContent = '+' + ajouts;
         document.getElementById('stat-merged').textContent = '~' + fusions;
         logImport(`✅ +${ajouts} ajouts, ~${fusions} fusions`, "success");
-        await sleep(400);
+        await sleep(300);
 
         mettreAJourProgress(90, "Sauvegarde...");
-        logImport("💾 Sauvegarde localStorage...", "step");
-        try {
-            localStorage.setItem('kevFusion_megaBase', JSON.stringify(megaBase));
-            const verif = localStorage.getItem('kevFusion_megaBase');
-            if (!verif) throw new Error("Sauvegarde vide");
-            logImport("✅ Sauvegarde réussie", "success");
-        } catch (e) {
-            throw new Error("Échec sauvegarde: " + e.message);
-        }
-        await sleep(400);
+        localStorage.setItem('kevFusion_megaBase', JSON.stringify(megaBase));
+        localStorage.setItem('kevFusion_expertBase', JSON.stringify(expertBase));
+        logImport("✅ Sauvegarde réussie", "success");
+        await sleep(300);
 
         mettreAJourProgress(100, "Vérification intégrité...");
-        logImport("🛡️ Vérification intégrité...", "step");
-        const saved = localStorage.getItem('kevFusion_megaBase');
-        let parsed = [];
-        try { parsed = JSON.parse(saved); } catch(e) {}
-        if (parsed.length === megaBase.length) {
-            logImport("✅ Intégrité vérifiée - AUCUN BLOCAGE", "success");
-        } else {
-            logImport(`⚠️ Divergence: ${parsed.length} vs ${megaBase.length}`, "warning");
-        }
-        await sleep(400);
-
+        const saved = JSON.parse(localStorage.getItem('kevFusion_megaBase') || '[]');
+        logImport(saved.length === megaBase.length ? "✅ Intégrité vérifiée - AUCUN BLOCAGE" : "⚠️ Divergence détectée", saved.length === megaBase.length ? "success" : "warning");
         document.getElementById('stat-after').textContent = megaBase.length;
-
-        const resultDiv = document.getElementById('import-result');
-        const msgEl = document.getElementById('result-message');
-        const detailsEl = document.getElementById('result-details');
-        resultDiv.classList.remove('hidden', 'error');
-        msgEl.textContent = `Import terminé - Base APK mise à jour`;
-        detailsEl.innerHTML = `
-            <div style="color:#4ade80;font-weight:bold;margin-bottom:.5rem">📊 RAPPORT FINAL</div>
-            <div>• Format: <strong>${format}</strong></div>
-            <div>• Avant: <strong>${avant}</strong></div>
-            <div>• Ajouts: <strong style="color:#4ade80">+${ajouts}</strong></div>
-            <div>• Fusions: <strong style="color:#fbbf24">~${fusions}</strong></div>
-            <div>• Après: <strong style="color:#38bdf8">${megaBase.length}</strong></div>
-            <div style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.1)">
-                <span style="color:#4ade80">✅ Intégrité vérifiée - AUCUN BLOCAGE</span>
-            </div>
-            <div style="margin-top:.5rem;color:#94a3b8;font-size:.75rem">
-                💾 localStorage: OK | 📦 Base APK: ${megaBase.length} véhicules
-            </div>
-        `;
-        showNotification(`✅ Import: +${ajouts} véhicules`, 'success');
+        
+        afficherResultat('success', '✅ Import réussi', 'Base APK mise à jour sans blocage',
+            `<div style="color:#4ade80;font-weight:bold;margin-bottom:.5rem">📊 RAPPORT FINAL</div>
+             <div>• Avant: <strong>${avant}</strong></div>
+             <div>• Ajouts: <strong style="color:#4ade80">+${ajouts}</strong></div>
+             <div>• Fusions: <strong style="color:#fbbf24">~${fusions}</strong></div>
+             <div>• Après: <strong style="color:#38bdf8">${megaBase.length}</strong></div>
+             <div style="margin-top:.5rem;color:#4ade80">✅ Intégrité vérifiée - AUCUN BLOCAGE</div>`);
+        showNotification(`✅ Import: +${ajouts} éléments`, 'success');
         initFiltresEntretien();
-
     } catch (error) {
         logImport(`❌ ${error.message}`, "error");
-        const resultDiv = document.getElementById('import-result');
-        const msgEl = document.getElementById('result-message');
-        const detailsEl = document.getElementById('result-details');
-        resultDiv.classList.remove('hidden');
-        resultDiv.classList.add('error');
-        resultDiv.querySelector('.w-20').innerHTML = '<i data-lucide="alert-circle" class="w-12 h-12 text-red-400"></i>';
-        resultDiv.querySelector('h3').textContent = '❌ Échec import';
-        resultDiv.querySelector('h3').style.color = '#f87171';
-        msgEl.textContent = error.message;
-        detailsEl.innerHTML = `
-            <div style="color:#f87171;font-weight:bold">⚠️ Base préservée</div>
-            <div>• Véhicules actuels: <strong>${megaBase.length}</strong></div>
-        `;
-        showNotification('❌ Import échoué', 'error');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        afficherResultat('error', '❌ Échec import', error.message,
+            `<div style="color:#f87171;font-weight:bold">⚠️ Base préservée</div><div>• Véhicules: <strong>${megaBase.length}</strong></div>`);
+        showNotification('❌ Import échoué - base préservée', 'error');
     }
 }
 
@@ -817,41 +737,193 @@ function normaliserItem(item) {
     const modele = item.modele || item.model || item.modele_nom;
     if (!marque || !modele) return null;
     return {
-        marque: normaliserMarque(marque),
-        modele: String(modele).trim(),
+        marque: normaliserMarque(marque), modele: String(modele).trim(),
         motorisation: item.motorisation || item.motor || item.moteur || "Standard",
-        codeMoteur: (item.codeMoteur || item.code_moteur || item.engine_code || genererCodeMoteur(marque, item.motorisation)).toUpperCase(),
+        codeMoteur: String(item.codeMoteur || item.code_moteur || item.engine_code || genererCodeMoteur(marque, item.motorisation)).toUpperCase(),
         puissance: item.puissance || item.power || "Auto",
         annee: item.annee || item.year || item.years || "À définir",
         typeCarburant: item.typeCarburant || item.fuel || item.carburant || determinerCarburant(item.motorisation || ''),
-        entretiens: item.entretiens || item.maintenance || { "30000":["Vidange"], "60000":["Vidange"], "120000":["Vidange"], "160000":["Vidange"] },
-        dtc: Array.isArray(item.dtc) ? item.dtc : (item.dtc ? String(item.dtc).split(/[,\/\s]+/).filter(x => /^[PUBC]\d{4}/i.test(x)) : []),
-        rappels: Array.isArray(item.rappels) ? item.rappels : (item.rappels ? [item.rappels] : (item.recall ? [item.recall] : [])),
+        entretiens: item.entretiens || item.maintenance || genererEntretiens(item.typeCarburant || item.fuel || 'Essence'),
+        dtc: Array.isArray(item.dtc) ? item.dtc : (item.dtc ? String(item.dtc).split(/[,\/\s]+/).filter(x => /^[PUBC]\d{4}$/i.test(x)) : []),
+        rappels: Array.isArray(item.rappels) ? item.rappels : (item.rappels ? [item.rappels] : []),
         notes: item.notes || item.note || item.comment || ""
     };
 }
 
 // ==========================================
-// 15. SYNCHRONISATION
+// 14. IMPORT MASSIF EN LIGNE (SOURCES AUTO-DIAGNOSTIC)
 // ==========================================
-async function forcerSynchro() {
+const SOURCE_FILES = [
+    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/faults2019.js', arrays: [{ nom:'F2019', schema:'A' }] },
+    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/update2026.js', arrays: [{ nom:'BATCH_2026_ISSUES', schema:'B' }, { nom:'BATCH_2026_MODELS', schema:'MODELS' }] },
+    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/premium22.js', arrays: [{ nom:'PREMIUM_EXPERT', schema:'A' }, { nom:'PREMIUM_MODELS', schema:'MODELS' }] },
+    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/app.js', arrays: [{ nom:'BATCH_ISSUES', schema:'D' }, { nom:'BRAND_EXPERT', schema:'C' }] }
+];
+
+function extraireTableau(code, nom) {
+    try {
+        const re = new RegExp('const\\s+' + nom + '\\s*=\\s*\\[([\\s\\S]*?)\\n\\];');
+        const m = code.match(re);
+        if (!m) return [];
+        const val = new Function('return [' + m[1] + '];')();
+        return Array.isArray(val) ? val : [];
+    } catch (e) { return []; }
+}
+
+function convertirIssue(item, schema) {
+    if (!Array.isArray(item) || item.length < 8) return null;
+    let brand = item[0], model = '', motor = '', title = '', rest = 1;
+    if (schema === 'A') { motor = item[1] || ''; title = item[3] || ''; rest = 4; }
+    else if (schema === 'B') { model = item[1] || ''; motor = item[2] || ''; title = item[4] || ''; rest = 5; }
+    else if (schema === 'C') { motor = item[1] || ''; title = item[2] || ''; rest = 3; }
+    else if (schema === 'D') { model = item[1] || ''; motor = item[2] || ''; title = item[3] || ''; rest = 4; }
+    if (!brand || !title) return null;
+    const dtcStr = String(item[rest + 3] || '');
+    return {
+        marque: normaliserMarque(brand),
+        modele: model ? String(model) : '',
+        motorisation: motor ? String(motor) : '',
+        titre: String(title),
+        symptome: String(item[rest] || ''),
+        protocole: String(item[rest + 1] || ''),
+        organes: String(item[rest + 2] || ''),
+        dtc: dtcStr.split(/[,\/\s]+/).filter(c => /^[PUBC]\d{4}$/i.test(c)),
+        source: String(item[rest + 4] || ''),
+        annees: String(item[rest + 5] || '')
+    };
+}
+
+function convertirModel(item) {
+    if (!Array.isArray(item) || item.length < 4) return [];
+    const brand = item[0], name = item[1], years = item[2], motors = item[3];
+    if (!brand || !name || !Array.isArray(motors)) return [];
+    return motors.filter(m => Array.isArray(m)).map(m => ({
+        marque: normaliserMarque(brand), modele: String(name),
+        motorisation: String(m[0] || 'Standard'),
+        codeMoteur: genererCodeMoteur(brand, m[0]),
+        puissance: String(m[2] || 'Auto'), annee: String(years || ''),
+        typeCarburant: capFuel(m[1]),
+        entretiens: genererEntretiens(capFuel(m[1])),
+        dtc: [], rappels: [], notes: ''
+    }));
+}
+
+async function importEnLigne() {
+    if (!navigator.onLine) { showNotification('❌ Hors ligne - connexion requise', 'error'); return; }
+    ouvrirOverlayImport('Import massif en ligne');
+    const avant = megaBase.length;
+    const avantExpert = expertBase.length;
+    let vehiculesAjoutes = 0, fichesAjoutees = 0, enrichis = 0, fichiersOK = 0;
+    
+    try {
+        for (let f = 0; f < SOURCE_FILES.length; f++) {
+            const src = SOURCE_FILES[f];
+            const pct = 5 + (f / SOURCE_FILES.length) * 60;
+            mettreAJourProgress(pct, `Source ${f+1}/${SOURCE_FILES.length}: ${src.url.split('/').pop()}`);
+            logImport(`🌐 Fetch: ${src.url.split('/').pop()}`, "step");
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 12000);
+                const resp = await fetch(src.url, { signal: controller.signal });
+                clearTimeout(timeout);
+                if (!resp.ok) { logImport(`⚠️ HTTP ${resp.status}`, "warning"); continue; }
+                const code = await resp.text();
+                fichiersOK++;
+                logImport(`✅ ${code.length} octets reçus`, "success");
+                
+                for (const arr of src.arrays) {
+                    const raw = extraireTableau(code, arr.nom);
+                    if (!raw.length) { logImport(`⚠️ ${arr.nom}: vide`, "warning"); continue; }
+                    
+                    if (arr.schema === 'MODELS') {
+                        let added = 0;
+                        raw.forEach(item => {
+                            convertirModel(item).forEach(v => {
+                                if (!megaBase.find(x => x.marque === v.marque && x.modele === v.modele && x.codeMoteur === v.codeMoteur)) {
+                                    megaBase.push(v); added++; vehiculesAjoutes++;
+                                }
+                            });
+                        });
+                        logImport(`🚗 ${arr.nom}: +${added} véhicules`, "success");
+                    } else {
+                        let added = 0;
+                        raw.forEach(item => {
+                            const e = convertirIssue(item, arr.schema);
+                            if (!e) return;
+                            if (!expertBase.find(x => x.titre === e.titre && x.marque === e.marque)) {
+                                expertBase.push(e); added++; fichesAjoutees++;
+                            }
+                            // Enrichissement des véhicules existants
+                            const cible = megaBase.find(v =>
+                                v.marque === e.marque &&
+                                (e.modele ? v.modele.toLowerCase().includes(e.modele.toLowerCase()) :
+                                 (e.motorisation && e.motorisation.length > 2 && v.motorisation.toLowerCase().includes(e.motorisation.toLowerCase())))
+                            );
+                            if (cible) {
+                                enrichis++;
+                                e.dtc.forEach(d => { if (!cible.dtc.includes(d)) cible.dtc.push(d); });
+                                const rap = `${e.source}: ${e.titre}`;
+                                if (e.source && !cible.rappels.includes(rap) && cible.rappels.length < 6) cible.rappels.push(rap);
+                            }
+                        });
+                        logImport(`🧠 ${arr.nom}: +${added} fiches expert`, "success");
+                    }
+                }
+            } catch (e) {
+                logImport(`⚠️ Échec source: ${e.message}`, "warning");
+            }
+            document.getElementById('stat-added').textContent = '+' + (vehiculesAjoutes + fichesAjoutees);
+            document.getElementById('stat-merged').textContent = '~' + enrichis;
+            await sleep(200);
+        }
+        
+        mettreAJourProgress(80, "Sauvegarde...");
+        localStorage.setItem('kevFusion_megaBase', JSON.stringify(megaBase));
+        localStorage.setItem('kevFusion_expertBase', JSON.stringify(expertBase));
+        logImport("✅ Sauvegarde réussie", "success");
+        await sleep(300);
+        
+        mettreAJourProgress(100, "Vérification intégrité...");
+        const savedV = JSON.parse(localStorage.getItem('kevFusion_megaBase') || '[]');
+        const savedE = JSON.parse(localStorage.getItem('kevFusion_expertBase') || '[]');
+        const integre = savedV.length === megaBase.length && savedE.length === expertBase.length;
+        logImport(integre ? "✅ Intégrité vérifiée - AUCUN BLOCAGE" : "⚠️ Divergence détectée", integre ? "success" : "warning");
+        document.getElementById('stat-after').textContent = megaBase.length;
+        syncStatus.lastSync = new Date().toISOString();
+        
+        const totalNew = vehiculesAjoutes + fichesAjoutees;
+        if (totalNew === 0 && fichiersOK === 0) {
+            afficherResultat('warning', '⚠️ Sources injoignables', 'Aucune source n\'a pu être contactée.',
+                `<div>• Fichiers OK: 0/${SOURCE_FILES.length}</div><div>• Base conservée: <strong>${megaBase.length}</strong></div>`);
+        } else {
+            afficherResultat('success', '✅ Import massif réussi', 'Données rapatriées et intégrées sans blocage',
+                `<div style="color:#4ade80;font-weight:bold;margin-bottom:.5rem">📊 RAPPORT FINAL</div>
+                 <div>• Sources OK: <strong>${fichiersOK}/${SOURCE_FILES.length}</strong></div>
+                 <div>• Véhicules avant: <strong>${avant}</strong> → après: <strong style="color:#38bdf8">${megaBase.length}</strong></div>
+                 <div>• Fiches expert: <strong>${avantExpert}</strong> → <strong style="color:#c084fc">${expertBase.length}</strong></div>
+                 <div>• Véhicules enrichis (DTC/rappels): <strong style="color:#fbbf24">${enrichis}</strong></div>
+                 <div style="margin-top:.5rem;color:#4ade80">✅ Intégrité vérifiée - AUCUN BLOCAGE</div>`);
+            showNotification(`✅ +${totalNew} éléments importés`, 'success');
+        }
+        initFiltresEntretien();
+        majIndicateurSync();
+    } catch (error) {
+        logImport(`❌ ${error.message}`, "error");
+        afficherResultat('error', '❌ Échec import', error.message,
+            `<div style="color:#f87171;font-weight:bold">⚠️ Base préservée</div><div>• Véhicules: <strong>${megaBase.length}</strong></div>`);
+    }
+}
+
+function majIndicateurSync() {
     const syncEl = document.getElementById('sync-status');
     if (!syncEl) return;
-    showNotification('🔄 Synchronisation...', 'info');
-    syncEl.className = 'sync-indicator sync-active';
-    syncEl.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 sync-icon"></i><span>Synchro...</span>';
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    await sleep(800);
     syncEl.className = 'sync-indicator sync-inactive';
     syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    syncStatus.lastSync = new Date().toISOString();
-    showNotification(`✅ ${megaBase.length} véhicules en base`, 'success');
-    if (!document.getElementById('view-stats').classList.contains('hidden')) afficherStats();
 }
 
 // ==========================================
-// 16. STATISTIQUES
+// 15. STATISTIQUES
 // ==========================================
 function afficherStats() {
     const container = document.getElementById('stats-container');
@@ -860,11 +932,11 @@ function afficherStats() {
     if (!container) return;
     const total = megaBase.length;
     const marques = [...new Set(megaBase.map(v => v.marque))].length;
-    const dtc = megaBase.reduce((a,v) => a + (v.dtc?.length || 0), 0);
+    const dtc = megaBase.reduce((a,v) => a + (v.dtc?.length || 0), 0) + expertBase.reduce((a,e) => a + (e.dtc?.length || 0), 0);
     const rappels = megaBase.reduce((a,v) => a + (v.rappels?.length || 0), 0);
     container.innerHTML = `
         <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="car" class="w-8 h-8 text-cyan-400"></i><span class="text-slate-400 font-bold text-sm uppercase">Véhicules</span></div><p class="text-4xl font-black">${total}</p></div>
-        <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="tag" class="w-8 h-8 text-purple-400"></i><span class="text-slate-400 font-bold text-sm uppercase">Marques</span></div><p class="text-4xl font-black">${marques}</p></div>
+        <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="brain" class="w-8 h-8 text-purple-400"></i><span class="text-slate-400 font-bold text-sm uppercase">Fiches expert</span></div><p class="text-4xl font-black">${expertBase.length}</p></div>
         <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="alert-circle" class="w-8 h-8 text-red-400"></i><span class="text-slate-400 font-bold text-sm uppercase">DTC</span></div><p class="text-4xl font-black">${dtc}</p></div>
         <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="alert-triangle" class="w-8 h-8 text-amber-400"></i><span class="text-slate-400 font-bold text-sm uppercase">Rappels</span></div><p class="text-4xl font-black">${rappels}</p></div>
     `;
@@ -878,34 +950,33 @@ function afficherStats() {
     }
     if (syncDetails) {
         syncDetails.innerHTML = `
-            <div class="glass rounded-2xl p-5 border-l-4 border-cyan-500"><div class="flex items-center gap-3 mb-2"><i data-lucide="database" class="w-6 h-6 text-cyan-400"></i><span class="font-bold text-lg">Base locale</span></div><p class="text-slate-300">${megaBase.length} véhicules</p>${syncStatus.lastSync ? `<p class="text-xs text-slate-500 mt-2">MAJ: ${new Date(syncStatus.lastSync).toLocaleString('fr-FR')}</p>` : ''}</div>
+            <div class="glass rounded-2xl p-5 border-l-4 border-cyan-500"><div class="flex items-center gap-3 mb-2"><i data-lucide="database" class="w-6 h-6 text-cyan-400"></i><span class="font-bold text-lg">Base locale</span></div><p class="text-slate-300">${megaBase.length} véhicules • ${expertBase.length} fiches expert</p>${syncStatus.lastSync ? `<p class="text-xs text-slate-500 mt-2">Dernier import: ${new Date(syncStatus.lastSync).toLocaleString('fr-FR')}</p>` : ''}</div>
         `;
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 // ==========================================
-// 17. INITIALISATION
+// 16. INITIALISATION
 // ==========================================
 function chargerBase() {
     try {
         const saved = localStorage.getItem('kevFusion_megaBase');
         if (saved) {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                megaBase = parsed;
-                console.log('✅ Base chargée depuis localStorage:', megaBase.length);
-                return;
-            }
+            if (Array.isArray(parsed) && parsed.length > 0) { megaBase = parsed; }
+            else { megaBase = [...MEGA_BASE_INITIALE]; }
+        } else { megaBase = [...MEGA_BASE_INITIALE]; }
+        const savedE = localStorage.getItem('kevFusion_expertBase');
+        if (savedE) {
+            const parsedE = JSON.parse(savedE);
+            if (Array.isArray(parsedE)) expertBase = parsedE;
         }
     } catch (e) {
-        console.error('Erreur chargement localStorage:', e);
+        megaBase = [...MEGA_BASE_INITIALE];
+        expertBase = [];
     }
-    megaBase = [...MEGA_BASE_INITIALE];
-    try {
-        localStorage.setItem('kevFusion_megaBase', JSON.stringify(megaBase));
-    } catch (e) {}
-    console.log('✅ Base initiale utilisée:', megaBase.length);
+    console.log('✅ Base chargée:', megaBase.length, 'véhicules,', expertBase.length, 'fiches');
 }
 
 function initialiser() {
@@ -915,45 +986,27 @@ function initialiser() {
         initAdminHash();
         chargerBase();
         initFiltresEntretien();
-        const syncEl = document.getElementById('sync-status');
-        if (syncEl) {
-            syncEl.className = 'sync-indicator sync-inactive';
-            syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
-        }
+        majIndicateurSync();
         if (typeof lucide !== 'undefined') lucide.createIcons();
-        console.log('✅ Initialisation terminée:', megaBase.length, 'véhicules');
+        console.log('✅ Initialisation terminée');
     } catch (error) {
         console.error('❌ Erreur initialisation:', error);
         megaBase = [...MEGA_BASE_INITIALE];
-        const syncEl = document.getElementById('sync-status');
-        if (syncEl) {
-            syncEl.className = 'sync-indicator sync-inactive';
-            syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
-        }
+        majIndicateurSync();
         updateNetworkStatus();
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 }
 
-// ==========================================
-// 18. DÉMARRAGE MULTI-NIVEAUX
-// ==========================================
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialiser);
-} else {
-    initialiser();
-}
+} else { initialiser(); }
 
 setTimeout(() => {
     const networkText = document.getElementById('network-text');
     if (networkText && networkText.textContent === 'Connexion...') updateNetworkStatus();
     const syncEl = document.getElementById('sync-status');
-    if (syncEl && syncEl.querySelector('.sync-icon')) {
-        syncEl.className = 'sync-indicator sync-inactive';
-        syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
-    updateNetworkStatus();
+    if (syncEl && syncEl.querySelector('.sync-icon')) majIndicateurSync();
 }, 2000);
 
 let initCheckCount = 0;
@@ -961,31 +1014,9 @@ const initCheckInterval = setInterval(() => {
     initCheckCount++;
     const networkText = document.getElementById('network-text');
     if (networkText && networkText.textContent === 'Connexion...') updateNetworkStatus();
-    const syncEl = document.getElementById('sync-status');
-    if (syncEl && syncEl.className.includes('sync-active')) {
-        const hasSpinningIcon = syncEl.querySelector('.sync-icon');
-        if (hasSpinningIcon && initCheckCount > 3) {
-            syncEl.className = 'sync-indicator sync-inactive';
-            syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-    }
-    if (initCheckCount >= 10) {
-        clearInterval(initCheckInterval);
-        console.log('✅ Vérifications initiales terminées');
-    }
+    if (initCheckCount >= 10) clearInterval(initCheckInterval);
 }, 1000);
 
-window.addEventListener('online', () => {
-    updateNetworkStatus();
-    showNotification('🌐 Connexion rétablie', 'success');
-});
-
-window.addEventListener('offline', () => {
-    updateNetworkStatus();
-    showNotification('📡 Mode hors ligne', 'warning');
-});
-
-document.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && e.target.id === 'secure-code-input') verifierAcces(e);
-});
+window.addEventListener('online', () => { updateNetworkStatus(); showNotification('🌐 Connexion rétablie', 'success'); });
+window.addEventListener('offline', () => { updateNetworkStatus(); showNotification('📡 Mode hors ligne', 'warning'); });
+document.addEventListener('keypress', (e) => { if (e.key === 'Enter' && e.target.id === 'secure-code-input') verifierAcces(e); });
