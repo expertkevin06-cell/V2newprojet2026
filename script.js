@@ -8,8 +8,8 @@ const SESSION_DURATION = 30 * 60 * 1000;
 let isSecureModeActive = false;
 let secureSessionTimeout = null;
 let ADMIN_HASH = null;
-let megaBase = [];
-let expertBase = [];
+let megaBase = [];        // véhicules
+let expertBase = [];      // fiches pannes/expert
 let syncStatus = { lastSync: null, sources: [] };
 
 // ==========================================
@@ -60,11 +60,17 @@ function capFuel(f) {
     return m[String(f || '').toLowerCase()] || 'Essence';
 }
 
+function extrairePuissance(texte) {
+    if (!texte) return 0;
+    const m = String(texte).match(/(\d{2,3})\s*(?:ch|hp|cv)/i);
+    return m ? parseInt(m[1]) : 0;
+}
+
 function genererEntretiens(fuel) {
     if (fuel === 'Électrique') return { "30000":["Contrôle batterie HV","Filtre habitacle"],"60000":["Vidange réducteur","Contrôle charge"],"120000":["Contrôle SOH batterie","Liquide refroidissement HV"],"160000":["Contrôle complet HV"] };
-    if (fuel === 'Hybride') return { "15000":["Vidange 0W20","Contrôle hybride"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"90000":["Liquide de frein"],"120000":["Bougies"],"160000":["Contrôle batterie HV","Liquide refroidissement"] };
-    if (fuel === 'Diesel') return { "30000":["Vidange","Filtre à huile"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Kit distribution","Filtre à air"],"160000":["Filtre à gasoil","Liquide refroidissement"] };
-    return { "30000":["Vidange","Filtre à huile"],"60000":["Filtre à air","Bougies"],"90000":["Liquide de frein"],"120000":["Kit distribution"],"160000":["Bougies","Liquide refroidissement"] };
+    if (fuel === 'Hybride') return { "15000":["Vidange 0W20","Contrôle hybride"],"30000":["Filtre habitacle"],"60000":["Filtre à air","Bougies"],"90000":["Liquide de frein"],"120000":["Contrôle batterie HV","Bougies"],"160000":["Liquide refroidissement"] };
+    if (fuel === 'Diesel') return { "30000":["Vidange 5W30","Filtre à huile","Contrôle FAP"],"60000":["Vidange","Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Kit distribution","Filtre à air"],"160000":["Filtre à gasoil","Liquide refroidissement"] };
+    return { "30000":["Vidange","Filtre à huile","Contrôle courroie"],"60000":["Filtre à air","Bougies"],"90000":["Liquide de frein"],"120000":["Kit distribution"],"160000":["Bougies","Liquide refroidissement"] };
 }
 
 // ==========================================
@@ -95,63 +101,65 @@ async function initAdminHash() {
 }
 
 // ==========================================
-// 4. MÉGA BASE INITIALE (52 véhicules)
+// 4. MÉGA BASE INITIALE AVEC PUISSANCE
 // ==========================================
 const MEGA_BASE_INITIALE = [
-    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech", codeMoteur:"HNS", puissance:"130 ch", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile","Contrôle courroie humide"],"60000":["Vidange","Filtre à huile","Filtre à air","Bougies iridium"],"90000":["Vidange","Filtre à huile","Liquide de frein DOT 4"],"120000":["Vidange","Kit distribution + pompe eau"],"160000":["Vidange","Bougies","Liquide refroidissement G12+"]}, dtc:["P0420","P0300","P0301","P0171","P0087","P0340"], rappels:["Rappel freinage 2022","Campagne tendeur courroie 2022-2023"], notes:"Distribution humide à surveiller 30 000 km" },
-    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTD", puissance:"100 ch", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"],"160000":["Vidange","Bougies","Liquide refroidissement"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
-    { marque:"Peugeot", modele:"e-208", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle batterie HV","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle SOH","Liquide refroidissement HV"]}, dtc:["P0AA6","U0111","P0C00"], rappels:["Campagne autonomie hiver","Campagne BMS"], notes:"" },
-    { marque:"Peugeot", modele:"3008 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:"130 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile","Contrôle FAP"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Vidange","Filtre à gasoil","Liquide refroidissement"]}, dtc:["P2002","P0401","P0471","P20EE"], rappels:["Campagne FAP 2021","Campagne AdBlue"], notes:"FAP sensible trajets courts" },
-    { marque:"Peugeot", modele:"5008 II", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:"180 ch", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P2453"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.5 dCi", codeMoteur:"K9K", puissance:"85 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30","Filtre à huile"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement Type D"]}, dtc:["P2263","P0401","P0299"], rappels:["Campagne EGR 1.5 dCi"], notes:"Turbo fragile 2019-2020" },
-    { marque:"Renault", modele:"Megane IV", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:"140 ch", annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0171","P0300"], rappels:["Campagne chaîne 2020"], notes:"Chaîne à surveiller" },
-    { marque:"Renault", modele:"Captur II", motorisation:"1.0 TCe", codeMoteur:"H4D", puissance:"100 ch", annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Austral", motorisation:"1.2 TCe Hybride", codeMoteur:"H5H-H", puissance:"200 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"],"60000":["Filtre à air","Bougies"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Zoe", motorisation:"Électrique 135", codeMoteur:"5AGen2", puissance:"135 ch", annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle batterie"]}, dtc:["P0AA6","U0111","P0D11"], rappels:["Campagne OBC","Campagne connecteur Type2"], notes:"" },
-    { marque:"Citroën", modele:"C5 Aircross", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:"130 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C3 III", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:"110 ch", annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie humide"], notes:"Distribution humide PSA" },
-    { marque:"Citroën", modele:"ë-C4", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["P0D11","P0AA6"], rappels:["Campagne OBC"], notes:"" },
-    { marque:"DS", modele:"DS 7 Crossback", motorisation:"E-Tense 300", codeMoteur:"EP6-PHEV", puissance:"300 ch", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"60000":["Filtre à air"],"120000":["Contrôle batterie HV"]}, dtc:["P0AA6","U0111"], rappels:["Campagne batterie HV"], notes:"" },
-    { marque:"Volkswagen", modele:"Golf 8", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL-IV","Filtre à huile"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Kit distribution"],"160000":["Liquide refroidissement G13"]}, dtc:["P2002","P0401","P0471","P0406"], rappels:["Campagne sonde NOx 2023","Campagne ICU 12V"], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:"150 ch", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID.4", motorisation:"Électrique 204", codeMoteur:"APP310", puissance:"204 ch", annee:"2021-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["U0111","P0AA6"], rappels:["Campagne ICU décharge 12V"], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:"150 ch", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P0406"], rappels:["Campagne AdBlue 2021"], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"2.0d B47", codeMoteur:"B47", puissance:"190 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Contrôle chaîne"],"160000":["Liquide refroidissement BMW"]}, dtc:["P0401","P2002","P0299"], rappels:["Campagne EGR incendie","Campagne refroidisseur EGR 2018-2020"], notes:"" },
-    { marque:"BMW", modele:"X1 F48", motorisation:"1.8d B47", codeMoteur:"B47", puissance:"150 ch", annee:"2018-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P0401","P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"iX", motorisation:"Électrique 523", codeMoteur:"EKA", puissance:"523 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Liquide refroidissement"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
-    { marque:"Mercedes-Benz", modele:"Classe A W177", motorisation:"A 200d OM654", codeMoteur:"OM654", puissance:"150 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"25000":["Vidange 5W30 MB"],"50000":["Filtre à gasoil"],"75000":["Liquide de frein"],"100000":["Filtre à air"],"125000":["Liquide refroidissement MB"]}, dtc:["P0401","P2002","P0234","P20EE"], rappels:["Campagne injecteur AdBlue","Campagne alterno-démarreur 48V"], notes:"" },
-    { marque:"Audi", modele:"A3 8Y", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P0406"], rappels:[], notes:"" },
-    { marque:"Audi", modele:"e-tron", motorisation:"Électrique 408", codeMoteur:"UA1", puissance:"408 ch", annee:"2019-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
-    { marque:"Porsche", modele:"Taycan", motorisation:"Électrique 761", codeMoteur:"Taycan", puissance:"761 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
-    { marque:"Opel", modele:"Corsa F", motorisation:"1.2 Turbo", codeMoteur:"EB2ADTD", puissance:"130 ch", annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0301","P0087"], rappels:["Campagne courroie humide"], notes:"" },
-    { marque:"Opel", modele:"Corsa-e", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2020-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11"], rappels:["Campagne OBC"], notes:"" },
-    { marque:"Toyota", modele:"Yaris Cross", motorisation:"1.5 Hybride", codeMoteur:"M15A-FXE", puissance:"116 ch", annee:"2021-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W16","Contrôle hybride"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"90000":["Liquide de frein"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"Chaîne - Très fiable" },
-    { marque:"Toyota", modele:"RAV4 V", motorisation:"2.5 Hybride", codeMoteur:"A25A-FXS", puissance:"218 ch", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W20"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies iridium"]}, dtc:[], rappels:["Campagne pompe à carburant 2019-2020"], notes:"Chaîne - Très fiable" },
-    { marque:"Toyota", modele:"Corolla XII", motorisation:"1.8 Hybride", codeMoteur:"2ZR-FXE", puissance:"122 ch", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Hyundai", modele:"Tucson IV", motorisation:"1.6 CRDi", codeMoteur:"D4FE", puissance:"136 ch", annee:"2021-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 C3"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:["Campagne logiciel FAP"], notes:"" },
-    { marque:"Hyundai", modele:"Ioniq 5", motorisation:"Électrique 325", codeMoteur:"EM17", puissance:"325 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111","P0AA6"], rappels:["Campagne ICCU"], notes:"ICCU défaillant" },
-    { marque:"Hyundai", modele:"Kona EV", motorisation:"Électrique 204", codeMoteur:"EM16", puissance:"204 ch", annee:"2018-2022", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne incendie batterie"], notes:"Risque incendie" },
-    { marque:"Kia", modele:"Sportage V", motorisation:"1.6 T-GDi Hybride", codeMoteur:"G4FT", puissance:"230 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W20"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Kia", modele:"EV6", motorisation:"Électrique 585", codeMoteur:"EM21", puissance:"585 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111"], rappels:["Campagne ICCU"], notes:"" },
-    { marque:"Nissan", modele:"Leaf", motorisation:"Électrique 150", codeMoteur:"EM57", puissance:"150 ch", annee:"2018-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH"]}, dtc:[], rappels:["Campagne SOH batterie"], notes:"Perte autonomie" },
-    { marque:"Nissan", modele:"Qashqai III", motorisation:"1.3 DIG-T", codeMoteur:"HR13DDT", puissance:"158 ch", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Honda", modele:"HR-V III", motorisation:"1.5 e:HEV", codeMoteur:"LEB", puissance:"131 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"20000":["Vidange 0W20"],"40000":["Filtre habitacle"],"60000":["Filtre à air"],"100000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech", codeMoteur:"HNS", puissance:"130", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile","Contrôle courroie humide"],"60000":["Vidange","Filtre à huile","Filtre à air","Bougies iridium"],"90000":["Vidange","Filtre à huile","Liquide de frein DOT 4"],"120000":["Vidange","Kit distribution + pompe eau"],"160000":["Vidange","Bougies","Liquide refroidissement G12+"]}, dtc:["P0420","P0300","P0301","P0171","P0087","P0340"], rappels:["Rappel freinage 2022","Campagne tendeur courroie 2022-2023"], notes:"Distribution humide à surveiller 30 000 km" },
+    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTD", puissance:"100", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"],"160000":["Vidange","Bougies","Liquide refroidissement"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
+    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTS", puissance:"130", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"],"160000":["Vidange","Bougies","Liquide refroidissement"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
+    { marque:"Peugeot", modele:"e-208", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle batterie HV","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle SOH","Liquide refroidissement HV"]}, dtc:["P0AA6","U0111","P0C00"], rappels:["Campagne autonomie hiver","Campagne BMS"], notes:"" },
+    { marque:"Peugeot", modele:"3008 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:"130", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile","Contrôle FAP"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Vidange","Filtre à gasoil","Liquide refroidissement"]}, dtc:["P2002","P0401","P0471","P20EE"], rappels:["Campagne FAP 2021","Campagne AdBlue"], notes:"FAP sensible trajets courts" },
+    { marque:"Peugeot", modele:"5008 II", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:"180", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P2453"], rappels:[], notes:"" },
+    { marque:"Renault", modele:"Clio V", motorisation:"1.5 Blue dCi", codeMoteur:"K9K", puissance:"85", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30","Filtre à huile"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement Type D"]}, dtc:["P2263","P0401","P0299"], rappels:["Campagne EGR 1.5 dCi"], notes:"Turbo fragile 2019-2020" },
+    { marque:"Renault", modele:"Clio V", motorisation:"1.5 Blue dCi", codeMoteur:"K9K", puissance:"115", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30","Filtre à huile"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement Type D"]}, dtc:["P2263","P0401","P0299"], rappels:["Campagne EGR 1.5 dCi"], notes:"" },
+    { marque:"Renault", modele:"Megane IV", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:"140", annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0171","P0300"], rappels:["Campagne chaîne 2020"], notes:"Chaîne à surveiller" },
+    { marque:"Renault", modele:"Captur II", motorisation:"1.0 TCe", codeMoteur:"H4D", puissance:"100", annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
+    { marque:"Renault", modele:"Austral", motorisation:"1.2 TCe Hybride", codeMoteur:"H5H-H", puissance:"200", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"],"60000":["Filtre à air","Bougies"]}, dtc:[], rappels:[], notes:"" },
+    { marque:"Renault", modele:"Zoe", motorisation:"Électrique 135", codeMoteur:"5AGen2", puissance:"135", annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle batterie"]}, dtc:["P0AA6","U0111","P0D11"], rappels:["Campagne OBC","Campagne connecteur Type2"], notes:"" },
+    { marque:"Citroën", modele:"C5 Aircross", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:"130", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Citroën", modele:"C3 III", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:"110", annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie humide"], notes:"Distribution humide PSA" },
+    { marque:"Citroën", modele:"ë-C4", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["P0D11","P0AA6"], rappels:["Campagne OBC"], notes:"" },
+    { marque:"DS", modele:"DS 7 Crossback", motorisation:"E-Tense 300", codeMoteur:"EP6-PHEV", puissance:"300", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"60000":["Filtre à air"],"120000":["Contrôle batterie HV"]}, dtc:["P0AA6","U0111"], rappels:["Campagne batterie HV"], notes:"" },
+    { marque:"Volkswagen", modele:"Golf 8", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL-IV","Filtre à huile"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Kit distribution"],"160000":["Liquide refroidissement G13"]}, dtc:["P2002","P0401","P0471","P0406"], rappels:["Campagne sonde NOx 2023","Campagne ICU 12V"], notes:"" },
+    { marque:"Volkswagen", modele:"T-Roc", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:"150", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
+    { marque:"Volkswagen", modele:"ID.4", motorisation:"Électrique 204", codeMoteur:"APP310", puissance:"204", annee:"2021-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["U0111","P0AA6"], rappels:["Campagne ICU décharge 12V"], notes:"" },
+    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:"150", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P0406"], rappels:["Campagne AdBlue 2021"], notes:"" },
+    { marque:"BMW", modele:"Série 3 G20", motorisation:"2.0d B47", codeMoteur:"B47", puissance:"190", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Contrôle chaîne"],"160000":["Liquide refroidissement BMW"]}, dtc:["P0401","P2002","P0299"], rappels:["Campagne EGR incendie","Campagne refroidisseur EGR 2018-2020"], notes:"" },
+    { marque:"BMW", modele:"X1 F48", motorisation:"1.8d B47", codeMoteur:"B47", puissance:"150", annee:"2018-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P0401","P2002"], rappels:[], notes:"" },
+    { marque:"BMW", modele:"iX", motorisation:"Électrique 523", codeMoteur:"EKA", puissance:"523", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Liquide refroidissement"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
+    { marque:"Mercedes-Benz", modele:"Classe A W177", motorisation:"A 200d OM654", codeMoteur:"OM654", puissance:"150", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"25000":["Vidange 5W30 MB"],"50000":["Filtre à gasoil"],"75000":["Liquide de frein"],"100000":["Filtre à air"],"125000":["Liquide refroidissement MB"]}, dtc:["P0401","P2002","P0234","P20EE"], rappels:["Campagne injecteur AdBlue","Campagne alterno-démarreur 48V"], notes:"" },
+    { marque:"Audi", modele:"A3 8Y", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P0406"], rappels:[], notes:"" },
+    { marque:"Audi", modele:"e-tron", motorisation:"Électrique 408", codeMoteur:"UA1", puissance:"408", annee:"2019-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
+    { marque:"Porsche", modele:"Taycan", motorisation:"Électrique 761", codeMoteur:"Taycan", puissance:"761", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
+    { marque:"Opel", modele:"Corsa F", motorisation:"1.2 Turbo", codeMoteur:"EB2ADTD", puissance:"130", annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0301","P0087"], rappels:["Campagne courroie humide"], notes:"" },
+    { marque:"Opel", modele:"Corsa-e", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136", annee:"2020-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11"], rappels:["Campagne OBC"], notes:"" },
+    { marque:"Toyota", modele:"Yaris Cross", motorisation:"1.5 Hybride", codeMoteur:"M15A-FXE", puissance:"116", annee:"2021-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W16","Contrôle hybride"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"90000":["Liquide de frein"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"Chaîne - Très fiable" },
+    { marque:"Toyota", modele:"RAV4 V", motorisation:"2.5 Hybride", codeMoteur:"A25A-FXS", puissance:"218", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W20"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies iridium"]}, dtc:[], rappels:["Campagne pompe à carburant 2019-2020"], notes:"Chaîne - Très fiable" },
+    { marque:"Toyota", modele:"Corolla XII", motorisation:"1.8 Hybride", codeMoteur:"2ZR-FXE", puissance:"122", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
+    { marque:"Hyundai", modele:"Tucson IV", motorisation:"1.6 CRDi", codeMoteur:"D4FE", puissance:"136", annee:"2021-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 C3"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:["Campagne logiciel FAP"], notes:"" },
+    { marque:"Hyundai", modele:"Ioniq 5", motorisation:"Électrique 325", codeMoteur:"EM17", puissance:"325", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111","P0AA6"], rappels:["Campagne ICCU"], notes:"ICCU défaillant" },
+    { marque:"Hyundai", modele:"Kona EV", motorisation:"Électrique 204", codeMoteur:"EM16", puissance:"204", annee:"2018-2022", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne incendie batterie"], notes:"Risque incendie" },
+    { marque:"Kia", modele:"Sportage V", motorisation:"1.6 T-GDi Hybride", codeMoteur:"G4FT", puissance:"230", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W20"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
+    { marque:"Kia", modele:"EV6", motorisation:"Électrique 585", codeMoteur:"EM21", puissance:"585", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111"], rappels:["Campagne ICCU"], notes:"" },
+    { marque:"Nissan", modele:"Leaf", motorisation:"Électrique 150", codeMoteur:"EM57", puissance:"150", annee:"2018-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH"]}, dtc:[], rappels:["Campagne SOH batterie"], notes:"Perte autonomie" },
+    { marque:"Nissan", modele:"Qashqai III", motorisation:"1.3 DIG-T", codeMoteur:"HR13DDT", puissance:"158", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
+    { marque:"Honda", modele:"HR-V III", motorisation:"1.5 e:HEV", codeMoteur:"LEB", puissance:"131", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"20000":["Vidange 0W20"],"40000":["Filtre habitacle"],"60000":["Filtre à air"],"100000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
     { marque:"Tesla", modele:"Model 3/Y", motorisation:"Électrique", codeMoteur:"Tesla", puissance:"Multi", annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"]}, dtc:["U0101","P0AA6"], rappels:["Campagne freinage fantôme 2023","Campagne eMMC MCU","Campagne contacteurs HV"], notes:"Multiples campagnes NHTSA" },
-    { marque:"Ford", modele:"Kuga III", motorisation:"2.5 PHEV", codeMoteur:"PHEV", puissance:"225 ch", annee:"2020-2022", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne batterie HV incendie"], notes:"Risque incendie" },
-    { marque:"Ford", modele:"Puma", motorisation:"1.0 EcoBoost Hybrid", codeMoteur:"B3JA", puissance:"155 ch", annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange 5W20"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Fiat", modele:"500e", motorisation:"Électrique 118", codeMoteur:"500e", puissance:"118 ch", annee:"2021-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11"], rappels:["Campagne OBC"], notes:"" },
-    { marque:"Alfa Romeo", modele:"Giulia II", motorisation:"2.2 JTDm", codeMoteur:"940A", puissance:"180 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Jeep", modele:"Compass II", motorisation:"1.6 Multijet", codeMoteur:"55283860", puissance:"120 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Volvo", modele:"XC40 I", motorisation:"D4", codeMoteur:"D4204T14", puissance:"190 ch", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W20 VCC"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Volvo", modele:"EX30", motorisation:"Électrique 428", codeMoteur:"EX30", puissance:"428 ch", annee:"2023-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6","P0C00"], rappels:["Campagne BMS surchauffe"], notes:"" },
-    { marque:"Dacia", modele:"Spring", motorisation:"Électrique 45", codeMoteur:"Spring", puissance:"45 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11","P0562","C1365"], rappels:["Campagne servofrein","Campagne OBC","Campagne DC-DC"], notes:"Multiples campagnes" },
-    { marque:"Dacia", modele:"Bigster", motorisation:"Hybrid 155", codeMoteur:"Bigster-H", puissance:"155 ch", annee:"2025-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange"]}, dtc:["P0700"], rappels:["Campagne ressorts AR","Campagne boîte DCT"], notes:"Ressorts AR diamètre fil insuffisant" },
-    { marque:"Skoda", modele:"Octavia IV", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Seat", modele:"Leon IV", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Cupra", modele:"Born", motorisation:"Électrique 231", codeMoteur:"Born", puissance:"231 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne logiciel HV"], notes:"" },
-    { marque:"Polestar", modele:"Polestar 2", motorisation:"Électrique 476", codeMoteur:"PS2", puissance:"476 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne capteurs isolement"], notes:"" },
-    { marque:"BYD", modele:"Seal U DM-i", motorisation:"DM-i 218", codeMoteur:"BYD-DMi", puissance:"218 ch", annee:"2026-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange"]}, dtc:["P0087"], rappels:["Campagne pompe huile DM-i"], notes:"" },
-    { marque:"MG", modele:"MG4", motorisation:"Électrique 204", codeMoteur:"MG4", puissance:"204 ch", annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111"], rappels:["Campagne 12V / DC-DC"], notes:"" }
+    { marque:"Ford", modele:"Kuga III", motorisation:"2.5 PHEV", codeMoteur:"PHEV", puissance:"225", annee:"2020-2022", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne batterie HV incendie"], notes:"Risque incendie" },
+    { marque:"Ford", modele:"Puma", motorisation:"1.0 EcoBoost Hybrid", codeMoteur:"B3JA", puissance:"155", annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange 5W20"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
+    { marque:"Fiat", modele:"500e", motorisation:"Électrique 118", codeMoteur:"500e", puissance:"118", annee:"2021-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11"], rappels:["Campagne OBC"], notes:"" },
+    { marque:"Alfa Romeo", modele:"Giulia II", motorisation:"2.2 JTDm", codeMoteur:"940A", puissance:"180", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Jeep", modele:"Compass II", motorisation:"1.6 Multijet", codeMoteur:"55283860", puissance:"120", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Volvo", modele:"XC40 I", motorisation:"D4", codeMoteur:"D4204T14", puissance:"190", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W20 VCC"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Volvo", modele:"EX30", motorisation:"Électrique 428", codeMoteur:"EX30", puissance:"428", annee:"2023-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6","P0C00"], rappels:["Campagne BMS surchauffe"], notes:"" },
+    { marque:"Dacia", modele:"Spring", motorisation:"Électrique 45", codeMoteur:"Spring", puissance:"45", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11","P0562","C1365"], rappels:["Campagne servofrein","Campagne OBC","Campagne DC-DC"], notes:"Multiples campagnes" },
+    { marque:"Dacia", modele:"Bigster", motorisation:"Hybrid 155", codeMoteur:"Bigster-H", puissance:"155", annee:"2025-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange"]}, dtc:["P0700"], rappels:["Campagne ressorts AR","Campagne boîte DCT"], notes:"Ressorts AR diamètre fil insuffisant" },
+    { marque:"Skoda", modele:"Octavia IV", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Seat", modele:"Leon IV", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Cupra", modele:"Born", motorisation:"Électrique 231", codeMoteur:"Born", puissance:"231", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne logiciel HV"], notes:"" },
+    { marque:"Polestar", modele:"Polestar 2", motorisation:"Électrique 476", codeMoteur:"PS2", puissance:"476", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne capteurs isolement"], notes:"" },
+    { marque:"BYD", modele:"Seal U DM-i", motorisation:"DM-i 218", codeMoteur:"BYD-DMi", puissance:"218", annee:"2026-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange"]}, dtc:["P0087"], rappels:["Campagne pompe huile DM-i"], notes:"" },
+    { marque:"MG", modele:"MG4", motorisation:"Électrique 204", codeMoteur:"MG4", puissance:"204", annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111"], rappels:["Campagne 12V / DC-DC"], notes:"" }
 ];
 
 // ==========================================
@@ -202,9 +210,13 @@ function showTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(el => { el.classList.remove('tab-active'); el.classList.add('text-slate-400'); });
     const active = document.getElementById(`tab-${tabName}`);
     if (active) { active.classList.add('tab-active'); active.classList.remove('text-slate-400'); }
+    
+    if (tabName === 'vin') initFiltresPannes();
+    if (tabName === 'diagnostic') initFiltresExpert();
     if (tabName === 'entretien') initFiltresEntretien();
     if (tabName === 'stats') afficherStats();
     if (tabName === 'secure') resetSecureForm();
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -233,7 +245,7 @@ async function rechercherVIN() {
         if (data.Results && data.Results.length > 0) {
             let html = `<div class="glass rounded-3xl p-8 border-l-4 border-red-500 slide-up"><h3 class="text-3xl font-black text-red-400 mb-4">⚠️ ${data.Results.length} rappel(s)</h3><div class="space-y-5">`;
             data.Results.forEach((r, i) => {
-                html += `<div class="bg-red-900/30 border-2 border-red-500/40 rounded-2xl p-6"><p class="font-black text-cyan-400 text-xl mb-2">${i+1}. ${r.Component}</p><p class="text-slate-200 mb-3">${r.Summary}</p><span class="recall-badge px-3 py-1.5 rounded-lg font-bold">NHTSA</span></div>`;
+                html += `<div class="issue-card critical"><p class="issue-title">${i+1}. ${r.Component}</p><p class="text-slate-200 mb-3">${r.Summary}</p><div class="issue-meta"><span class="recall-badge px-3 py-1.5 rounded-lg font-bold">NHTSA</span>${r.Manufacturer ? `<span class="success-badge px-3 py-1.5 rounded-lg font-bold">${r.Manufacturer}</span>` : ''}</div></div>`;
             });
             html += '</div></div>';
             results.innerHTML = html;
@@ -241,70 +253,417 @@ async function rechercherVIN() {
             results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-green-500 slide-up"><h3 class="text-3xl font-black text-green-400">✅ Aucun rappel</h3><p class="text-slate-400">VIN: ${vin}</p></div>`;
         }
     } catch (e) {
-        results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-amber-500 slide-up"><h3 class="text-2xl font-black text-amber-400">Erreur API</h3></div>`;
+        results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-amber-500 slide-up"><h3 class="text-2xl font-black text-amber-400">Erreur API NHTSA</h3></div>`;
     }
 }
 
 // ==========================================
-// 8. PRÉCONISATIONS
+// 8. FILTRES PANNES (VIN tab) - cascade Marque → Modèle+année → Motorisation → Puissance
+// ==========================================
+function initFiltresPannes() {
+    const sel = document.getElementById('pannes-marque');
+    if (!sel || sel.options.length > 1) return;
+    sel.innerHTML = '<option value="">🏷️ Marque</option>';
+    const marques = [...new Set([...megaBase, ...expertBase].map(x => x.marque).filter(Boolean))].sort();
+    marques.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+}
+
+function pannes_updateModeles() {
+    const marque = document.getElementById('pannes-marque').value;
+    const selM = document.getElementById('pannes-modele');
+    const selMo = document.getElementById('pannes-motorisation');
+    const selP = document.getElementById('pannes-puissance');
+    selM.innerHTML = '<option value="">🚗 Modèle (années)</option>';
+    selMo.innerHTML = '<option value="">⚙️ Motorisation</option>'; selMo.disabled = true;
+    selP.innerHTML = '<option value="">⚡ Puissance</option>'; selP.disabled = true;
+    if (!marque) { selM.disabled = true; return; }
+    selM.disabled = false;
+    const all = [...megaBase, ...expertBase].filter(x => x.marque === marque && x.modele);
+    const modelesUniques = new Map();
+    all.forEach(x => {
+        const k = x.modele + '|' + (x.annee || '');
+        if (!modelesUniques.has(k)) {
+            modelesUniques.set(k, { modele: x.modele, annee: x.annee || '' });
+        }
+    });
+    [...modelesUniques.values()].sort((a,b) => a.modele.localeCompare(b.modele)).forEach(m => {
+        const label = m.annee ? `${m.modele} (${m.annee})` : m.modele;
+        selM.innerHTML += `<option value="${m.modele}|${m.annee}">${label}</option>`;
+    });
+}
+
+function pannes_updateMotorisations() {
+    const marque = document.getElementById('pannes-marque').value;
+    const modeleVal = document.getElementById('pannes-modele').value;
+    const selMo = document.getElementById('pannes-motorisation');
+    const selP = document.getElementById('pannes-puissance');
+    selMo.innerHTML = '<option value="">⚙️ Motorisation</option>';
+    selP.innerHTML = '<option value="">⚡ Puissance</option>'; selP.disabled = true;
+    if (!modeleVal) { selMo.disabled = true; return; }
+    selMo.disabled = false;
+    const [modele, annee] = modeleVal.split('|');
+    const all = [...megaBase, ...expertBase].filter(x => x.marque === marque && x.modele === modele && (!annee || x.annee === annee));
+    const motorUniques = new Map();
+    all.forEach(x => {
+        if (x.motorisation && !motorUniques.has(x.motorisation)) {
+            motorUniques.set(x.motorisation, x.motorisation);
+        }
+    });
+    [...motorUniques.values()].sort().forEach(m => {
+        selMo.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+}
+
+function pannes_updatePuissances() {
+    const marque = document.getElementById('pannes-marque').value;
+    const modeleVal = document.getElementById('pannes-modele').value;
+    const motorisation = document.getElementById('pannes-motorisation').value;
+    const selP = document.getElementById('pannes-puissance');
+    selP.innerHTML = '<option value="">⚡ Puissance</option>';
+    if (!motorisation) { selP.disabled = true; return; }
+    selP.disabled = false;
+    const [modele, annee] = modeleVal.split('|');
+    const all = [...megaBase, ...expertBase].filter(x => x.marque === marque && x.modele === modele && (!annee || x.annee === annee) && x.motorisation === motorisation);
+    const puissances = new Set();
+    all.forEach(x => { if (x.puissance) puissances.add(String(x.puissance)); });
+    [...puissances].sort((a,b) => (parseInt(a)||0) - (parseInt(b)||0)).forEach(p => {
+        selP.innerHTML += `<option value="${p}">${p} ch</option>`;
+    });
+}
+
+function pannes_rechercher() {
+    const marque = document.getElementById('pannes-marque').value;
+    const modeleVal = document.getElementById('pannes-modele').value;
+    const motorisation = document.getElementById('pannes-motorisation').value;
+    const puissance = document.getElementById('pannes-puissance').value;
+    const results = document.getElementById('pannes-results');
+    if (!marque) { results.innerHTML = ''; return; }
+    
+    const [modele, annee] = (modeleVal || '|').split('|');
+    const pannes = expertBase.filter(e =>
+        e.marque === marque &&
+        (!modele || fuzzyMatch(e.modele, modele)) &&
+        (!motorisation || fuzzyMotor(e.motorisation, motorisation)) &&
+        (!puissance || puissanceMatch(e.puissance, puissance))
+    );
+    
+    let html = '';
+    if (pannes.length === 0) {
+        html = `<div class="glass rounded-3xl p-8 border-l-4 border-green-500 slide-up"><div class="flex items-center gap-4"><i data-lucide="check-circle" class="w-10 h-10 text-green-400"></i><div><h3 class="text-2xl font-black text-green-400">✅ Aucune panne connue</h3><p class="text-slate-400">Aucune panne ou rappel recensé pour ce véhicule</p></div></div></div>`;
+    } else {
+        html = `<div class="glass rounded-3xl p-8 mb-4"><div class="flex items-center gap-3"><i data-lucide="alert-triangle" class="w-6 h-6 text-amber-400"></i><h3 class="font-black text-xl text-amber-400">${pannes.length} panne(s) / rappel(s) connu(s)</h3></div></div>`;
+        html += pannes.map(p => renderIssueCard(p)).join('');
+    }
+    results.innerHTML = html;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function fuzzyMatch(a, b) {
+    if (!a || !b) return true;
+    const A = String(a).toLowerCase(), B = String(b).toLowerCase();
+    return A.includes(B) || B.includes(A);
+}
+
+function fuzzyMotor(a, b) {
+    if (!a || !b) return true;
+    const A = String(a).toLowerCase(), B = String(b).toLowerCase();
+    if (A.includes(B) || B.includes(A)) return true;
+    const tokA = A.split(/\s+/), tokB = B.split(/\s+/);
+    return tokA.some(t => t.length >= 3 && B.includes(t));
+}
+
+function puissanceMatch(p1, p2) {
+    const n1 = parseInt(String(p1).match(/\d+/)?.[0] || '0');
+    const n2 = parseInt(String(p2).match(/\d+/)?.[0] || '0');
+    return Math.abs(n1 - n2) <= 10;
+}
+
+function renderIssueCard(p, isExpert) {
+    const isCritical = (p.type || '').toLowerCase().includes('campagne') || (p.source || '').toLowerCase().includes('rappel');
+    const cardClass = isExpert ? 'issue-card expert' : (isCritical ? 'issue-card critical' : 'issue-card');
+    return `
+        <div class="${cardClass}">
+            <p class="issue-title">${isExpert ? '🧠 ' : '⚠️ '}${escapeHtml(p.titre || 'Titre manquant')}</p>
+            <div class="issue-meta">
+                ${p.type ? `<span class="type-badge px-3 py-1 rounded-lg text-xs font-bold">🔬 ${escapeHtml(p.type)}</span>` : ''}
+                ${p.marque ? `<span class="success-badge px-3 py-1 rounded-lg text-xs font-bold">${escapeHtml(p.marque)}</span>` : ''}
+                ${p.modele ? `<span class="recall-badge px-3 py-1 rounded-lg text-xs font-bold">${escapeHtml(p.modele)}</span>` : ''}
+                ${p.motorisation ? `<span class="recall-badge px-3 py-1 rounded-lg text-xs font-bold">${escapeHtml(p.motorisation)}</span>` : ''}
+                ${p.puissance ? `<span class="expert-badge px-3 py-1 rounded-lg text-xs font-bold text-white">${escapeHtml(p.puissance)} ch</span>` : ''}
+            </div>
+            ${p.symptome ? `<div class="issue-section"><div class="issue-section-label">⚠️ Symptômes</div><p class="text-slate-200">${escapeHtml(p.symptome)}</p></div>` : ''}
+            ${p.diagnostic || p.protocole ? `<div class="issue-section"><div class="issue-section-label">🔬 Protocole ingénieur</div><p class="text-slate-200">${escapeHtml(p.diagnostic || p.protocole)}</p></div>` : ''}
+            ${p.organes ? `<div class="issue-section"><div class="issue-section-label">🔩 Organes / Pièces</div><p class="text-slate-200">${escapeHtml(p.organes)}</p></div>` : ''}
+            ${(p.dtc && p.dtc.length > 0) ? `<div class="issue-section"><div class="issue-section-label">🔗 Codes DTC liés</div><div class="flex flex-wrap gap-2">${p.dtc.map(d => `<span class="dtc-badge px-3 py-1 rounded-lg text-xs font-mono text-white font-bold">${escapeHtml(d)}</span>`).join('')}</div></div>` : ''}
+            <div class="issue-section"><div class="flex flex-wrap gap-2 items-center">
+                ${p.source ? `<span class="src-link">📋 ${escapeHtml(p.source)}</span>` : ''}
+                ${p.annees ? `<span class="src-link" style="background:rgba(245,158,11,0.15);color:#fbbf24">📅 ${escapeHtml(p.annees)}</span>` : ''}
+            </div></div>
+        </div>
+    `;
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ==========================================
+// 9. DIAGNOSTIC EXPERT (style auto-diagnostic)
+// ==========================================
+function initFiltresExpert() {
+    const sel = document.getElementById('expert-marque');
+    if (!sel || sel.options.length > 1) return;
+    sel.innerHTML = '<option value="">🏷️ Marque</option>';
+    const marques = [...new Set([...megaBase, ...expertBase].map(x => x.marque).filter(Boolean))].sort();
+    marques.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+}
+
+function expert_updateModeles() { return pannes_updateModeles_generic('expert-'); }
+function expert_updateMotorisations() { return pannes_updateMotorisations_generic('expert-'); }
+function expert_updatePuissances() { return pannes_updatePuissances_generic('expert-'); }
+
+function pannes_updateModeles_generic(prefix) {
+    const marque = document.getElementById(prefix + 'marque').value;
+    const selM = document.getElementById(prefix + 'modele');
+    const selMo = document.getElementById(prefix + 'motorisation');
+    const selP = document.getElementById(prefix + 'puissance');
+    selM.innerHTML = '<option value="">🚗 Modèle (années)</option>';
+    selMo.innerHTML = '<option value="">⚙️ Motorisation</option>'; selMo.disabled = true;
+    selP.innerHTML = '<option value="">⚡ Puissance</option>'; selP.disabled = true;
+    if (!marque) { selM.disabled = true; return; }
+    selM.disabled = false;
+    const all = [...megaBase, ...expertBase].filter(x => x.marque === marque && x.modele);
+    const modelesUniques = new Map();
+    all.forEach(x => {
+        const k = x.modele + '|' + (x.annee || '');
+        if (!modelesUniques.has(k)) modelesUniques.set(k, { modele: x.modele, annee: x.annee || '' });
+    });
+    [...modelesUniques.values()].sort((a,b) => a.modele.localeCompare(b.modele)).forEach(m => {
+        const label = m.annee ? `${m.modele} (${m.annee})` : m.modele;
+        selM.innerHTML += `<option value="${m.modele}|${m.annee}">${label}</option>`;
+    });
+}
+
+function pannes_updateMotorisations_generic(prefix) {
+    const marque = document.getElementById(prefix + 'marque').value;
+    const modeleVal = document.getElementById(prefix + 'modele').value;
+    const selMo = document.getElementById(prefix + 'motorisation');
+    const selP = document.getElementById(prefix + 'puissance');
+    selMo.innerHTML = '<option value="">⚙️ Motorisation</option>';
+    selP.innerHTML = '<option value="">⚡ Puissance</option>'; selP.disabled = true;
+    if (!modeleVal) { selMo.disabled = true; return; }
+    selMo.disabled = false;
+    const [modele, annee] = modeleVal.split('|');
+    const all = [...megaBase, ...expertBase].filter(x => x.marque === marque && x.modele === modele && (!annee || x.annee === annee));
+    const motorUniques = new Map();
+    all.forEach(x => { if (x.motorisation && !motorUniques.has(x.motorisation)) motorUniques.set(x.motorisation, x.motorisation); });
+    [...motorUniques.values()].sort().forEach(m => {
+        selMo.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+}
+
+function pannes_updatePuissances_generic(prefix) {
+    const marque = document.getElementById(prefix + 'marque').value;
+    const modeleVal = document.getElementById(prefix + 'modele').value;
+    const motorisation = document.getElementById(prefix + 'motorisation').value;
+    const selP = document.getElementById(prefix + 'puissance');
+    selP.innerHTML = '<option value="">⚡ Puissance</option>';
+    if (!motorisation) { selP.disabled = true; return; }
+    selP.disabled = false;
+    const [modele, annee] = modeleVal.split('|');
+    const all = [...megaBase, ...expertBase].filter(x => x.marque === marque && x.modele === modele && (!annee || x.annee === annee) && x.motorisation === motorisation);
+    const puissances = new Set();
+    all.forEach(x => { if (x.puissance) puissances.add(String(x.puissance)); });
+    [...puissances].sort((a,b) => (parseInt(a)||0) - (parseInt(b)||0)).forEach(p => {
+        selP.innerHTML += `<option value="${p}">${p} ch</option>`;
+    });
+}
+
+function expert_rechercher() {
+    const marque = document.getElementById('expert-marque').value;
+    const modeleVal = document.getElementById('expert-modele').value;
+    const motorisation = document.getElementById('expert-motorisation').value;
+    const puissance = document.getElementById('expert-puissance').value;
+    const q = (document.getElementById('expert-search').value || '').toLowerCase().trim();
+    
+    const [modele, annee] = (modeleVal || '|').split('|');
+    
+    // Pannes connues
+    let pannes = expertBase.filter(e => {
+        if (q && q.length >= 2) {
+            const texte = `${e.titre} ${e.symptome} ${e.diagnostic} ${e.organes} ${(e.dtc||[]).join(' ')} ${e.source}`.toLowerCase();
+            if (!texte.includes(q)) return false;
+        }
+        if (marque && e.marque !== marque) return false;
+        if (modele && !fuzzyMatch(e.modele, modele)) return false;
+        if (motorisation && !fuzzyMotor(e.motorisation, motorisation)) return false;
+        if (puissance && !puissanceMatch(e.puissance, puissance)) return false;
+        return true;
+    });
+    
+    const issuesDiv = document.getElementById('expert-issues');
+    if (pannes.length === 0) {
+        if (q || marque || modele) {
+            issuesDiv.innerHTML = `<div class="issue-card" style="border-left-color:#10b981"><p class="text-green-400 font-bold">✅ Aucune panne connue pour ces critères</p><p class="text-slate-300 mt-2">Essayez une recherche plus large ou un autre véhicule.</p></div>`;
+        } else {
+            issuesDiv.innerHTML = '<p class="text-slate-400 italic">Sélectionnez un véhicule pour voir les pannes connues…</p>';
+        }
+    } else {
+        issuesDiv.innerHTML = `<p class="text-sm text-slate-400 mb-4">${pannes.length} panne(s) / rappel(s) corrélé(s)</p>` + pannes.map(p => renderIssueCard(p, false)).join('');
+    }
+    
+    // Fiches expert (même données, affichées différemment si type contient "expert")
+    const fiches = expertBase.filter(e => {
+        const t = (e.type || '').toLowerCase();
+        return t.includes('expert') || t.includes('scientifique') || t.includes('fiche');
+    }).filter(e => {
+        if (q && q.length >= 2) {
+            const texte = `${e.titre} ${e.symptome} ${e.diagnostic} ${e.organes} ${(e.dtc||[]).join(' ')} ${e.source}`.toLowerCase();
+            if (!texte.includes(q)) return false;
+        }
+        if (marque && e.marque !== marque) return false;
+        if (modele && !fuzzyMatch(e.modele, modele)) return false;
+        return true;
+    });
+    
+    const fichesDiv = document.getElementById('expert-fiches');
+    if (fiches.length === 0) {
+        fichesDiv.innerHTML = '<p class="text-slate-400 italic">Aucune fiche expert pour ces critères.</p>';
+    } else {
+        fichesDiv.innerHTML = `<p class="text-sm text-slate-400 mb-4">${fiches.length} fiche(s) expert</p>` + fiches.map(f => renderIssueCard(f, true)).join('');
+    }
+    
+    // DTC corrélés
+    const dtcSet = new Set();
+    [...pannes, ...fiches].forEach(e => (e.dtc || []).forEach(d => dtcSet.add(d)));
+    const dtcDiv = document.getElementById('expert-dtc');
+    if (dtcSet.size === 0) {
+        dtcDiv.innerHTML = '<p class="text-slate-400 italic">—</p>';
+    } else {
+        dtcDiv.innerHTML = `<div class="flex flex-wrap gap-2">${[...dtcSet].map(d => `<span class="dtc-badge px-4 py-2 rounded-xl text-sm font-mono text-white font-bold">${d}</span>`).join('')}</div>`;
+    }
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function rechercherDTClibre() {
+    const code = document.getElementById('dtc-libre-input').value.trim().toUpperCase();
+    const result = document.getElementById('dtc-libre-result');
+    if (!code) { result.innerHTML = ''; return; }
+    const matches = expertBase.filter(e => (e.dtc || []).some(d => String(d).toUpperCase().includes(code)));
+    if (matches.length === 0) {
+        result.innerHTML = `<div class="glass rounded-2xl p-6"><p class="text-amber-400 font-bold">⚠️ Code "${code}" non trouvé dans la base</p><p class="text-slate-400 text-sm mt-2">Essayez les sites spécialisés ci-dessus.</p></div>`;
+    } else {
+        result.innerHTML = `<p class="text-sm text-slate-400 mb-3">${matches.length} occurrence(s) du code ${code}</p>` + matches.slice(0, 10).map(p => renderIssueCard(p, false)).join('');
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// ==========================================
+// 10. PRÉCONISATIONS (renforcé avec puissance)
 // ==========================================
 function initFiltresEntretien() {
-    const marques = [...new Set(megaBase.map(v => v.marque))].sort();
     const sel = document.getElementById('filter-marque');
-    if (!sel) return;
+    if (!sel || sel.options.length > 1) return;
     sel.innerHTML = '<option value="">🏷️ Marque</option>';
+    const marques = [...new Set(megaBase.map(v => v.marque))].sort();
     marques.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
 }
 
 function updateModeles() {
     const marque = document.getElementById('filter-marque').value;
     const selM = document.getElementById('filter-modele');
-    const selMo = document.getElementById('filter-moteur');
-    if (!selM || !selMo) return;
-    selM.innerHTML = '<option value="">🚗 Modèle</option>';
-    selMo.innerHTML = '<option value="">⚙️ Motorisation</option>';
-    selMo.disabled = true;
-    if (marque) {
-        const modeles = [...new Set(megaBase.filter(v => v.marque === marque).map(v => v.modele))].sort();
-        modeles.forEach(m => selM.innerHTML += `<option value="${m}">${m}</option>`);
-        selM.disabled = false;
-    } else selM.disabled = true;
+    const selMo = document.getElementById('filter-motorisation');
+    const selP = document.getElementById('filter-puissance');
+    selM.innerHTML = '<option value="">🚗 Modèle (années)</option>';
+    selMo.innerHTML = '<option value="">⚙️ Motorisation</option>'; selMo.disabled = true;
+    selP.innerHTML = '<option value="">⚡ Puissance</option>'; selP.disabled = true;
+    if (!marque) { selM.disabled = true; return; }
+    selM.disabled = false;
+    const modelesUniques = new Map();
+    megaBase.filter(v => v.marque === marque).forEach(x => {
+        const k = x.modele + '|' + (x.annee || '');
+        if (!modelesUniques.has(k)) modelesUniques.set(k, { modele: x.modele, annee: x.annee || '' });
+    });
+    [...modelesUniques.values()].sort((a,b) => a.modele.localeCompare(b.modele)).forEach(m => {
+        const label = m.annee ? `${m.modele} (${m.annee})` : m.modele;
+        selM.innerHTML += `<option value="${m.modele}|${m.annee}">${label}</option>`;
+    });
 }
 
 function updateMotorisations() {
     const marque = document.getElementById('filter-marque').value;
-    const modele = document.getElementById('filter-modele').value;
-    const sel = document.getElementById('filter-moteur');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">⚙️ Motorisation</option>';
-    if (marque && modele) {
-        megaBase.filter(v => v.marque === marque && v.modele === modele).forEach(m => {
-            sel.innerHTML += `<option value="${m.codeMoteur}">${m.motorisation} - ${m.codeMoteur} (${m.puissance})</option>`;
-        });
-        sel.disabled = false;
-    }
+    const modeleVal = document.getElementById('filter-modele').value;
+    const selMo = document.getElementById('filter-motorisation');
+    const selP = document.getElementById('filter-puissance');
+    selMo.innerHTML = '<option value="">⚙️ Motorisation</option>';
+    selP.innerHTML = '<option value="">⚡ Puissance</option>'; selP.disabled = true;
+    if (!modeleVal) { selMo.disabled = true; return; }
+    selMo.disabled = false;
+    const [modele, annee] = modeleVal.split('|');
+    const motorUniques = new Map();
+    megaBase.filter(v => v.marque === marque && v.modele === modele && (!annee || v.annee === annee)).forEach(x => {
+        if (x.motorisation && !motorUniques.has(x.motorisation)) motorUniques.set(x.motorisation, x.motorisation);
+    });
+    [...motorUniques.values()].sort().forEach(m => {
+        selMo.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+}
+
+function updatePuissances() {
+    const marque = document.getElementById('filter-marque').value;
+    const modeleVal = document.getElementById('filter-modele').value;
+    const motorisation = document.getElementById('filter-motorisation').value;
+    const selP = document.getElementById('filter-puissance');
+    selP.innerHTML = '<option value="">⚡ Puissance</option>';
+    if (!motorisation) { selP.disabled = true; return; }
+    selP.disabled = false;
+    const [modele, annee] = modeleVal.split('|');
+    const puissances = new Set();
+    megaBase.filter(v => v.marque === marque && v.modele === modele && (!annee || v.annee === annee) && v.motorisation === motorisation).forEach(x => {
+        if (x.puissance) puissances.add(String(x.puissance));
+    });
+    [...puissances].sort((a,b) => (parseInt(a)||0) - (parseInt(b)||0)).forEach(p => {
+        selP.innerHTML += `<option value="${p}">${p} ch</option>`;
+    });
 }
 
 function afficherEntretien() {
     const marque = document.getElementById('filter-marque').value;
-    const modele = document.getElementById('filter-modele').value;
-    const code = document.getElementById('filter-moteur').value;
+    const modeleVal = document.getElementById('filter-modele').value;
+    const motorisation = document.getElementById('filter-motorisation').value;
+    const puissance = document.getElementById('filter-puissance').value;
     const results = document.getElementById('entretien-results');
     if (!results) return;
-    const v = megaBase.find(x => x.marque === marque && x.modele === modele && x.codeMoteur === code);
-    if (!v) return;
-    let html = `<div class="glass rounded-3xl p-8 border-t-4 border-cyan-500 slide-up"><h3 class="text-3xl font-black mb-2">${v.marque} ${v.modele}</h3><p class="text-cyan-400 font-mono text-lg mb-3">${v.motorisation} | ${v.codeMoteur} | ${v.puissance} | ${v.annee}</p>${v.notes ? `<p class="text-amber-400 italic mb-4">⚠️ ${v.notes}</p>` : ''}<div class="space-y-5">`;
+    
+    const [modele, annee] = (modeleVal || '|').split('|');
+    const v = megaBase.find(x =>
+        x.marque === marque && x.modele === modele &&
+        (!annee || x.annee === annee) &&
+        x.motorisation === motorisation &&
+        (!puissance || String(x.puissance) === puissance)
+    );
+    
+    if (!v) {
+        results.innerHTML = `<div class="glass rounded-3xl p-8 border-l-4 border-amber-500"><p class="text-amber-400 font-bold">Aucune fiche d'entretien trouvée pour cette combinaison</p></div>`;
+        return;
+    }
+    
+    let html = `<div class="glass rounded-3xl p-8 border-t-4 border-cyan-500 slide-up"><h3 class="text-3xl font-black mb-2">${v.marque} ${v.modele}${v.annee ? ` (${v.annee})` : ''}</h3><p class="text-cyan-400 font-mono text-lg mb-3">${v.motorisation} • ${v.puissance} ch • ${v.codeMoteur} • ${v.typeCarburant}</p>${v.notes ? `<p class="text-amber-400 italic mb-4">⚠️ ${v.notes}</p>` : ''}<div class="space-y-5">`;
+    
     ["15000","30000","60000","90000","120000","160000"].forEach(km => {
         const ops = v.entretiens[km];
         if (ops && ops.length > 0) {
             html += `<div class="bg-slate-800/60 rounded-2xl p-6 border-2 border-slate-700"><div class="flex flex-col md:flex-row gap-5"><div class="km-badge text-white px-6 py-4 rounded-xl text-center min-w-[140px] text-xl">${parseInt(km).toLocaleString()} km</div><ul class="flex-1 space-y-3">${ops.map(op => `<li class="flex items-start gap-3"><i data-lucide="check-circle" class="w-6 h-6 text-green-400 mt-0.5"></i><span>${op}</span></li>`).join('')}</ul></div></div>`;
         }
     });
+    
     if (v.dtc && v.dtc.length > 0) {
-        html += `<div class="mt-8 pt-8 border-t-2 border-slate-700"><h4 class="font-black text-xl mb-4">Codes DTC</h4><div class="flex flex-wrap gap-3">${v.dtc.map(d => `<span class="dtc-badge px-4 py-2 rounded-xl text-sm font-mono text-white font-bold">${d}</span>`).join('')}</div></div>`;
+        html += `<div class="mt-8 pt-8 border-t-2 border-slate-700"><h4 class="font-black text-xl mb-4">Codes DTC fréquents</h4><div class="flex flex-wrap gap-3">${v.dtc.map(d => `<span class="dtc-badge px-4 py-2 rounded-xl text-sm font-mono text-white font-bold">${d}</span>`).join('')}</div></div>`;
     }
     if (v.rappels && v.rappels.length > 0) {
-        html += `<div class="mt-6 pt-6 border-t-2 border-slate-700"><h4 class="font-black text-xl mb-4">Rappels</h4><div class="space-y-3">${v.rappels.map(r => `<div class="bg-amber-900/30 border-2 border-amber-500/40 rounded-xl p-4"><p class="text-amber-100">${r}</p></div>`).join('')}</div></div>`;
+        html += `<div class="mt-6 pt-6 border-t-2 border-slate-700"><h4 class="font-black text-xl mb-4">Rappels & campagnes</h4><div class="space-y-3">${v.rappels.map(r => `<div class="bg-amber-900/30 border-2 border-amber-500/40 rounded-xl p-4"><p class="text-amber-100">${r}</p></div>`).join('')}</div></div>`;
     }
     html += '</div></div>';
     results.innerHTML = html;
@@ -312,7 +671,7 @@ function afficherEntretien() {
 }
 
 // ==========================================
-// 9. RECHERCHE MEGA BASE (véhicules + expert)
+// 11. RECHERCHE MEGA BASE
 // ==========================================
 function rechercherMegaBase() {
     const q = document.getElementById('mega-search').value.toLowerCase().trim();
@@ -322,13 +681,12 @@ function rechercherMegaBase() {
     
     const vehicules = megaBase.filter(v =>
         v.marque.toLowerCase().includes(q) || v.modele.toLowerCase().includes(q) ||
-        v.codeMoteur.toLowerCase().includes(q) ||
-        (v.dtc && v.dtc.some(d => d.toLowerCase().includes(q))) ||
-        (v.rappels && v.rappels.some(r => r.toLowerCase().includes(q)))
-    ).slice(0, 20);
+        v.codeMoteur.toLowerCase().includes(q) || v.motorisation.toLowerCase().includes(q) ||
+        (v.dtc && v.dtc.some(d => d.toLowerCase().includes(q)))
+    ).slice(0, 15);
     
     const experts = expertBase.filter(e =>
-        (e.marque + ' ' + e.modele + ' ' + e.motorisation + ' ' + e.titre + ' ' + (e.dtc || []).join(' ')).toLowerCase().includes(q)
+        `${e.marque} ${e.modele} ${e.motorisation} ${e.titre} ${(e.dtc||[]).join(' ')} ${e.symptome || ''}`.toLowerCase().includes(q)
     ).slice(0, 10);
     
     if (vehicules.length === 0 && experts.length === 0) {
@@ -340,8 +698,8 @@ function rechercherMegaBase() {
         <div class="glass rounded-2xl p-6 cursor-pointer hover:border-cyan-500 transition-all" onclick="naviguerVersVehicule('${v.marque.replace(/'/g,"\\'")}','${v.modele.replace(/'/g,"\\'")}','${v.codeMoteur.replace(/'/g,"\\'")}')">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <p class="font-black text-cyan-400 text-xl">${v.marque} ${v.modele}</p>
-                    <p class="text-slate-300 mt-2">${v.motorisation} (${v.codeMoteur}) • ${v.puissance}</p>
+                    <p class="font-black text-cyan-400 text-xl">${v.marque} ${v.modele}${v.annee ? ` (${v.annee})` : ''}</p>
+                    <p class="text-slate-300 mt-2">${v.motorisation} • ${v.puissance} ch • ${v.codeMoteur}</p>
                 </div>
                 <i data-lucide="arrow-right" class="w-6 h-6 text-slate-500"></i>
             </div>
@@ -356,12 +714,9 @@ function rechercherMegaBase() {
             </div>
             <p class="font-black text-white text-lg mb-2">${e.titre}</p>
             ${e.symptome ? `<p class="text-slate-300 text-sm mb-2">⚠️ ${e.symptome}</p>` : ''}
-            ${e.protocole ? `<p class="text-slate-300 text-sm mb-2">🔬 ${e.protocole}</p>` : ''}
-            ${e.organes ? `<p class="text-slate-400 text-sm mb-2">🔩 ${e.organes}</p>` : ''}
             <div class="flex flex-wrap gap-2 mt-2">
                 ${(e.dtc || []).map(d => `<span class="dtc-badge px-3 py-1 rounded-lg text-xs font-mono text-white font-bold">${d}</span>`).join('')}
                 ${e.source ? `<span class="recall-badge px-3 py-1 rounded-lg text-xs font-bold text-white">${e.source}</span>` : ''}
-                ${e.annees ? `<span class="success-badge px-3 py-1 rounded-lg text-xs font-bold text-white">${e.annees}</span>` : ''}
             </div>
         </div>
     `).join('');
@@ -377,20 +732,27 @@ function naviguerVersVehicule(marque, modele, code) {
         if (m) m.value = marque;
         updateModeles();
         setTimeout(() => {
+            const v = megaBase.find(x => x.marque === marque && x.modele === modele && x.codeMoteur === code);
+            if (!v) return;
             const mo = document.getElementById('filter-modele');
-            if (mo) mo.value = modele;
+            if (mo) mo.value = v.modele + '|' + (v.annee || '');
             updateMotorisations();
             setTimeout(() => {
-                const mo2 = document.getElementById('filter-moteur');
-                if (mo2) mo2.value = code;
-                afficherEntretien();
+                const mo2 = document.getElementById('filter-motorisation');
+                if (mo2) mo2.value = v.motorisation;
+                updatePuissances();
+                setTimeout(() => {
+                    const p = document.getElementById('filter-puissance');
+                    if (p) p.value = v.puissance;
+                    afficherEntretien();
+                }, 100);
             }, 100);
         }, 100);
     }, 100);
 }
 
 // ==========================================
-// 10. AUTHENTIFICATION
+// 12. AUTH
 // ==========================================
 async function verifierAcces(event) {
     if (event) event.preventDefault();
@@ -439,7 +801,7 @@ function fermerSessionSecurisee() {
 }
 
 // ==========================================
-// 11. GESTION BASE
+// 13. GESTION BASE
 // ==========================================
 function ajouterEntree(event) {
     event.preventDefault();
@@ -499,7 +861,7 @@ function exporterJSON() {
 }
 
 // ==========================================
-// 12. OVERLAY IMPORT
+// 14. OVERLAY IMPORT
 // ==========================================
 function ouvrirOverlayImport(titre) {
     const overlay = document.getElementById('import-overlay');
@@ -572,7 +934,7 @@ function afficherResultat(type, titre, message, detailsHtml) {
 }
 
 // ==========================================
-// 13. IMPORT FICHIER JSON MULTI-FORMATS (CORRIGÉ)
+// 15. IMPORT FICHIER JSON MULTI-FORMATS
 // ==========================================
 function detecterFormat(data) {
     if (!data) return 'inconnu';
@@ -585,31 +947,22 @@ function detecterFormat(data) {
 
 function convertirFormatAutoDiagnostic(data) {
     const result = [];
-    const pushVehicule = (src) => {
-        const marque = src.marque || src.brand;
-        const modele = src.modele || src.model;
+    const pushV = (src) => {
+        const marque = src.marque || src.brand; const modele = src.modele || src.model;
         if (!marque || !modele) return;
         result.push({
-            marque: marque, modele: modele,
+            marque, modele,
             motorisation: src.motorisation || src.motor || 'Standard',
             codeMoteur: src.codeMoteur || src.code_moteur || genererCodeMoteur(marque, src.motorisation),
-            puissance: src.puissance || src.power || 'Auto',
+            puissance: String(src.puissance || src.power || 'Auto'),
             annee: src.annee || src.year || 'À définir',
             typeCarburant: src.typeCarburant || src.fuel || 'Essence',
             entretiens: src.entretiens || genererEntretiens(src.typeCarburant || src.fuel || 'Essence'),
             dtc: src.dtc || [], rappels: src.rappels || [], notes: src.notes || ''
         });
     };
-    (data.customs || []).forEach(pushVehicule);
-    (data.modelsExtra || []).forEach(pushVehicule);
-    (data.recalls || []).forEach(r => {
-        const marque = r.marque || r.brand; const modele = r.modele || r.model;
-        if (!marque || !modele) return;
-        const existant = result.find(v => v.marque === marque && v.modele === modele);
-        const titre = r.titre || r.title || 'Rappel';
-        if (existant) { if (!existant.rappels.includes(titre)) existant.rappels.push(titre); }
-        else result.push({ marque, modele, motorisation:'Standard', codeMoteur:genererCodeMoteur(marque), puissance:'Auto', annee:'À définir', typeCarburant:'Essence', entretiens:genererEntretiens('Essence'), dtc:[], rappels:[titre], notes:'' });
-    });
+    (data.customs || []).forEach(pushV);
+    (data.modelsExtra || []).forEach(pushV);
     return result;
 }
 
@@ -648,8 +1001,7 @@ async function importFichierAvecControle(file) {
         const format = detecterFormat(data);
         logImport(`📊 Format détecté: ${format}`, "info");
         
-        let items = [];
-        let expertsImportes = [];
+        let items = [], expertsImportes = [];
         if (format === 'auto-diagnostic') {
             items = convertirFormatAutoDiagnostic(data);
             logImport(`🔄 Conversion auto-diagnostic: ${items.length} véhicules`, "info");
@@ -660,20 +1012,17 @@ async function importFichierAvecControle(file) {
         
         await sleep(200);
 
-        // CAS FICHIER VIDE → AVERTISSEMENT (pas une erreur bloquante)
         if (items.length === 0 && expertsImportes.length === 0) {
             mettreAJourProgress(100, "Terminé");
-            logImport("⚠️ Fichier valide mais AUCUNE donnée à importer", "warning");
+            logImport("⚠️ Fichier valide mais AUCUNE donnée", "warning");
             document.getElementById('stat-after').textContent = megaBase.length;
-            afficherResultat('warning',
-                '⚠️ Fichier vide',
-                'Le fichier est valide mais ne contient aucune donnée (tableaux vides).',
+            afficherResultat('warning', '⚠️ Fichier vide', 'Le fichier est valide mais ne contient aucune donnée.',
                 `<div style="color:#fbbf24;font-weight:bold;margin-bottom:.5rem">📋 CONSTAT</div>
                  <div>• Format: ${format}</div>
-                 <div>• Données trouvées: 0</div>
+                 <div>• Données: 0</div>
                  <div>• Base conservée: <strong>${megaBase.length} véhicules</strong></div>
                  <div style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.1);color:#94a3b8">
-                 💡 Utilisez le bouton "Import massif en ligne" pour rapatrier les vraies données depuis les sources auto-diagnostic.</div>`);
+                 💡 Utilisez "Import massif en ligne" pour rapatrier les vraies données.</div>`);
             showNotification('⚠️ Fichier vide - base conservée', 'warning');
             return;
         }
@@ -683,7 +1032,7 @@ async function importFichierAvecControle(file) {
         for (let i = 0; i < items.length; i++) {
             const item = normaliserItem(items[i]);
             if (!item) continue;
-            const existant = megaBase.find(v => v.marque === item.marque && v.modele === item.modele && v.codeMoteur === item.codeMoteur);
+            const existant = megaBase.find(v => v.marque === item.marque && v.modele === item.modele && v.codeMoteur === item.codeMoteur && v.puissance === item.puissance);
             if (!existant) { megaBase.push(item); ajouts++; }
             else {
                 if (item.dtc) item.dtc.forEach(d => { if (!existant.dtc.includes(d)) existant.dtc.push(d); });
@@ -711,16 +1060,16 @@ async function importFichierAvecControle(file) {
 
         mettreAJourProgress(100, "Vérification intégrité...");
         const saved = JSON.parse(localStorage.getItem('kevFusion_megaBase') || '[]');
-        logImport(saved.length === megaBase.length ? "✅ Intégrité vérifiée - AUCUN BLOCAGE" : "⚠️ Divergence détectée", saved.length === megaBase.length ? "success" : "warning");
+        logImport(saved.length === megaBase.length ? "✅ Intégrité OK" : "⚠️ Divergence", saved.length === megaBase.length ? "success" : "warning");
         document.getElementById('stat-after').textContent = megaBase.length;
         
         afficherResultat('success', '✅ Import réussi', 'Base APK mise à jour sans blocage',
-            `<div style="color:#4ade80;font-weight:bold;margin-bottom:.5rem">📊 RAPPORT FINAL</div>
+            `<div style="color:#4ade80;font-weight:bold;margin-bottom:.5rem">📊 RAPPORT</div>
              <div>• Avant: <strong>${avant}</strong></div>
              <div>• Ajouts: <strong style="color:#4ade80">+${ajouts}</strong></div>
              <div>• Fusions: <strong style="color:#fbbf24">~${fusions}</strong></div>
              <div>• Après: <strong style="color:#38bdf8">${megaBase.length}</strong></div>
-             <div style="margin-top:.5rem;color:#4ade80">✅ Intégrité vérifiée - AUCUN BLOCAGE</div>`);
+             <div style="margin-top:.5rem;color:#4ade80">✅ Intégrité vérifiée</div>`);
         showNotification(`✅ Import: +${ajouts} éléments`, 'success');
         initFiltresEntretien();
     } catch (error) {
@@ -740,7 +1089,7 @@ function normaliserItem(item) {
         marque: normaliserMarque(marque), modele: String(modele).trim(),
         motorisation: item.motorisation || item.motor || item.moteur || "Standard",
         codeMoteur: String(item.codeMoteur || item.code_moteur || item.engine_code || genererCodeMoteur(marque, item.motorisation)).toUpperCase(),
-        puissance: item.puissance || item.power || "Auto",
+        puissance: String(item.puissance || item.power || "Auto"),
         annee: item.annee || item.year || item.years || "À définir",
         typeCarburant: item.typeCarburant || item.fuel || item.carburant || determinerCarburant(item.motorisation || ''),
         entretiens: item.entretiens || item.maintenance || genererEntretiens(item.typeCarburant || item.fuel || 'Essence'),
@@ -751,12 +1100,12 @@ function normaliserItem(item) {
 }
 
 // ==========================================
-// 14. IMPORT MASSIF EN LIGNE (SOURCES AUTO-DIAGNOSTIC)
+// 16. IMPORT MASSIF EN LIGNE (SOURCES AUTO-DIAGNOSTIC)
 // ==========================================
 const SOURCE_FILES = [
-    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/faults2019.js', arrays: [{ nom:'F2019', schema:'A' }] },
-    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/update2026.js', arrays: [{ nom:'BATCH_2026_ISSUES', schema:'B' }, { nom:'BATCH_2026_MODELS', schema:'MODELS' }] },
-    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/premium22.js', arrays: [{ nom:'PREMIUM_EXPERT', schema:'A' }, { nom:'PREMIUM_MODELS', schema:'MODELS' }] },
+    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/faults2019.js', arrays: [{ nom:'F2019', schema:'F' }] },
+    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/update2026.js', arrays: [{ nom:'BATCH_2026_ISSUES', schema:'B' }, { nom:'BATCH_2026_MODELS', schema:'M' }] },
+    { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/premium22.js', arrays: [{ nom:'PREMIUM_EXPERT', schema:'F' }, { nom:'PREMIUM_MODELS', schema:'M' }] },
     { url: 'https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/app.js', arrays: [{ nom:'BATCH_ISSUES', schema:'D' }, { nom:'BRAND_EXPERT', schema:'C' }] }
 ];
 
@@ -772,24 +1121,48 @@ function extraireTableau(code, nom) {
 
 function convertirIssue(item, schema) {
     if (!Array.isArray(item) || item.length < 8) return null;
-    let brand = item[0], model = '', motor = '', title = '', rest = 1;
-    if (schema === 'A') { motor = item[1] || ''; title = item[3] || ''; rest = 4; }
-    else if (schema === 'B') { model = item[1] || ''; motor = item[2] || ''; title = item[4] || ''; rest = 5; }
-    else if (schema === 'C') { motor = item[1] || ''; title = item[2] || ''; rest = 3; }
-    else if (schema === 'D') { model = item[1] || ''; motor = item[2] || ''; title = item[3] || ''; rest = 4; }
+    let brand = '', model = '', motor = '', type = '', title = '', symptome = '', diag = '', organes = '', dtc = '', source = '', annees = '';
+    try {
+        if (schema === 'F') {
+            // [brand, motorKey, TYPE, title, symptom, diagnosis, organes, dtc, source, years]
+            brand = item[0]; motor = item[1] || ''; type = item[2] || ''; title = item[3] || '';
+            symptome = item[4] || ''; diag = item[5] || ''; organes = item[6] || '';
+            dtc = item[7] || ''; source = item[8] || ''; annees = item[9] || '';
+        } else if (schema === 'B') {
+            // [brand, model, motor, TYPE, title, symptom, diagnosis, organes, dtc, source, years]
+            brand = item[0]; model = item[1] || ''; motor = item[2] || ''; type = item[3] || '';
+            title = item[4] || ''; symptome = item[5] || ''; diag = item[6] || '';
+            organes = item[7] || ''; dtc = item[8] || ''; source = item[9] || ''; annees = item[10] || '';
+        } else if (schema === 'C') {
+            // [brand, motorKey, TYPE, title, symptom, diagnosis, organes, dtc, source, years]
+            brand = item[0]; motor = item[1] || ''; type = item[2] || ''; title = item[3] || '';
+            symptome = item[4] || ''; diag = item[5] || ''; organes = item[6] || '';
+            dtc = item[7] || ''; source = item[8] || ''; annees = item[9] || '';
+        } else if (schema === 'D') {
+            // BATCH_ISSUES : [brand, model, motor, title, symptom, diagnosis, organes, dtc, source, years]
+            brand = item[0]; model = item[1] || ''; motor = item[2] || ''; title = item[3] || '';
+            symptome = item[4] || ''; diag = item[5] || ''; organes = item[6] || '';
+            dtc = item[7] || ''; source = item[8] || ''; annees = item[9] || '';
+        }
+    } catch (e) { return null; }
+    
     if (!brand || !title) return null;
-    const dtcStr = String(item[rest + 3] || '');
+    
     return {
         marque: normaliserMarque(brand),
         modele: model ? String(model) : '',
         motorisation: motor ? String(motor) : '',
+        puissance: extrairePuissance(motor) || '',
+        type: type ? String(type) : '',
         titre: String(title),
-        symptome: String(item[rest] || ''),
-        protocole: String(item[rest + 1] || ''),
-        organes: String(item[rest + 2] || ''),
-        dtc: dtcStr.split(/[,\/\s]+/).filter(c => /^[PUBC]\d{4}$/i.test(c)),
-        source: String(item[rest + 4] || ''),
-        annees: String(item[rest + 5] || '')
+        symptome: symptome ? String(symptome) : '',
+        diagnostic: diag ? String(diag) : '',
+        protocole: diag ? String(diag) : '',
+        organes: organes ? String(organes) : '',
+        dtc: String(dtc).split(/[,\/\s]+/).filter(c => /^[PUBC]\d{4}$/i.test(c)),
+        source: source ? String(source) : '',
+        annees: annees ? String(annees) : '',
+        notes: ''
     };
 }
 
@@ -797,11 +1170,12 @@ function convertirModel(item) {
     if (!Array.isArray(item) || item.length < 4) return [];
     const brand = item[0], name = item[1], years = item[2], motors = item[3];
     if (!brand || !name || !Array.isArray(motors)) return [];
-    return motors.filter(m => Array.isArray(m)).map(m => ({
+    return motors.filter(m => Array.isArray(m) && m.length >= 3).map(m => ({
         marque: normaliserMarque(brand), modele: String(name),
         motorisation: String(m[0] || 'Standard'),
         codeMoteur: genererCodeMoteur(brand, m[0]),
-        puissance: String(m[2] || 'Auto'), annee: String(years || ''),
+        puissance: String(extrairePuissance(m[2]) || 'Auto'),
+        annee: String(years || ''),
         typeCarburant: capFuel(m[1]),
         entretiens: genererEntretiens(capFuel(m[1])),
         dtc: [], rappels: [], notes: ''
@@ -835,11 +1209,11 @@ async function importEnLigne() {
                     const raw = extraireTableau(code, arr.nom);
                     if (!raw.length) { logImport(`⚠️ ${arr.nom}: vide`, "warning"); continue; }
                     
-                    if (arr.schema === 'MODELS') {
+                    if (arr.schema === 'M') {
                         let added = 0;
                         raw.forEach(item => {
                             convertirModel(item).forEach(v => {
-                                if (!megaBase.find(x => x.marque === v.marque && x.modele === v.modele && x.codeMoteur === v.codeMoteur)) {
+                                if (!megaBase.find(x => x.marque === v.marque && x.modele === v.modele && x.codeMoteur === v.codeMoteur && x.puissance === v.puissance)) {
                                     megaBase.push(v); added++; vehiculesAjoutes++;
                                 }
                             });
@@ -853,10 +1227,9 @@ async function importEnLigne() {
                             if (!expertBase.find(x => x.titre === e.titre && x.marque === e.marque)) {
                                 expertBase.push(e); added++; fichesAjoutees++;
                             }
-                            // Enrichissement des véhicules existants
                             const cible = megaBase.find(v =>
                                 v.marque === e.marque &&
-                                (e.modele ? v.modele.toLowerCase().includes(e.modele.toLowerCase()) :
+                                (e.modele ? fuzzyMatch(v.modele, e.modele) :
                                  (e.motorisation && e.motorisation.length > 2 && v.motorisation.toLowerCase().includes(e.motorisation.toLowerCase())))
                             );
                             if (cible) {
@@ -887,29 +1260,29 @@ async function importEnLigne() {
         const savedV = JSON.parse(localStorage.getItem('kevFusion_megaBase') || '[]');
         const savedE = JSON.parse(localStorage.getItem('kevFusion_expertBase') || '[]');
         const integre = savedV.length === megaBase.length && savedE.length === expertBase.length;
-        logImport(integre ? "✅ Intégrité vérifiée - AUCUN BLOCAGE" : "⚠️ Divergence détectée", integre ? "success" : "warning");
+        logImport(integre ? "✅ Intégrité vérifiée - AUCUN BLOCAGE" : "⚠️ Divergence", integre ? "success" : "warning");
         document.getElementById('stat-after').textContent = megaBase.length;
         syncStatus.lastSync = new Date().toISOString();
         
         const totalNew = vehiculesAjoutes + fichesAjoutees;
         if (totalNew === 0 && fichiersOK === 0) {
-            afficherResultat('warning', '⚠️ Sources injoignables', 'Aucune source n\'a pu être contactée.',
-                `<div>• Fichiers OK: 0/${SOURCE_FILES.length}</div><div>• Base conservée: <strong>${megaBase.length}</strong></div>`);
+            afficherResultat('warning', '⚠️ Sources injoignables', 'Aucune source contactée.',
+                `<div>• Fichiers OK: 0/${SOURCE_FILES.length}</div><div>• Base: <strong>${megaBase.length}</strong></div>`);
         } else {
-            afficherResultat('success', '✅ Import massif réussi', 'Données rapatriées et intégrées sans blocage',
-                `<div style="color:#4ade80;font-weight:bold;margin-bottom:.5rem">📊 RAPPORT FINAL</div>
+            afficherResultat('success', '✅ Import massif réussi', 'Données rapatriées sans blocage',
+                `<div style="color:#4ade80;font-weight:bold;margin-bottom:.5rem">📊 RAPPORT</div>
                  <div>• Sources OK: <strong>${fichiersOK}/${SOURCE_FILES.length}</strong></div>
-                 <div>• Véhicules avant: <strong>${avant}</strong> → après: <strong style="color:#38bdf8">${megaBase.length}</strong></div>
+                 <div>• Véhicules: <strong>${avant}</strong> → <strong style="color:#38bdf8">${megaBase.length}</strong></div>
                  <div>• Fiches expert: <strong>${avantExpert}</strong> → <strong style="color:#c084fc">${expertBase.length}</strong></div>
-                 <div>• Véhicules enrichis (DTC/rappels): <strong style="color:#fbbf24">${enrichis}</strong></div>
-                 <div style="margin-top:.5rem;color:#4ade80">✅ Intégrité vérifiée - AUCUN BLOCAGE</div>`);
+                 <div>• Véhicules enrichis: <strong style="color:#fbbf24">${enrichis}</strong></div>
+                 <div style="margin-top:.5rem;color:#4ade80">✅ Intégrité vérifiée</div>`);
             showNotification(`✅ +${totalNew} éléments importés`, 'success');
         }
         initFiltresEntretien();
         majIndicateurSync();
     } catch (error) {
         logImport(`❌ ${error.message}`, "error");
-        afficherResultat('error', '❌ Échec import', error.message,
+        afficherResultat('error', '❌ Échec', error.message,
             `<div style="color:#f87171;font-weight:bold">⚠️ Base préservée</div><div>• Véhicules: <strong>${megaBase.length}</strong></div>`);
     }
 }
@@ -923,7 +1296,7 @@ function majIndicateurSync() {
 }
 
 // ==========================================
-// 15. STATISTIQUES
+// 17. STATS
 // ==========================================
 function afficherStats() {
     const container = document.getElementById('stats-container');
@@ -936,7 +1309,7 @@ function afficherStats() {
     const rappels = megaBase.reduce((a,v) => a + (v.rappels?.length || 0), 0);
     container.innerHTML = `
         <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="car" class="w-8 h-8 text-cyan-400"></i><span class="text-slate-400 font-bold text-sm uppercase">Véhicules</span></div><p class="text-4xl font-black">${total}</p></div>
-        <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="brain" class="w-8 h-8 text-purple-400"></i><span class="text-slate-400 font-bold text-sm uppercase">Fiches expert</span></div><p class="text-4xl font-black">${expertBase.length}</p></div>
+        <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="brain" class="w-8 h-8 text-purple-400"></i><span class="text-slate-400 font-bold text-sm uppercase">Fiches pannes</span></div><p class="text-4xl font-black">${expertBase.length}</p></div>
         <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="alert-circle" class="w-8 h-8 text-red-400"></i><span class="text-slate-400 font-bold text-sm uppercase">DTC</span></div><p class="text-4xl font-black">${dtc}</p></div>
         <div class="stat-card rounded-2xl p-6"><div class="flex items-center gap-3 mb-3"><i data-lucide="alert-triangle" class="w-8 h-8 text-amber-400"></i><span class="text-slate-400 font-bold text-sm uppercase">Rappels</span></div><p class="text-4xl font-black">${rappels}</p></div>
     `;
@@ -950,23 +1323,23 @@ function afficherStats() {
     }
     if (syncDetails) {
         syncDetails.innerHTML = `
-            <div class="glass rounded-2xl p-5 border-l-4 border-cyan-500"><div class="flex items-center gap-3 mb-2"><i data-lucide="database" class="w-6 h-6 text-cyan-400"></i><span class="font-bold text-lg">Base locale</span></div><p class="text-slate-300">${megaBase.length} véhicules • ${expertBase.length} fiches expert</p>${syncStatus.lastSync ? `<p class="text-xs text-slate-500 mt-2">Dernier import: ${new Date(syncStatus.lastSync).toLocaleString('fr-FR')}</p>` : ''}</div>
+            <div class="glass rounded-2xl p-5 border-l-4 border-cyan-500"><div class="flex items-center gap-3 mb-2"><i data-lucide="database" class="w-6 h-6 text-cyan-400"></i><span class="font-bold text-lg">Base locale</span></div><p class="text-slate-300">${megaBase.length} véhicules • ${expertBase.length} fiches pannes</p>${syncStatus.lastSync ? `<p class="text-xs text-slate-500 mt-2">Dernier import: ${new Date(syncStatus.lastSync).toLocaleString('fr-FR')}</p>` : ''}</div>
         `;
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 // ==========================================
-// 16. INITIALISATION
+// 18. INITIALISATION
 // ==========================================
 function chargerBase() {
     try {
         const saved = localStorage.getItem('kevFusion_megaBase');
         if (saved) {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) { megaBase = parsed; }
-            else { megaBase = [...MEGA_BASE_INITIALE]; }
-        } else { megaBase = [...MEGA_BASE_INITIALE]; }
+            if (Array.isArray(parsed) && parsed.length > 0) megaBase = parsed;
+            else megaBase = [...MEGA_BASE_INITIALE];
+        } else megaBase = [...MEGA_BASE_INITIALE];
         const savedE = localStorage.getItem('kevFusion_expertBase');
         if (savedE) {
             const parsedE = JSON.parse(savedE);
@@ -976,7 +1349,7 @@ function chargerBase() {
         megaBase = [...MEGA_BASE_INITIALE];
         expertBase = [];
     }
-    console.log('✅ Base chargée:', megaBase.length, 'véhicules,', expertBase.length, 'fiches');
+    console.log('✅ Base chargée:', megaBase.length, 'véhicules,', expertBase.length, 'fiches pannes');
 }
 
 function initialiser() {
@@ -985,12 +1358,11 @@ function initialiser() {
         updateNetworkStatus();
         initAdminHash();
         chargerBase();
-        initFiltresEntretien();
         majIndicateurSync();
         if (typeof lucide !== 'undefined') lucide.createIcons();
         console.log('✅ Initialisation terminée');
     } catch (error) {
-        console.error('❌ Erreur initialisation:', error);
+        console.error('❌ Erreur:', error);
         megaBase = [...MEGA_BASE_INITIALE];
         majIndicateurSync();
         updateNetworkStatus();
