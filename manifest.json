@@ -1,19 +1,15 @@
 {
-  "name": "KEV FUSION 2026 - Méga Base Technique Ultime",
+  "name": "KEV FUSION 2026",
   "short_name": "KevFusion",
-  "description": "Application technique automobile ultime avec base massive auto-diagnostic, rappels VIN, préconisations 160 000 km, synchronisation automatique",
+  "description": "Méga Base Technique Automobile",
   "start_url": "/newprojet2026/",
   "display": "standalone",
   "background_color": "#0a0e27",
   "theme_color": "#0a0e27",
   "orientation": "portrait-primary",
-  "categories": ["utilities", "productivity", "business"],
+  "categories": ["utilities", "productivity"],
   "icons": [
     { "src": "https://cdn-icons-png.flaticon.com/512/3202/3202926.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "https://cdn-icons-png.flaticon.com/512/3202/3202926.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
-  ],
-  "shortcuts": [
-    { "name": "Recherche VIN", "short_name": "VIN", "description": "Recherche rapide VIN", "url": "/newprojet2026/#vin" },
-    { "name": "Préconisations", "short_name": "Entretien", "description": "Plans entretien", "url": "/newprojet2026/#entretien" }
   ]
 }
