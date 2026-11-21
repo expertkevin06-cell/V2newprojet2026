@@ -48,6 +48,7 @@
         .sync-active { background:rgba(16,185,129,0.25); color:var(--success); border:2px solid var(--success); }
         .sync-inactive { background:rgba(100,116,139,0.25); color:#94a3b8; border:2px solid #64748b; }
         .sync-icon { animation:rotate 1.5s linear infinite; }
+        .sync-inactive .sync-icon { animation:none; }
         @keyframes rotate { to{transform:rotate(360deg)} }
         .stat-card { background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(139,92,246,0.15)); border:2px solid rgba(6,182,212,0.3); transition:all .4s; }
         .stat-card:hover { transform:translateY(-6px); box-shadow:0 12px 40px rgba(6,182,212,0.4); border-color:var(--primary); }
@@ -102,10 +103,12 @@
             </div>
             <div class="flex items-center gap-3">
                 <div id="sync-status" class="sync-indicator sync-inactive">
-                    <i data-lucide="refresh-cw" class="w-4 h-4 sync-icon"></i><span>Synchro</span>
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Prêt</span>
                 </div>
                 <div id="network-status" class="flex items-center text-sm font-bold px-4 py-2 rounded-xl glass">
-                    <span class="pulse-dot offline"></span><span>Init</span>
+                    <span class="pulse-dot online"></span>
+                    <span id="network-text">Connexion...</span>
                 </div>
             </div>
         </div>
@@ -246,7 +249,6 @@
 
     <div id="notification-container"></div>
 
-    <!-- OVERLAY IMPORT (caché par défaut) -->
     <div id="import-overlay" class="import-overlay hidden">
         <div class="import-modal">
             <div class="text-center mb-6">
@@ -283,16 +285,19 @@
 
     <script src="script.js"></script>
     <script>
-        // Protection anti-autofill
         (function() {
             function nettoyer() {
                 const i = document.getElementById('secure-code-input');
                 if (i && i.value && i.value.toLowerCase().includes('admin')) i.value = '';
             }
-            document.addEventListener('DOMContentLoaded', () => {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    nettoyer();
+                    [100,500,1000,2000].forEach(t => setTimeout(nettoyer, t));
+                });
+            } else {
                 nettoyer();
-                [100,500,1000,2000].forEach(t => setTimeout(nettoyer, t));
-            });
+            }
         })();
         if (typeof lucide !== 'undefined') lucide.createIcons();
     </script>
