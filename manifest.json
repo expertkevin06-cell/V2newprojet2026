@@ -1,12 +1,13 @@
 {
-  "name": "KEV FUSION 2026 - Méga Base Technique",
+  "name": "KEV FUSION 2026 - Méga Base Technique Ultime",
   "short_name": "KevFusion",
-  "description": "Application technique automobile : Rappels VIN, préconisations constructeurs jusqu'à 160 000 km, et base DTC corrélée.",
+  "description": "Application technique automobile ultime : Rappels VIN, préconisations constructeurs jusqu'à 160 000 km, base DTC corrélée avec synchronisation automatique",
   "start_url": "/newprojet2026/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#0a0e27",
+  "theme_color": "#0a0e27",
   "orientation": "portrait-primary",
+  "categories": ["utilities", "productivity", "business"],
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3202/3202926.png",
@@ -19,6 +20,23 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Recherche VIN",
+      "short_name": "VIN",
+      "description": "Recherche rapide par VIN",
+      "url": "/newprojet2026/#vin",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3202/3202926.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Préconisations",
+      "short_name": "Entretien",
+      "description": "Plans d'entretien constructeur",
+      "url": "/newprojet2026/#entretien",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3202/3202926.png", "sizes": "192x192" }]
     }
   ]
 }
