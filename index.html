@@ -85,8 +85,6 @@
         .import-result.error { border-color:rgba(239,68,68,0.4); }
         .import-result.warning { border-color:rgba(245,158,11,0.5); }
         .result-details { background:rgba(15,23,42,0.6); border-radius:12px; padding:1rem; margin-top:1rem; text-align:left; font-family:'Courier New',monospace; font-size:.85rem; color:#cbd5e1; line-height:1.6; }
-
-        /* Cartes pannes style auto-diagnostic */
         .issue-card { background:rgba(30,41,59,0.7); border-left:4px solid #f59e0b; border-radius:12px; padding:1.25rem; margin-bottom:1rem; transition:all .3s; }
         .issue-card:hover { border-left-color:#fbbf24; background:rgba(30,41,59,0.9); transform:translateX(4px); }
         .issue-card.critical { border-left-color:#ef4444; }
@@ -97,7 +95,6 @@
         .issue-section-label { font-weight:700; color:#94a3b8; font-size:.85rem; text-transform:uppercase; letter-spacing:.5px; margin-bottom:.25rem; display:flex; align-items:center; gap:.5rem; }
         .src-link { display:inline-flex; align-items:center; gap:.375rem; padding:.25rem .75rem; background:rgba(6,182,212,0.15); color:#38bdf8; border-radius:8px; font-size:.75rem; font-weight:700; text-decoration:none; transition:all .2s; }
         .src-link:hover { background:rgba(6,182,212,0.3); transform:translateX(2px); }
-        .dtc-card { background:rgba(220,38,38,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:.75rem; margin-bottom:.5rem; }
         .external-links { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:.75rem; margin-top:1rem; }
         .ext-link { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:.75rem; text-align:center; transition:all .3s; text-decoration:none; color:white; display:block; }
         .ext-link:hover { background:rgba(6,182,212,0.15); border-color:var(--primary); transform:translateY(-2px); }
@@ -155,7 +152,7 @@
                 <div class="glass rounded-3xl p-8 mb-8 card-shine">
                     <div class="flex items-start gap-4 mb-8">
                         <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center"><i data-lucide="car" class="w-7 h-7 text-white"></i></div>
-                        <div><h2 class="text-3xl font-black mb-3">Recherche VIN</h2><p class="text-slate-400 text-lg">Campagnes de rappel officielles</p></div>
+                        <div><h2 class="text-3xl font-black mb-3">Recherche VIN</h2><p class="text-slate-400 text-lg">Campagnes de rappel officielles NHTSA</p></div>
                     </div>
                     <div class="flex flex-col md:flex-row gap-4">
                         <input type="text" id="vin-input" placeholder="VIN 17 caractères" maxlength="17" autocomplete="off" class="input-field flex-1 rounded-2xl px-6 py-5 text-white text-lg font-mono uppercase">
@@ -163,38 +160,38 @@
                     </div>
                 </div>
 
-                <!-- FILTRES RAPIDES POUR PANNES CONNUES (style auto-diagnostic) -->
+                <!-- FILTRES PANNES CONNUES (cascade stricte) -->
                 <div class="glass rounded-3xl p-8 mb-8 card-shine">
                     <div class="flex items-start gap-4 mb-6">
                         <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center"><i data-lucide="alert-triangle" class="w-7 h-7 text-white"></i></div>
-                        <div><h2 class="text-3xl font-black mb-3">Pannes connues par véhicule</h2><p class="text-slate-400 text-lg">Sélection en cascade Marque → Modèle → Motorisation → Puissance</p></div>
+                        <div><h2 class="text-3xl font-black mb-3">Pannes connues par véhicule</h2><p class="text-slate-400 text-lg">Sélection en cascade stricte : Marque → Modèle (années) → Motorisation → Puissance</p></div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <select id="pannes-marque" onchange="pannes_updateModeles()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold"><option value="">🏷️ Marque</option></select>
-                        <select id="pannes-modele" onchange="pannes_updateMotorisations()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">🚗 Modèle (années)</option></select>
-                        <select id="pannes-motorisation" onchange="pannes_updatePuissances()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚙️ Motorisation</option></select>
-                        <select id="pannes-puissance" onchange="pannes_rechercher()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚡ Puissance</option></select>
+                        <select id="vin-marque" onchange="cascade_update('vin')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold"><option value="">🏷️ Marque</option></select>
+                        <select id="vin-modele" onchange="cascade_update('vin')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">🚗 Modèle (années)</option></select>
+                        <select id="vin-motorisation" onchange="cascade_update('vin')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚙️ Motorisation</option></select>
+                        <select id="vin-puissance" onchange="cascade_update('vin')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚡ Puissance</option></select>
                     </div>
                 </div>
-                <div id="pannes-results" class="space-y-4"></div>
+                <div id="vin-pannes-results" class="space-y-4"></div>
                 <div id="vin-results" class="space-y-6"></div>
             </section>
 
-            <!-- DIAGNOSTIC EXPERT (style auto-diagnostic) -->
+            <!-- DIAGNOSTIC EXPERT -->
             <section id="view-diagnostic" class="view-section hidden fade-in">
                 <div class="glass rounded-3xl p-8 mb-8 card-shine">
                     <div class="flex items-start gap-4 mb-6">
                         <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center"><i data-lucide="brain" class="w-7 h-7 text-white"></i></div>
                         <div><h2 class="text-3xl font-black mb-3">🧠 Diagnostic Expert par symptôme</h2><p class="text-slate-400 text-lg">Recherche scientifique : pannes + fiches expert + codes DTC corrélés</p></div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <input type="text" id="expert-search" placeholder="🔍 Symptôme, DTC, mot-clé (ex: 'courroie humide', 'P0087')..." oninput="expert_rechercher()" class="input-field rounded-2xl px-6 py-4 text-white text-lg" autocomplete="off">
+                    <div class="mb-4">
+                        <input type="text" id="expert-search" placeholder="🔍 Symptôme, DTC, mot-clé (ex: 'courroie humide', 'P0087')..." oninput="expert_rechercher()" class="input-field w-full rounded-2xl px-6 py-4 text-white text-lg" autocomplete="off">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <select id="expert-marque" onchange="expert_updateModeles()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold"><option value="">🏷️ Marque</option></select>
-                        <select id="expert-modele" onchange="expert_updateMotorisations()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">🚗 Modèle (années)</option></select>
-                        <select id="expert-motorisation" onchange="expert_updatePuissances()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚙️ Motorisation</option></select>
-                        <select id="expert-puissance" onchange="expert_rechercher()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚡ Puissance</option></select>
+                        <select id="expert-marque" onchange="cascade_update('expert')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold"><option value="">🏷️ Marque</option></select>
+                        <select id="expert-modele" onchange="cascade_update('expert')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">🚗 Modèle (années)</option></select>
+                        <select id="expert-motorisation" onchange="cascade_update('expert')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚙️ Motorisation</option></select>
+                        <select id="expert-puissance" onchange="cascade_update('expert')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚡ Puissance</option></select>
                     </div>
                 </div>
 
@@ -237,18 +234,18 @@
                 </div>
             </section>
 
-            <!-- PRÉCONISATIONS (renforcé avec puissance) -->
+            <!-- PRÉCONISATIONS -->
             <section id="view-entretien" class="view-section hidden fade-in">
                 <div class="glass rounded-3xl p-8 mb-8 card-shine">
                     <div class="flex items-start gap-4 mb-6">
                         <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center"><i data-lucide="settings" class="w-7 h-7 text-white"></i></div>
-                        <div><h2 class="text-3xl font-black mb-3">Préconisations constructeur</h2><p class="text-slate-400 text-lg">Plan d'entretien corrélé Marque → Modèle → Motorisation → Puissance</p></div>
+                        <div><h2 class="text-3xl font-black mb-3">Préconisations constructeur</h2><p class="text-slate-400 text-lg">Plan d'entretien corrélé strictement : Marque → Modèle (années) → Motorisation → Puissance</p></div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <select id="filter-marque" onchange="updateModeles()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold"><option value="">🏷️ Marque</option></select>
-                        <select id="filter-modele" onchange="updateMotorisations()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">🚗 Modèle (années)</option></select>
-                        <select id="filter-motorisation" onchange="updatePuissances()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚙️ Motorisation</option></select>
-                        <select id="filter-puissance" onchange="afficherEntretien()" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚡ Puissance</option></select>
+                        <select id="entretien-marque" onchange="cascade_update('entretien')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold"><option value="">🏷️ Marque</option></select>
+                        <select id="entretien-modele" onchange="cascade_update('entretien')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">🚗 Modèle (années)</option></select>
+                        <select id="entretien-motorisation" onchange="cascade_update('entretien')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚙️ Motorisation</option></select>
+                        <select id="entretien-puissance" onchange="cascade_update('entretien')" class="input-field rounded-2xl px-5 py-4 text-white font-semibold" disabled><option value="">⚡ Puissance</option></select>
                     </div>
                 </div>
                 <div id="entretien-results" class="space-y-6"></div>
