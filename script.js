@@ -1,32 +1,51 @@
 // ==========================================
-// SÉCURITÉ ADMIN (Hash SHA-256 invisible)
+// KEV FUSION 2026 - SCRIPT PRINCIPAL ULTIME
+// Version corrigée anti-autofill + sécurité hashée
+// ==========================================
+
+'use strict';
+
+// ==========================================
+// 1. SÉCURITÉ (Mot de passe hashé - INVISIBLE)
 // ==========================================
 const ADMIN_HASH = '7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3c16a28f8f8e0c3a1b7e9d2';
-let isAdminAuthenticated = false;
-let sessionTimeout = null;
-let syncStatus = { autoDiagnostic: 'inactive', myTech: 'inactive', lastSync: null };
+const SECURITY_SALT = 'kev_fusion_2026_salt';
+const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes
+
+let isSecureModeActive = false;
+let secureSessionTimeout = null;
 
 async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password + 'kev_fusion_2026_salt');
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password + SECURITY_SALT);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+        console.error('Erreur hashage:', e);
+        return '';
+    }
 }
 
 // ==========================================
-// MÉGA BASE TECHNIQUE MASSIVE (50+ véhicules)
+// 2. MÉGA BASE TECHNIQUE MASSIVE (50+ véhicules)
 // ==========================================
 const megaBaseInitiale = [
+    // === FRANÇAISES ===
     { marque: "Peugeot", modele: "308 III", motorisation: "1.2 PureTech", codeMoteur: "HNS", puissance: "130 ch", annee: "2021-2024", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 0W20 C5", "Filtre à huile", "Filtre habitacle pollens", "Contrôle visuel courroie distribution humide"], "60000": ["Vidange huile 0W20", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies d'allumage iridium"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein DOT 4"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit courroie distribution + pompe à eau"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies d'allumage", "Liquide de refroidissement G12+"] }, dtc: ["P0420", "P0300", "P0301", "P0171"], rappels: ["Rappel système de freinage 2022", "Mise à jour calculateur injection 2023"], notes: "Distribution humide à surveiller tous les 30 000 km" },
     { marque: "Peugeot", modele: "3008 II", motorisation: "1.5 BlueHDi", codeMoteur: "DV5", puissance: "130 ch", annee: "2019-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 0W30 C3", "Filtre à huile", "Filtre habitacle", "Contrôle FAP"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution + galets"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401", "P0471", "P20EE"], rappels: ["Campagne FAP 2021", "Mise à jour AdBlue 2022"], notes: "FAP sensible aux trajets courts" },
     { marque: "Peugeot", modele: "5008 II", motorisation: "2.0 BlueHDi", codeMoteur: "DW10", puissance: "180 ch", annee: "2018-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 0W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit distribution complet"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401", "P2453"], rappels: [], notes: "" },
+    { marque: "Peugeot", modele: "208 II", motorisation: "1.2 PureTech", codeMoteur: "EB2ADTD", puissance: "100 ch", annee: "2019-2024", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 0W20", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit distribution humide"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420", "P0300"], rappels: [], notes: "Distribution humide PSA" },
     { marque: "Renault", modele: "Clio V", motorisation: "1.5 dCi", codeMoteur: "K9K", puissance: "85 ch", annee: "2019-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30 RN0720", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein DOT 4"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution + pompe à eau"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement Type D"] }, dtc: ["P2263", "P0401", "P0299"], rappels: [], notes: "Turbo fragile sur les premiers modèles 2019-2020" },
     { marque: "Renault", modele: "Megane IV", motorisation: "1.3 TCe", codeMoteur: "H5H", puissance: "140 ch", annee: "2018-2023", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 5W40 RN17", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies d'allumage"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420", "P0171", "P0300"], rappels: ["Campagne chaîne de distribution 2020"], notes: "Chaîne de distribution à surveiller" },
     { marque: "Renault", modele: "Captur II", motorisation: "1.0 TCe", codeMoteur: "H4D", puissance: "100 ch", annee: "2020-2024", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420", "P0300"], rappels: [], notes: "" },
+    { marque: "Renault", modele: "Austral", motorisation: "1.2 TCe Hybride", codeMoteur: "H5H", puissance: "200 ch", annee: "2022-2024", typeCarburant: "Hybride", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle", "Contrôle hybride"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: [], rappels: [], notes: "" },
     { marque: "Citroën", modele: "C5 Aircross", motorisation: "1.5 BlueHDi", codeMoteur: "DV5", puissance: "130 ch", annee: "2020-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 0W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit distribution complet"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401"], rappels: [], notes: "" },
     { marque: "Citroën", modele: "C3 III", motorisation: "1.2 PureTech", codeMoteur: "EB2", puissance: "110 ch", annee: "2018-2024", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 0W20", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit distribution humide"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420", "P0300", "P0301"], rappels: [], notes: "Distribution humide PSA" },
     { marque: "DS", modele: "DS 7 Crossback", motorisation: "1.6 PureTech", codeMoteur: "EP6", puissance: "180 ch", annee: "2019-2024", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 0W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420", "P0171", "P0300"], rappels: ["Campagne chaîne de distribution 2020"], notes: "" },
+
+    // === ALLEMANDES ===
     { marque: "Volkswagen", modele: "Golf 8", motorisation: "2.0 TDI", codeMoteur: "DSR", puissance: "150 ch", annee: "2020-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30 LongLife IV", "Filtre à huile", "Filtre habitacle anti-odeurs"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein DOT 4"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution + pompe à eau"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement G13"] }, dtc: ["P2002", "P0401", "P0471", "P0406"], rappels: ["Mise à jour logiciel infodivertissement 2022", "Campagne sonde NOx 2023"], notes: "Problème électronique connu sur modèles 2020-2021" },
     { marque: "Volkswagen", modele: "T-Roc", motorisation: "1.5 TSI", codeMoteur: "DPCA", puissance: "150 ch", annee: "2019-2024", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 5W40", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies d'allumage"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420", "P0300"], rappels: [], notes: "" },
     { marque: "Volkswagen", modele: "Tiguan II", motorisation: "2.0 TDI", codeMoteur: "DFG", puissance: "150 ch", annee: "2018-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit distribution complet"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401", "P0406"], rappels: ["Campagne AdBlue 2021"], notes: "" },
@@ -38,6 +57,8 @@ const megaBaseInitiale = [
     { marque: "Audi", modele: "Q3 F3", motorisation: "2.0 TDI", codeMoteur: "DFG", puissance: "150 ch", annee: "2019-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401"], rappels: [], notes: "" },
     { marque: "Opel", modele: "Corsa F", motorisation: "1.2 Turbo", codeMoteur: "EB2ADTD", puissance: "130 ch", annee: "2020-2024", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 0W20", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit distribution humide"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420", "P0300", "P0301"], rappels: [], notes: "Distribution humide PSA" },
     { marque: "Opel", modele: "Grandland X", motorisation: "1.5 Diesel", codeMoteur: "DV5", puissance: "130 ch", annee: "2019-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 0W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Kit distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401"], rappels: [], notes: "" },
+
+    // === ASIATIQUES ===
     { marque: "Toyota", modele: "Yaris Cross", motorisation: "1.5 Hybride", codeMoteur: "M15A-FXE", puissance: "116 ch", annee: "2021-2024", typeCarburant: "Hybride", entretiens: { "15000": ["Vidange huile 0W16", "Filtre à huile", "Contrôle système hybride"], "30000": ["Vidange huile", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein DOT 3"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies d'allumage"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement Toyota"] }, dtc: [], rappels: [], notes: "Fiabilité exceptionnelle - Distribution par chaîne" },
     { marque: "Toyota", modele: "RAV4 V", motorisation: "2.5 Hybride", codeMoteur: "A25A-FXS", puissance: "218 ch", annee: "2019-2024", typeCarburant: "Hybride", entretiens: { "15000": ["Vidange huile 0W20", "Filtre à huile", "Contrôle hybride"], "30000": ["Vidange huile", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies iridium"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: [], rappels: [], notes: "Distribution par chaîne - Très fiable" },
     { marque: "Toyota", modele: "Corolla XII", motorisation: "1.8 Hybride", codeMoteur: "2ZR-FXE", puissance: "122 ch", annee: "2019-2024", typeCarburant: "Hybride", entretiens: { "15000": ["Vidange huile 0W20", "Filtre à huile", "Contrôle hybride"], "30000": ["Vidange huile", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: [], rappels: [], notes: "" },
@@ -49,13 +70,19 @@ const megaBaseInitiale = [
     { marque: "Nissan", modele: "Juke II", motorisation: "1.0 DIG-T", codeMoteur: "HR10DDT", puissance: "117 ch", annee: "2020-2024", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420"], rappels: [], notes: "" },
     { marque: "Honda", modele: "HR-V III", motorisation: "1.5 e:HEV", codeMoteur: "LEB", puissance: "131 ch", annee: "2022-2024", typeCarburant: "Hybride", entretiens: { "20000": ["Vidange huile 0W20", "Filtre à huile", "Contrôle hybride"], "40000": ["Vidange huile", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air"], "80000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "100000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: [], rappels: [], notes: "" },
     { marque: "Mazda", modele: "CX-5 II", motorisation: "2.0 Skyactiv-G", codeMoteur: "PE-VPS", puissance: "165 ch", annee: "2018-2024", typeCarburant: "Essence", entretiens: { "20000": ["Vidange huile 0W20", "Filtre à huile", "Filtre habitacle"], "40000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "80000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "100000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: [], rappels: [], notes: "" },
+
+    // === AMÉRICAINES ===
     { marque: "Ford", modele: "Kuga III", motorisation: "2.0 EcoBlue", codeMoteur: "YLCB", puissance: "150 ch", annee: "2020-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement Motorcraft"] }, dtc: ["P2002", "P0401", "P0299"], rappels: ["Campagne AdBlue 2022"], notes: "" },
     { marque: "Ford", modele: "Puma", motorisation: "1.0 EcoBoost Hybrid", codeMoteur: "B3JA", puissance: "155 ch", annee: "2020-2024", typeCarburant: "Hybride", entretiens: { "30000": ["Vidange huile 5W20", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420", "P0300"], rappels: [], notes: "" },
     { marque: "Ford", modele: "Focus IV", motorisation: "1.5 EcoBlue", codeMoteur: "XLCB", puissance: "120 ch", annee: "2019-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401"], rappels: [], notes: "" },
     { marque: "Jeep", modele: "Compass II", motorisation: "1.6 Multijet", codeMoteur: "55283860", puissance: "120 ch", annee: "2019-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401"], rappels: [], notes: "" },
+
+    // === ITALIENNES ===
     { marque: "Fiat", modele: "500 III", motorisation: "1.0 FireFly", codeMoteur: "GSE", puissance: "70 ch", annee: "2020-2024", typeCarburant: "Essence", entretiens: { "30000": ["Vidange huile 0W20", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: ["P0420"], rappels: [], notes: "" },
     { marque: "Fiat", modele: "Tipo IV", motorisation: "1.6 Multijet", codeMoteur: "55283860", puissance: "120 ch", annee: "2021-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401"], rappels: [], notes: "" },
     { marque: "Alfa Romeo", modele: "Giulia II", motorisation: "2.2 JTDm", codeMoteur: "940A", puissance: "180 ch", annee: "2019-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Chaîne distribution (contrôle)"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401"], rappels: [], notes: "" },
+
+    // === AUTRES ===
     { marque: "Volvo", modele: "XC40 I", motorisation: "D4", codeMoteur: "D4204T14", puissance: "190 ch", annee: "2018-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 0W20 VCC RBS0-2AE", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement Volvo"] }, dtc: ["P2002", "P0401"], rappels: [], notes: "" },
     { marque: "Volvo", modele: "V60 II", motorisation: "B4", codeMoteur: "B4204T46", puissance: "197 ch", annee: "2019-2024", typeCarburant: "Hybride", entretiens: { "30000": ["Vidange huile 0W20", "Filtre à huile", "Filtre habitacle", "Contrôle hybride"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Bougies", "Liquide de refroidissement"] }, dtc: [], rappels: [], notes: "" },
     { marque: "Skoda", modele: "Octavia IV", motorisation: "2.0 TDI", codeMoteur: "DSR", puissance: "150 ch", annee: "2020-2024", typeCarburant: "Diesel", entretiens: { "30000": ["Vidange huile 5W30", "Filtre à huile", "Filtre habitacle"], "60000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil"], "90000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Liquide de frein"], "120000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à air", "Courroie de distribution"], "160000": ["Vidange huile", "Filtre à huile", "Filtre habitacle", "Filtre à gasoil", "Liquide de refroidissement"] }, dtc: ["P2002", "P0401"], rappels: [], notes: "" },
@@ -63,11 +90,81 @@ const megaBaseInitiale = [
 ];
 
 let megaBase = [...megaBaseInitiale];
+let syncStatus = {
+    autoDiagnostic: 'inactive',
+    myTech: 'inactive',
+    lastSync: null
+};
 
 // ==========================================
-// SYNCHRONISATION AUTOMATIQUE
+// 3. PROTECTION ANTI-AUTOFILL (CORRECTION ANDROID)
+// ==========================================
+function nettoyerChampsSecurises() {
+    const secureInput = document.getElementById('secure-code-input');
+    if (secureInput) {
+        // Supprimer toute valeur contenant "admin"
+        if (secureInput.value && secureInput.value.toLowerCase().includes('admin')) {
+            secureInput.value = '';
+        }
+        secureInput.setAttribute('value', '');
+    }
+    
+    // Nettoyer tous les honeypots
+    document.querySelectorAll('.honeypot-field').forEach(field => {
+        field.value = '';
+    });
+}
+
+function protegerContreAutofill() {
+    const secureInput = document.getElementById('secure-code-input');
+    if (!secureInput) return;
+    
+    // Nettoyages multiples pour contrer l'autofill Android
+    nettoyerChampsSecurises();
+    setTimeout(nettoyerChampsSecurises, 100);
+    setTimeout(nettoyerChampsSecurises, 500);
+    setTimeout(nettoyerChampsSecurises, 1000);
+    setTimeout(nettoyerChampsSecurises, 2000);
+    
+    // Protection au focus
+    secureInput.addEventListener('focus', nettoyerChampsSecurises);
+    secureInput.addEventListener('click', nettoyerChampsSecurises);
+    secureInput.addEventListener('touchstart', nettoyerChampsSecurises);
+    
+    // Protection à la saisie
+    secureInput.addEventListener('input', function(e) {
+        if (e.target.value.toLowerCase().includes('admin')) {
+            e.target.value = '';
+        }
+    });
+    
+    // Surveillance MutationObserver
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.target.id === 'secure-code-input') {
+                const val = mutation.target.value;
+                if (val && val.toLowerCase().includes('admin')) {
+                    mutation.target.value = '';
+                }
+            }
+        });
+    });
+    
+    observer.observe(secureInput, { 
+        attributes: true, 
+        attributeFilter: ['value'] 
+    });
+}
+
+// ==========================================
+// 4. SYNCHRONISATION AUTOMATIQUE DES BASES
 // ==========================================
 async function synchroniserBases() {
+    if (!navigator.onLine) {
+        showNotification('📡 Hors ligne - Synchronisation impossible', 'warning');
+        return;
+    }
+    
     showNotification('🔄 Démarrage de la synchronisation...', 'info');
     updateSyncStatus('active');
     
@@ -78,6 +175,7 @@ async function synchroniserBases() {
         successCount++;
     } catch (e) {
         console.warn('⚠️ Sync auto-diagnostic:', e.message);
+        syncStatus.autoDiagnostic = 'failed';
     }
     
     try {
@@ -85,6 +183,7 @@ async function synchroniserBases() {
         successCount++;
     } catch (e) {
         console.warn('⚠️ Sync my-tech:', e.message);
+        syncStatus.myTech = 'failed';
     }
     
     sauvegarderLocalStorage();
@@ -94,7 +193,12 @@ async function synchroniserBases() {
     if (successCount > 0) {
         showNotification(`✅ Synchronisation terminée : ${megaBase.length} véhicules`, 'success');
     } else {
-        showNotification('⚠️ Synchronisation partielle (mode hors ligne)', 'warning');
+        showNotification('⚠️ Synchronisation partielle (sources indisponibles)', 'warning');
+    }
+    
+    // Rafraîchir l'affichage si nécessaire
+    if (document.getElementById('view-stats') && !document.getElementById('view-stats').classList.contains('hidden')) {
+        afficherStats();
     }
 }
 
@@ -112,6 +216,8 @@ async function syncFromAutoDiagnostic() {
                 fusionnerDonnees(data, 'auto-diagnostic');
                 syncStatus.autoDiagnostic = 'success';
             }
+        } else {
+            throw new Error('HTTP ' + response.status);
         }
     } catch (error) {
         syncStatus.autoDiagnostic = 'failed';
@@ -133,6 +239,8 @@ async function syncFromMyTech() {
                 fusionnerDonnees(data, 'my-tech');
                 syncStatus.myTech = 'success';
             }
+        } else {
+            throw new Error('HTTP ' + response.status);
         }
     } catch (error) {
         syncStatus.myTech = 'failed';
@@ -145,6 +253,8 @@ function fusionnerDonnees(nouvellesDonnees, source) {
     let misesAJour = 0;
     
     nouvellesDonnees.forEach(newItem => {
+        if (!newItem.marque || !newItem.modele) return;
+        
         const existant = megaBase.find(item => 
             item.marque === newItem.marque && 
             item.modele === newItem.modele && 
@@ -155,14 +265,18 @@ function fusionnerDonnees(nouvellesDonnees, source) {
             megaBase.push(newItem);
             ajouts++;
         } else {
+            // Fusion intelligente des données
             if (newItem.dtc && Array.isArray(newItem.dtc)) {
-                existant.dtc = [...new Set([...existant.dtc, ...newItem.dtc])];
+                existant.dtc = [...new Set([...(existant.dtc || []), ...newItem.dtc])];
             }
             if (newItem.rappels && Array.isArray(newItem.rappels)) {
-                existant.rappels = [...new Set([...existant.rappels, ...newItem.rappels])];
+                existant.rappels = [...new Set([...(existant.rappels || []), ...newItem.rappels])];
             }
             if (newItem.entretiens) {
-                existant.entretiens = { ...existant.entretiens, ...newItem.entretiens };
+                existant.entretiens = { ...(existant.entretiens || {}), ...newItem.entretiens };
+            }
+            if (newItem.notes) {
+                existant.notes = newItem.notes;
             }
             misesAJour++;
         }
@@ -173,6 +287,8 @@ function fusionnerDonnees(nouvellesDonnees, source) {
 
 function updateSyncStatus(status) {
     const syncEl = document.getElementById('sync-status');
+    if (!syncEl) return;
+    
     if (status === 'active') {
         syncEl.className = 'sync-indicator sync-active';
         syncEl.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 sync-icon"></i><span>Synchro...</span>';
@@ -180,14 +296,23 @@ function updateSyncStatus(status) {
         syncEl.className = 'sync-indicator sync-inactive';
         syncEl.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Synchro OK</span>';
     }
-    lucide.createIcons();
+    
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function forcerSynchro() {
+    synchroniserBases();
 }
 
 // ==========================================
-// GESTION DU RÉSEAU
+// 5. GESTION DU RÉSEAU (4G/5G/WiFi)
 // ==========================================
 function updateNetworkStatus() {
     const statusEl = document.getElementById('network-status');
+    if (!statusEl) return;
+    
     if (navigator.onLine) {
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         const type = connection ? connection.effectiveType.toUpperCase() : 'WIFI/4G/5G';
@@ -209,7 +334,7 @@ window.addEventListener('offline', () => {
 });
 
 // ==========================================
-// NAVIGATION
+// 6. NAVIGATION
 // ==========================================
 function showTab(tabName) {
     document.querySelectorAll('.view-section').forEach(el => {
@@ -218,8 +343,10 @@ function showTab(tabName) {
     });
     
     const targetView = document.getElementById(`view-${tabName}`);
-    targetView.classList.remove('hidden');
-    targetView.classList.add('fade-in');
+    if (targetView) {
+        targetView.classList.remove('hidden');
+        targetView.classList.add('fade-in');
+    }
     
     document.querySelectorAll('.tab-btn').forEach(el => {
         el.classList.remove('tab-active');
@@ -227,24 +354,36 @@ function showTab(tabName) {
     });
     
     const activeTab = document.getElementById(`tab-${tabName}`);
-    activeTab.classList.add('tab-active');
-    activeTab.classList.remove('text-slate-400');
+    if (activeTab) {
+        activeTab.classList.add('tab-active');
+        activeTab.classList.remove('text-slate-400');
+    }
     
+    // Initialisations spécifiques
     if (tabName === 'entretien') initFiltresEntretien();
     if (tabName === 'stats') afficherStats();
-    if (tabName === 'admin') resetAdminForm();
+    if (tabName === 'secure') resetSecureForm();
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
-function resetAdminForm() {
-    const passwordInput = document.getElementById('admin-password');
-    if (passwordInput) passwordInput.value = '';
-    document.getElementById('admin-error')?.classList.add('hidden');
+function resetSecureForm() {
+    const input = document.getElementById('secure-code-input');
+    if (input) input.value = '';
+    
+    const errorEl = document.getElementById('secure-error');
+    if (errorEl) errorEl.classList.add('hidden');
+    
+    // Nettoyage supplémentaire
+    setTimeout(nettoyerChampsSecurises, 100);
 }
 
 // ==========================================
-// RECHERCHE VIN
+// 7. RECHERCHE VIN & RAPPELS
 // ==========================================
 async function rechercherVIN() {
     const vin = document.getElementById('vin-input').value.trim().toUpperCase();
@@ -293,8 +432,8 @@ async function rechercherVIN() {
                                 <span class="text-red-300 font-black text-lg">${index + 1}</span>
                             </div>
                             <div class="flex-1">
-                                <p class="font-black text-cyan-400 text-xl mb-2">${rappel.Component}</p>
-                                <p class="text-slate-200 text-base mb-3 leading-relaxed">${rappel.Summary}</p>
+                                <p class="font-black text-cyan-400 text-xl mb-2">${rappel.Component || 'Composant non spécifié'}</p>
+                                <p class="text-slate-200 text-base mb-3 leading-relaxed">${rappel.Summary || 'Détails non disponibles'}</p>
                                 <div class="flex flex-wrap gap-2 text-sm">
                                     <span class="recall-badge px-3 py-1.5 rounded-lg font-bold">NHTSA</span>
                                     ${rappel.Manufacturer ? `<span class="success-badge px-3 py-1.5 rounded-lg font-bold">${rappel.Manufacturer}</span>` : ''}
@@ -326,18 +465,20 @@ async function rechercherVIN() {
                     <i data-lucide="wifi-off" class="w-8 h-8 text-amber-400"></i>
                     <h3 class="text-2xl font-black text-amber-400">Erreur de connexion</h3>
                 </div>
-                <p class="text-slate-300 text-lg">Impossible de contacter l'API de rappels. Vérifiez votre connexion.</p>
+                <p class="text-slate-300 text-lg">Impossible de contacter l'API de rappels. Vérifiez votre connexion 4G/5G/WiFi.</p>
             </div>`;
         lucide.createIcons();
     }
 }
 
 // ==========================================
-// PRÉCONISATIONS CONSTRUCTEUR
+// 8. PRÉCONISATIONS CONSTRUCTEUR
 // ==========================================
 function initFiltresEntretien() {
     const marques = [...new Set(megaBase.map(v => v.marque))].sort();
     const selectMarque = document.getElementById('filter-marque');
+    if (!selectMarque) return;
+    
     selectMarque.innerHTML = '<option value="">🏷️ Sélectionner la Marque</option>';
     marques.forEach(m => {
         selectMarque.innerHTML += `<option value="${m}">${m}</option>`;
@@ -348,6 +489,8 @@ function updateModeles() {
     const marque = document.getElementById('filter-marque').value;
     const selectModele = document.getElementById('filter-modele');
     const selectMoteur = document.getElementById('filter-moteur');
+    
+    if (!selectModele || !selectMoteur) return;
     
     selectModele.innerHTML = '<option value="">🚗 Sélectionner le Modèle</option>';
     selectMoteur.innerHTML = '<option value="">⚙️ Motorisation</option>';
@@ -369,6 +512,8 @@ function updateMotorisations() {
     const modele = document.getElementById('filter-modele').value;
     const selectMoteur = document.getElementById('filter-moteur');
     
+    if (!selectMoteur) return;
+    
     selectMoteur.innerHTML = '<option value="">⚙️ Motorisation</option>';
 
     if (marque && modele) {
@@ -388,7 +533,7 @@ function afficherEntretien() {
 
     const vehicule = megaBase.find(v => v.marque === marque && v.modele === modele && v.codeMoteur === codeMoteur);
 
-    if (!vehicule) return;
+    if (!vehicule || !resultsDiv) return;
 
     let html = `
         <div class="glass rounded-3xl p-8 border-t-4 border-cyan-500 slide-up">
@@ -405,7 +550,7 @@ function afficherEntretien() {
             
             <div class="space-y-5">`;
 
-    const paliers = ["15000", "30000", "60000", "90000", "120000", "160000"];
+    const paliers = ["15000", "20000", "25000", "30000", "40000", "50000", "60000", "75000", "80000", "90000", "100000", "120000", "125000", "160000"];
     paliers.forEach(km => {
         const operations = vehicule.entretiens[km];
         if (operations && operations.length > 0) {
@@ -464,11 +609,13 @@ function afficherEntretien() {
 }
 
 // ==========================================
-// RECHERCHE MEGA BASE
+// 9. RECHERCHE MEGA BASE
 // ==========================================
 function rechercherMegaBase() {
-    const query = document.getElementById('mega-search').value.toLowerCase();
+    const query = document.getElementById('mega-search').value.toLowerCase().trim();
     const resultsDiv = document.getElementById('megabase-results');
+    
+    if (!resultsDiv) return;
     
     if (query.length < 2) {
         resultsDiv.innerHTML = '';
@@ -476,9 +623,9 @@ function rechercherMegaBase() {
     }
 
     const resultats = megaBase.filter(v => 
-        v.marque.toLowerCase().includes(query) ||
-        v.modele.toLowerCase().includes(query) ||
-        v.codeMoteur.toLowerCase().includes(query) ||
+        (v.marque && v.marque.toLowerCase().includes(query)) ||
+        (v.modele && v.modele.toLowerCase().includes(query)) ||
+        (v.codeMoteur && v.codeMoteur.toLowerCase().includes(query)) ||
         (v.dtc && v.dtc.some(d => d.toLowerCase().includes(query))) ||
         (v.rappels && v.rappels.some(r => r.toLowerCase().includes(query)))
     ).slice(0, 25);
@@ -490,7 +637,7 @@ function rechercherMegaBase() {
 
     resultsDiv.innerHTML = resultats.map(v => `
         <div class="glass rounded-2xl p-6 card-shine cursor-pointer hover:border-cyan-500 transition-all" 
-             onclick="document.getElementById('filter-marque').value='${v.marque}'; showTab('entretien'); updateModeles(); document.getElementById('filter-modele').value='${v.modele}'; updateMotorisations(); document.getElementById('filter-moteur').value='${v.codeMoteur}'; afficherEntretien();">
+             onclick="naviguerVersVehicule('${v.marque.replace(/'/g, "\\'")}', '${v.modele.replace(/'/g, "\\'")}', '${v.codeMoteur.replace(/'/g, "\\'")}')">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
                     <p class="font-black text-cyan-400 text-xl">${v.marque} ${v.modele}</p>
@@ -504,61 +651,151 @@ function rechercherMegaBase() {
     lucide.createIcons();
 }
 
+function naviguerVersVehicule(marque, modele, codeMoteur) {
+    showTab('entretien');
+    
+    setTimeout(() => {
+        document.getElementById('filter-marque').value = marque;
+        updateModeles();
+        
+        setTimeout(() => {
+            document.getElementById('filter-modele').value = modele;
+            updateMotorisations();
+            
+            setTimeout(() => {
+                document.getElementById('filter-moteur').value = codeMoteur;
+                afficherEntretien();
+            }, 100);
+        }, 100);
+    }, 100);
+}
+
 // ==========================================
-// ADMINISTRATION
+// 10. AUTHENTIFICATION SÉCURISÉE (CORRIGÉE)
 // ==========================================
-async function verifierAdmin() {
-    const input = document.getElementById('admin-password').value;
-    const hash = await hashPassword(input);
+async function verifierAcces(event) {
+    if (event) event.preventDefault();
+    
+    const input = document.getElementById('secure-code-input');
+    const errorEl = document.getElementById('secure-error');
+    
+    if (!input) return;
+    
+    const code = input.value.trim();
+    
+    // Protection : rejet des valeurs autofill suspectes
+    if (!code || code.toLowerCase() === 'admin' || code.length < 4) {
+        if (errorEl) errorEl.classList.remove('hidden');
+        input.value = '';
+        showNotification('❌ Code d\'accès incorrect', 'error');
+        return;
+    }
+    
+    const hash = await hashPassword(code);
     
     if (hash === ADMIN_HASH) {
-        isAdminAuthenticated = true;
-        document.getElementById('admin-auth').classList.add('hidden');
-        document.getElementById('admin-panel').classList.remove('hidden');
-        document.getElementById('admin-session-time').textContent = new Date().toLocaleTimeString('fr-FR');
+        isSecureModeActive = true;
+        if (errorEl) errorEl.classList.add('hidden');
         
-        if (sessionTimeout) clearTimeout(sessionTimeout);
-        sessionTimeout = setTimeout(() => deconnecterAdmin(), 30 * 60 * 1000);
+        const authEl = document.getElementById('secure-auth');
+        const panelEl = document.getElementById('secure-panel');
         
-        showNotification('✅ Accès administrateur déverrouillé', 'success');
+        if (authEl) authEl.classList.add('hidden');
+        if (panelEl) {
+            panelEl.classList.remove('hidden');
+            panelEl.classList.remove('admin-locked');
+            panelEl.classList.add('admin-unlocked');
+        }
+        
+        const sessionTime = document.getElementById('secure-session-time');
+        if (sessionTime) {
+            sessionTime.textContent = new Date().toLocaleTimeString('fr-FR');
+        }
+        
+        // Session limitée à 30 minutes
+        if (secureSessionTimeout) clearTimeout(secureSessionTimeout);
+        secureSessionTimeout = setTimeout(() => fermerSessionSecurisee(), SESSION_DURATION);
+        
+        showNotification('✅ Accès déverrouillé', 'success');
+        input.value = ''; // Nettoyage après succès
     } else {
-        document.getElementById('admin-error').classList.remove('hidden');
-        showNotification('❌ Mot de passe incorrect', 'error');
+        if (errorEl) errorEl.classList.remove('hidden');
+        showNotification('❌ Code d\'accès incorrect', 'error');
+        input.value = ''; // Nettoyage après échec
     }
 }
 
-function deconnecterAdmin() {
-    isAdminAuthenticated = false;
-    document.getElementById('admin-auth').classList.remove('hidden');
-    document.getElementById('admin-panel').classList.add('hidden');
-    if (sessionTimeout) clearTimeout(sessionTimeout);
-    showNotification('🔒 Déconnexion réussie', 'info');
+function fermerSessionSecurisee() {
+    isSecureModeActive = false;
+    
+    const authEl = document.getElementById('secure-auth');
+    const panelEl = document.getElementById('secure-panel');
+    
+    if (authEl) authEl.classList.remove('hidden');
+    if (panelEl) {
+        panelEl.classList.add('hidden');
+        panelEl.classList.add('admin-locked');
+    }
+    
+    // Nettoyage complet
+    const input = document.getElementById('secure-code-input');
+    if (input) input.value = '';
+    
+    if (secureSessionTimeout) {
+        clearTimeout(secureSessionTimeout);
+        secureSessionTimeout = null;
+    }
+    
+    showNotification('🔒 Session fermée', 'info');
 }
 
+// Compatibilité ascendante
+function verifierAdmin() { verifierAcces(null); }
+function deconnecterAdmin() { fermerSessionSecurisee(); }
+function resetAdminForm() { resetSecureForm(); }
+
+// ==========================================
+// 11. GESTION DE LA BASE (AJOUT/IMPORT/EXPORT)
+// ==========================================
 function ajouterEntree(event) {
     event.preventDefault();
+    
+    if (!isSecureModeActive) {
+        showNotification('⚠️ Accès non autorisé', 'error');
+        return;
+    }
+    
     const form = event.target;
     
     const nouvelleEntree = {
-        marque: form.marque.value,
-        modele: form.modele.value,
+        marque: form.marque.value.trim(),
+        modele: form.modele.value.trim(),
         motorisation: "À définir",
-        codeMoteur: form.codeMoteur.value.toUpperCase(),
-        puissance: form.puissance.value,
+        codeMoteur: form.codeMoteur.value.trim().toUpperCase(),
+        puissance: form.puissance.value.trim(),
         annee: "À définir",
         typeCarburant: "À définir",
-        entretiens: { "30000": ["Vidange"], "60000": ["Vidange"], "90000": ["Vidange"], "120000": ["Vidange"], "160000": ["Vidange"] },
+        entretiens: { 
+            "30000": ["Vidange"], 
+            "60000": ["Vidange"], 
+            "90000": ["Vidange"], 
+            "120000": ["Vidange"], 
+            "160000": ["Vidange"] 
+        },
         dtc: [],
         rappels: [],
         notes: ""
     };
     
+    // Tentative de parsing des préconisations
     try {
         const precon = JSON.parse(form.preconisations.value);
-        nouvelleEntree.entretiens = precon;
+        if (typeof precon === 'object' && precon !== null) {
+            nouvelleEntree.entretiens = precon;
+        }
     } catch(e) {
         if (form.preconisations.value.trim()) {
-            nouvelleEntree.entretiens["30000"] = [form.preconisations.value];
+            nouvelleEntree.entretiens["30000"] = [form.preconisations.value.trim()];
         }
     }
 
@@ -569,11 +806,12 @@ function ajouterEntree(event) {
     initFiltresEntretien();
 }
 
-function forcerSynchro() {
-    synchroniserBases();
-}
-
 function reinitialiserBase() {
+    if (!isSecureModeActive) {
+        showNotification('⚠️ Accès non autorisé', 'error');
+        return;
+    }
+    
     if (confirm('⚠️ Êtes-vous sûr de vouloir réinitialiser la base locale ? Cette action est irréversible.')) {
         megaBase = [...megaBaseInitiale];
         localStorage.removeItem('kevFusion_megaBase');
@@ -588,18 +826,23 @@ function sauvegarderLocalStorage() {
         showNotification('💾 Sauvegarde locale effectuée', 'success');
     } catch (e) {
         showNotification('❌ Erreur de sauvegarde', 'error');
+        console.error('Erreur sauvegarde:', e);
     }
 }
 
 function exporterJSON() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(megaBase, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `kev_fusion_megabase_${new Date().toISOString().slice(0,10)}.json`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-    showNotification('📥 Export JSON téléchargé', 'success');
+    try {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(megaBase, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `kev_fusion_megabase_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        showNotification('📥 Export JSON téléchargé', 'success');
+    } catch (e) {
+        showNotification('❌ Erreur lors de l\'export', 'error');
+    }
 }
 
 function importerJSON(input) {
@@ -615,21 +858,29 @@ function importerJSON(input) {
                 sauvegarderLocalStorage();
                 showNotification(`✅ Import réussi : ${megaBase.length} véhicules`, 'success');
                 initFiltresEntretien();
+            } else {
+                showNotification('❌ Format de fichier invalide', 'error');
             }
         } catch (err) {
             showNotification('❌ Erreur lors de la lecture du fichier', 'error');
+            console.error('Erreur import:', err);
         }
     };
     reader.readAsText(file);
+    
+    // Reset du champ fichier
+    input.value = '';
 }
 
 // ==========================================
-// STATISTIQUES
+// 12. STATISTIQUES
 // ==========================================
 function afficherStats() {
     const statsContainer = document.getElementById('stats-container');
     const fuelStats = document.getElementById('fuel-stats');
     const syncDetails = document.getElementById('sync-details');
+    
+    if (!statsContainer) return;
     
     const totalVehicules = megaBase.length;
     const totalMarques = [...new Set(megaBase.map(v => v.marque))].length;
@@ -667,58 +918,68 @@ function afficherStats() {
         </div>
     `;
     
-    const carburants = {};
-    megaBase.forEach(v => {
-        carburants[v.typeCarburant] = (carburants[v.typeCarburant] || 0) + 1;
-    });
-    
-    fuelStats.innerHTML = Object.entries(carburants).map(([type, count]) => {
-        const percentage = ((count / totalVehicules) * 100).toFixed(1);
-        return `
-            <div class="glass rounded-2xl p-5">
-                <div class="flex justify-between items-center mb-3">
-                    <span class="font-bold text-lg text-white">${type}</span>
-                    <span class="text-slate-400 font-semibold">${count} (${percentage}%)</span>
+    if (fuelStats) {
+        const carburants = {};
+        megaBase.forEach(v => {
+            if (v.typeCarburant) {
+                carburants[v.typeCarburant] = (carburants[v.typeCarburant] || 0) + 1;
+            }
+        });
+        
+        fuelStats.innerHTML = Object.entries(carburants).map(([type, count]) => {
+            const percentage = ((count / totalVehicules) * 100).toFixed(1);
+            return `
+                <div class="glass rounded-2xl p-5">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-bold text-lg text-white">${type}</span>
+                        <span class="text-slate-400 font-semibold">${count} (${percentage}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                    </div>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${percentage}%"></div>
+            `;
+        }).join('');
+    }
+    
+    if (syncDetails) {
+        syncDetails.innerHTML = `
+            <div class="glass rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-bold text-lg text-white">Auto-Diagnostic</span>
+                    <span class="font-semibold ${syncStatus.autoDiagnostic === 'success' ? 'text-green-400' : syncStatus.autoDiagnostic === 'failed' ? 'text-red-400' : 'text-slate-400'}">
+                        ${syncStatus.autoDiagnostic === 'success' ? '✅ Synchronisé' : syncStatus.autoDiagnostic === 'failed' ? '❌ Échec' : '⏳ En attente'}
+                    </span>
                 </div>
             </div>
+            <div class="glass rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-bold text-lg text-white">My-Tech by Kevin</span>
+                    <span class="font-semibold ${syncStatus.myTech === 'success' ? 'text-green-400' : syncStatus.myTech === 'failed' ? 'text-red-400' : 'text-slate-400'}">
+                        ${syncStatus.myTech === 'success' ? '✅ Synchronisé' : syncStatus.myTech === 'failed' ? '❌ Échec' : '⏳ En attente'}
+                    </span>
+                </div>
+            </div>
+            ${syncStatus.lastSync ? `
+                <div class="glass rounded-2xl p-5">
+                    <p class="text-slate-400 text-sm font-semibold">Dernière synchronisation : ${new Date(syncStatus.lastSync).toLocaleString('fr-FR')}</p>
+                </div>
+            ` : ''}
         `;
-    }).join('');
+    }
     
-    syncDetails.innerHTML = `
-        <div class="glass rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-3">
-                <span class="font-bold text-lg text-white">Auto-Diagnostic</span>
-                <span class="font-semibold ${syncStatus.autoDiagnostic === 'success' ? 'text-green-400' : syncStatus.autoDiagnostic === 'failed' ? 'text-red-400' : 'text-slate-400'}">
-                    ${syncStatus.autoDiagnostic === 'success' ? '✅ Synchronisé' : syncStatus.autoDiagnostic === 'failed' ? '❌ Échec' : '⏳ En attente'}
-                </span>
-            </div>
-        </div>
-        <div class="glass rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-3">
-                <span class="font-bold text-lg text-white">My-Tech by Kevin</span>
-                <span class="font-semibold ${syncStatus.myTech === 'success' ? 'text-green-400' : syncStatus.myTech === 'failed' ? 'text-red-400' : 'text-slate-400'}">
-                    ${syncStatus.myTech === 'success' ? '✅ Synchronisé' : syncStatus.myTech === 'failed' ? '❌ Échec' : '⏳ En attente'}
-                </span>
-            </div>
-        </div>
-        ${syncStatus.lastSync ? `
-            <div class="glass rounded-2xl p-5">
-                <p class="text-slate-400 text-sm font-semibold">Dernière synchronisation : ${new Date(syncStatus.lastSync).toLocaleString('fr-FR')}</p>
-            </div>
-        ` : ''}
-    `;
-    
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 // ==========================================
-// NOTIFICATIONS
+// 13. NOTIFICATIONS
 // ==========================================
 function showNotification(message, type = 'info') {
     const container = document.getElementById('notification-container');
+    if (!container) return;
+    
     const notification = document.createElement('div');
     
     const colors = {
@@ -728,7 +989,7 @@ function showNotification(message, type = 'info') {
         info: 'bg-cyan-500'
     };
     
-    notification.className = `notification ${colors[type]} text-white px-6 py-4 rounded-2xl shadow-2xl font-bold`;
+    notification.className = `notification ${colors[type] || colors.info} text-white px-6 py-4 rounded-2xl shadow-2xl font-bold`;
     notification.textContent = message;
     
     container.appendChild(notification);
@@ -736,17 +997,25 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.style.opacity = '0';
         notification.style.transform = 'translateX(400px)';
+        notification.style.transition = 'all 0.5s ease';
         setTimeout(() => notification.remove(), 500);
     }, 4000);
 }
 
 // ==========================================
-// INITIALISATION
+// 14. INITIALISATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+    // Mise à jour du statut réseau
     updateNetworkStatus();
+    
+    // Initialisation des filtres
     initFiltresEntretien();
     
+    // Protection anti-autofill
+    protegerContreAutofill();
+    
+    // Chargement depuis localStorage
     const saved = localStorage.getItem('kevFusion_megaBase');
     if (saved) {
         try {
@@ -760,15 +1029,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // Synchronisation initiale si en ligne
     setTimeout(() => {
         if (navigator.onLine) {
             synchroniserBases();
         }
     }, 3000);
     
+    // Synchronisation automatique toutes les 5 minutes si session active
     setInterval(() => {
-        if (navigator.onLine && isAdminAuthenticated) {
+        if (navigator.onLine && isSecureModeActive) {
             synchroniserBases();
         }
     }, 5 * 60 * 1000);
+    
+    // Nettoyage final des champs
+    setTimeout(nettoyerChampsSecurises, 100);
+    
+    // Initialisation des icônes
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+
+// Gestion de la touche Enter sur le champ sécurisé
+document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && e.target.id === 'secure-code-input') {
+        verifierAcces(e);
+    }
 });
