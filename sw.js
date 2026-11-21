@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kev-fusion-v2026';
+const CACHE_NAME = 'kev-fusion-v2026-ultimate';
 const ASSETS_TO_CACHE = [
   '/newprojet2026/',
   '/newprojet2026/index.html',
@@ -32,23 +32,32 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Stratégie : Network First pour les API, Cache First pour l'interface
 self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('api.nhtsa.gov')) {
-    // Network first pour les rappels VIN
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(JSON.stringify({ error: "Hors ligne" }), {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      })
+      fetch(event.request)
+        .then(response => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
     );
   } else {
-    // Cache first pour l'interface
     event.respondWith(
       caches.match(event.request).then((response) => {
         return response || fetch(event.request);
       })
     );
+  }
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data.action === 'skipWaiting') {
+    self.skipWaiting();
   }
 });
