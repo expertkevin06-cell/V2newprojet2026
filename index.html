@@ -6,6 +6,7 @@
     <title>KEV FUSION 2026 - Méga Base Technique Ultime</title>
     <meta name="theme-color" content="#0a0e27">
     <meta name="description" content="Application technique automobile ultime : Rappels VIN, préconisations constructeurs, base DTC corrélée">
+    <meta name="robots" content="noindex, nofollow">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -357,6 +358,18 @@
             box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
         }
 
+        /* Champ honeypot invisible pour tromper l'autofill */
+        .honeypot-field {
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
+            width: 1px !important;
+            height: 1px !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            z-index: -1 !important;
+        }
+
         @media (max-width: 640px) {
             .mobile-stack {
                 flex-direction: column !important;
@@ -374,15 +387,32 @@
             right: 20px;
             z-index: 9999;
             animation: slideInRight 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 90vw;
         }
 
         @keyframes slideInRight {
             from { transform: translateX(400px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+
+        /* Désactivation autofill Chrome/Android */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px rgba(30, 41, 59, 0.9) inset !important;
+            -webkit-text-fill-color: #e2e8f0 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
     </style>
 </head>
 <body class="flex flex-col relative">
+
+    <!-- Honeypot global pour tromper les gestionnaires de mots de passe -->
+    <form autocomplete="off" style="display:none" aria-hidden="true">
+        <input type="text" name="fake_username" tabindex="-1" autocomplete="username">
+        <input type="password" name="fake_password" tabindex="-1" autocomplete="current-password">
+    </form>
 
     <!-- Header -->
     <header class="glass sticky top-0 z-50 border-b border-white/10">
@@ -425,8 +455,8 @@
                 <button onclick="showTab('stats')" id="tab-stats" class="tab-btn flex-1 py-4 px-6 text-sm font-bold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap transition-all">
                     <i data-lucide="bar-chart-3" class="w-5 h-5"></i> Stats
                 </button>
-                <button onclick="showTab('admin')" id="tab-admin" class="tab-btn flex-1 py-4 px-6 text-sm font-bold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap transition-all">
-                    <i data-lucide="shield" class="w-5 h-5"></i> Admin
+                <button onclick="showTab('secure')" id="tab-secure" class="tab-btn flex-1 py-4 px-6 text-sm font-bold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap transition-all">
+                    <i data-lucide="shield" class="w-5 h-5"></i> Accès
                 </button>
             </div>
         </div>
@@ -450,8 +480,14 @@
                     </div>
                     
                     <div class="flex flex-col md:flex-row gap-4">
-                        <input type="text" id="vin-input" placeholder="Entrez le VIN (17 caractères)" maxlength="17" 
-                            class="input-field flex-1 rounded-2xl px-6 py-5 text-white text-lg font-mono uppercase tracking-wider">
+                        <input type="text" 
+                               id="vin-input" 
+                               placeholder="Entrez le VIN (17 caractères)" 
+                               maxlength="17"
+                               autocomplete="off"
+                               autocapitalize="characters"
+                               spellcheck="false"
+                               class="input-field flex-1 rounded-2xl px-6 py-5 text-white text-lg font-mono uppercase tracking-wider">
                         <button onclick="rechercherVIN()" class="btn-primary text-white px-10 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 whitespace-nowrap">
                             <i data-lucide="search" class="w-6 h-6"></i> Analyser
                         </button>
@@ -480,13 +516,16 @@
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <select id="filter-marque" onchange="updateModeles()" class="input-field rounded-2xl px-6 py-5 text-white text-lg font-semibold">
+                        <select id="filter-marque" onchange="updateModeles()" autocomplete="off"
+                            class="input-field rounded-2xl px-6 py-5 text-white text-lg font-semibold">
                             <option value="">🏷️ Sélectionner la Marque</option>
                         </select>
-                        <select id="filter-modele" onchange="updateMotorisations()" class="input-field rounded-2xl px-6 py-5 text-white text-lg font-semibold" disabled>
+                        <select id="filter-modele" onchange="updateMotorisations()" autocomplete="off"
+                            class="input-field rounded-2xl px-6 py-5 text-white text-lg font-semibold" disabled>
                             <option value="">🚗 Sélectionner le Modèle</option>
                         </select>
-                        <select id="filter-moteur" onchange="afficherEntretien()" class="input-field rounded-2xl px-6 py-5 text-white text-lg font-semibold" disabled>
+                        <select id="filter-moteur" onchange="afficherEntretien()" autocomplete="off"
+                            class="input-field rounded-2xl px-6 py-5 text-white text-lg font-semibold" disabled>
                             <option value="">⚙️ Motorisation</option>
                         </select>
                     </div>
@@ -508,9 +547,14 @@
                         </div>
                     </div>
                     
-                    <input type="text" id="mega-search" oninput="rechercherMegaBase()" 
-                        placeholder="🔍 Rechercher : DTC, panne, modèle, marque..." 
-                        class="input-field w-full rounded-2xl px-6 py-5 text-white text-lg mb-6">
+                    <input type="search" 
+                           id="mega-search" 
+                           oninput="rechercherMegaBase()" 
+                           placeholder="🔍 Rechercher : DTC, panne, modèle, marque..."
+                           autocomplete="off"
+                           autocorrect="off"
+                           spellcheck="false"
+                           class="input-field w-full rounded-2xl px-6 py-5 text-white text-lg mb-6">
                     
                     <button onclick="forcerSynchro()" class="btn-warning w-full text-white px-8 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 mb-8">
                         <i data-lucide="refresh-cw" class="w-6 h-6"></i> Forcer la synchronisation des bases
@@ -563,40 +607,77 @@
                 </div>
             </section>
 
-            <!-- ONGLET ADMIN -->
-            <section id="view-admin" class="view-section hidden fade-in">
-                <div id="admin-auth" class="glass rounded-3xl p-10 md:p-16 text-center">
+            <!-- ONGLET ACCÈS SÉCURISÉ (Corrigé anti-autofill) -->
+            <section id="view-secure" class="view-section hidden fade-in">
+                
+                <!-- Écran de déverrouillage -->
+                <div id="secure-auth" class="glass rounded-3xl p-10 md:p-16 text-center">
                     <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-500 via-purple-600 to-amber-500 flex items-center justify-center mx-auto mb-8 shadow-2xl">
                         <i data-lucide="shield" class="w-12 h-12 text-white"></i>
                     </div>
-                    <h2 class="text-4xl font-black mb-4 gradient-text">Accès Administration</h2>
-                    <p class="text-slate-400 text-lg mb-10">Zone sécurisée pour gestion avancée de la base</p>
+                    <h2 class="text-4xl font-black mb-4 gradient-text">Accès Sécurisé</h2>
+                    <p class="text-slate-400 text-lg mb-10">Zone privée pour gestion avancée de la base</p>
                     
                     <div class="max-w-md mx-auto">
-                        <input type="password" id="admin-password" placeholder="Entrez le mot de passe" 
-                            class="input-field w-full rounded-2xl px-6 py-5 text-white text-center text-xl mb-6 tracking-widest">
-                        <button onclick="verifierAdmin()" class="btn-primary w-full text-white px-10 py-5 rounded-2xl font-black text-xl">
-                            Déverrouiller l'accès
-                        </button>
-                        <p id="admin-error" class="text-red-400 mt-6 hidden font-bold text-lg">
-                            ⚠️ Mot de passe incorrect
+                        <!-- Formulaire isolé pour tromper l'autofill -->
+                        <form id="secure-form" onsubmit="verifierAcces(event)" autocomplete="off">
+                            
+                            <!-- Honeypot invisible : leurre pour les gestionnaires de mots de passe -->
+                            <input type="text" 
+                                   name="usr_field_decoy" 
+                                   tabindex="-1" 
+                                   autocomplete="username"
+                                   class="honeypot-field"
+                                   aria-hidden="true">
+                            <input type="password" 
+                                   name="pwd_field_decoy" 
+                                   tabindex="-1" 
+                                   autocomplete="current-password"
+                                   class="honeypot-field"
+                                   aria-hidden="true">
+                            
+                            <!-- Vrai champ de saisie avec protections maximales -->
+                            <input type="password" 
+                                   id="secure-code-input"
+                                   name="kf_access_code_v2"
+                                   placeholder="••••••••••" 
+                                   autocomplete="new-password"
+                                   autocapitalize="off"
+                                   autocorrect="off"
+                                   spellcheck="false"
+                                   data-lpignore="true"
+                                   data-1p-ignore="true"
+                                   data-bwignore="true"
+                                   data-kpxc-ignore="true"
+                                   data-form-type="other"
+                                   aria-label="Code d'accès sécurisé"
+                                   class="input-field w-full rounded-2xl px-6 py-5 text-white text-center text-xl mb-6 tracking-widest">
+                            
+                            <button type="submit" class="btn-primary w-full text-white px-10 py-5 rounded-2xl font-black text-xl">
+                                Déverrouiller
+                            </button>
+                        </form>
+                        
+                        <p id="secure-error" class="text-red-400 mt-6 hidden font-bold text-lg">
+                            ⚠️ Code d'accès incorrect
                         </p>
                     </div>
                 </div>
 
-                <div id="admin-panel" class="hidden space-y-8 admin-locked">
+                <!-- Panneau sécurisé (caché par défaut) -->
+                <div id="secure-panel" class="hidden space-y-8 admin-locked">
                     <div class="glass rounded-3xl p-8 border-l-4 border-green-500 admin-unlocked">
                         <div class="flex items-center gap-4 mb-4">
                             <div class="w-12 h-12 rounded-xl bg-green-500/30 flex items-center justify-center">
                                 <i data-lucide="check-circle" class="w-7 h-7 text-green-400"></i>
                             </div>
                             <div class="flex-1">
-                                <h3 class="text-2xl font-black text-green-400">Mode Administrateur Actif</h3>
-                                <p class="text-sm text-slate-400 font-semibold">Session sécurisée • <span id="admin-session-time"></span></p>
+                                <h3 class="text-2xl font-black text-green-400">Mode Sécurisé Actif</h3>
+                                <p class="text-sm text-slate-400 font-semibold">Session protégée • <span id="secure-session-time"></span></p>
                             </div>
                         </div>
-                        <button onclick="deconnecterAdmin()" class="btn-danger w-full text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3">
-                            <i data-lucide="log-out" class="w-5 h-5"></i> Déconnexion
+                        <button onclick="fermerSessionSecurisee()" class="btn-danger w-full text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3">
+                            <i data-lucide="log-out" class="w-5 h-5"></i> Fermer la session
                         </button>
                     </div>
 
@@ -605,18 +686,18 @@
                             <i data-lucide="plus-circle" class="w-7 h-7 text-cyan-400"></i>
                             Ajouter une fiche technique
                         </h3>
-                        <form id="add-entry-form" onsubmit="ajouterEntree(event)" class="space-y-5">
+                        <form id="add-entry-form" onsubmit="ajouterEntree(event)" autocomplete="off" class="space-y-5">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <input name="marque" placeholder="Marque (ex: Peugeot)" required 
+                                <input name="marque" placeholder="Marque (ex: Peugeot)" required autocomplete="off"
                                     class="input-field rounded-2xl px-6 py-4 text-white text-lg font-semibold">
-                                <input name="modele" placeholder="Modèle (ex: 308)" required 
+                                <input name="modele" placeholder="Modèle (ex: 308)" required autocomplete="off"
                                     class="input-field rounded-2xl px-6 py-4 text-white text-lg font-semibold">
-                                <input name="codeMoteur" placeholder="Code Moteur (ex: HNS)" required 
+                                <input name="codeMoteur" placeholder="Code Moteur (ex: HNS)" required autocomplete="off"
                                     class="input-field rounded-2xl px-6 py-4 text-white text-lg font-semibold">
-                                <input name="puissance" placeholder="Puissance (ex: 130 ch)" required 
+                                <input name="puissance" placeholder="Puissance (ex: 130 ch)" required autocomplete="off"
                                     class="input-field rounded-2xl px-6 py-4 text-white text-lg font-semibold">
                             </div>
-                            <textarea name="preconisations" placeholder="Préconisations d'entretien (JSON ou texte libre)" 
+                            <textarea name="preconisations" placeholder="Préconisations d'entretien (JSON ou texte libre)" autocomplete="off"
                                 class="input-field w-full rounded-2xl px-6 py-4 text-white text-lg font-mono" rows="5"></textarea>
                             <button type="submit" class="btn-success w-full text-white py-5 rounded-2xl font-black text-xl">
                                 Ajouter à la Méga Base
@@ -650,6 +731,78 @@
     <div id="notification-container"></div>
 
     <script src="script.js"></script>
+    
+    <!-- Script de protection anti-autofill intégré -->
+    <script>
+        // Nettoyage automatique des champs sensibles au démarrage
+        (function() {
+            function nettoyerChamps() {
+                const secureInput = document.getElementById('secure-code-input');
+                if (secureInput) {
+                    secureInput.value = '';
+                    secureInput.setAttribute('value', '');
+                }
+                // Nettoyer tous les honeypots
+                document.querySelectorAll('.honeypot-field').forEach(field => {
+                    field.value = '';
+                });
+            }
+            
+            // Nettoyages multiples pour contrer l'autofill Android
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    nettoyerChamps();
+                    setTimeout(nettoyerChamps, 100);
+                    setTimeout(nettoyerChamps, 500);
+                    setTimeout(nettoyerChamps, 1000);
+                    setTimeout(nettoyerChamps, 2000);
+                });
+            } else {
+                nettoyerChamps();
+                setTimeout(nettoyerChamps, 100);
+                setTimeout(nettoyerChamps, 500);
+            }
+            
+            // Nettoyage au focus
+            document.addEventListener('focusin', function(e) {
+                if (e.target && e.target.id === 'secure-code-input') {
+                    if (e.target.value && e.target.value.toLowerCase().includes('admin')) {
+                        e.target.value = '';
+                    }
+                }
+            });
+            
+            // Surveillance MutationObserver pour détecter l'autofill
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.target.id === 'secure-code-input') {
+                        const val = mutation.target.value;
+                        if (val && (val.toLowerCase() === 'admin' || val.toLowerCase().includes('admin'))) {
+                            mutation.target.value = '';
+                        }
+                    }
+                });
+            });
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                const secureInput = document.getElementById('secure-code-input');
+                if (secureInput) {
+                    observer.observe(secureInput, { 
+                        attributes: true, 
+                        attributeFilter: ['value'] 
+                    });
+                    
+                    // Protection supplémentaire sur input
+                    secureInput.addEventListener('input', function(e) {
+                        if (e.target.value.toLowerCase().includes('admin')) {
+                            e.target.value = '';
+                        }
+                    });
+                }
+            });
+        })();
+    </script>
+    
     <script>lucide.createIcons();</script>
 </body>
 </html>
