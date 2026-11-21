@@ -12,7 +12,7 @@ let megaBase = [];
 let syncStatus = { autoDiagnostic: 'inactive', myTech: 'inactive', lastSync: null };
 
 // ==========================================
-// 2. FONCTIONS UTILITAIRES (DÉFINIES EN PREMIER)
+// 2. FONCTIONS UTILITAIRES
 // ==========================================
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -54,7 +54,7 @@ function determinerCarburant(motor, type, title) {
 }
 
 // ==========================================
-// 3. HASHAGE MOT DE PASSE (avec fallback WebView)
+// 3. HASHAGE MOT DE PASSE
 // ==========================================
 async function hashPassword(password) {
     try {
@@ -68,7 +68,6 @@ async function hashPassword(password) {
     } catch (e) {
         console.warn('crypto.subtle indisponible, fallback utilisé');
     }
-    // Fallback pour WebView Android sans crypto.subtle
     let hash = 0;
     const str = password + SECURITY_SALT;
     for (let i = 0; i < str.length; i++) {
@@ -164,29 +163,23 @@ function showNotification(msg, type = 'info') {
 }
 
 // ==========================================
-// 6. GESTION RÉSEAU (CORRIGÉE)
+// 6. GESTION RÉSEAU
 // ==========================================
 function updateNetworkStatus() {
     const statusEl = document.getElementById('network-status');
     if (!statusEl) return;
-    
     try {
         if (navigator.onLine) {
             let type = 'WIFI/4G/5G';
             try {
                 const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-                if (conn && conn.effectiveType) {
-                    type = conn.effectiveType.toUpperCase();
-                }
-            } catch (e) {
-                // navigator.connection non supporté
-            }
+                if (conn && conn.effectiveType) type = conn.effectiveType.toUpperCase();
+            } catch (e) {}
             statusEl.innerHTML = `<span class="pulse-dot online"></span><span id="network-text">${type}</span>`;
         } else {
             statusEl.innerHTML = `<span class="pulse-dot offline"></span><span id="network-text">Hors ligne</span>`;
         }
     } catch (error) {
-        console.error('Erreur updateNetworkStatus:', error);
         statusEl.innerHTML = `<span class="pulse-dot online"></span><span id="network-text">En ligne</span>`;
     }
 }
@@ -482,6 +475,128 @@ function exporterJSON() {
     } catch (e) { showNotification('❌ Erreur export', 'error'); }
 }
 
+// ==========================================
+// 13. IMPORT MULTI-FORMATS (CORRIGÉ)
+// ==========================================
+function detecterFormat(data) {
+    if (!data) return 'inconnu';
+    
+    // Format sauvegarde auto-diagnostic
+    if (data.overrides !== undefined || data.customs !== undefined || 
+        data.recalls !== undefined || data.tsb !== undefined || 
+        data.modelsExtra !== undefined) {
+        return 'auto-diagnostic';
+    }
+    
+    // Format tableau simple
+    if (Array.isArray(data)) return 'tableau';
+    
+    // Format objet avec véhicules
+    if (data.vehicles && Array.isArray(data.vehicles)) return 'vehicles';
+    if (data.data && Array.isArray(data.data)) return 'data';
+    
+    return 'objet';
+}
+
+function convertirFormatAutoDiagnostic(data) {
+    const result = [];
+    
+    // Convertir customs (véhicules personnalisés)
+    if (data.customs && Array.isArray(data.customs)) {
+        data.customs.forEach(item => {
+            if (item && (item.marque || item.brand)) {
+                result.push({
+                    marque: item.marque || item.brand,
+                    modele: item.modele || item.model || 'Modèle',
+                    motorisation: item.motorisation || item.motor || 'Standard',
+                    codeMoteur: item.codeMoteur || item.code_moteur || genererCodeMoteur(item.marque || item.brand, item.motorisation),
+                    puissance: item.puissance || item.power || 'Auto',
+                    annee: item.annee || item.year || 'À définir',
+                    typeCarburant: item.typeCarburant || item.fuel || 'Essence',
+                    entretiens: item.entretiens || { "30000":["Vidange"], "60000":["Vidange"], "120000":["Vidange"], "160000":["Vidange"] },
+                    dtc: item.dtc || [],
+                    rappels: item.rappels || [],
+                    notes: item.notes || ''
+                });
+            }
+        });
+    }
+    
+    // Convertir recalls (rappels)
+    if (data.recalls && Array.isArray(data.recalls)) {
+        data.recalls.forEach(rappel => {
+            if (rappel && (rappel.marque || rappel.brand)) {
+                const existant = result.find(v => 
+                    v.marque === (rappel.marque || rappel.brand) && 
+                    v.modele === (rappel.modele || rappel.model)
+                );
+                if (existant) {
+                    if (!existant.rappels.includes(rappel.titre || rappel.title)) {
+                        existant.rappels.push(rappel.titre || rappel.title || 'Rappel');
+                    }
+                } else {
+                    result.push({
+                        marque: rappel.marque || rappel.brand,
+                        modele: rappel.modele || rappel.model || 'Modèle',
+                        motorisation: 'Standard',
+                        codeMoteur: genererCodeMoteur(rappel.marque || rappel.brand),
+                        puissance: 'Auto',
+                        annee: 'À définir',
+                        typeCarburant: 'Essence',
+                        entretiens: { "30000":["Vidange"] },
+                        dtc: [],
+                        rappels: [rappel.titre || rappel.title || 'Rappel'],
+                        notes: ''
+                    });
+                }
+            }
+        });
+    }
+    
+    // Convertir TSB
+    if (data.tsb && Array.isArray(data.tsb)) {
+        data.tsb.forEach(tsb => {
+            if (tsb && (tsb.marque || tsb.brand)) {
+                const existant = result.find(v => 
+                    v.marque === (tsb.marque || tsb.brand) && 
+                    v.modele === (tsb.modele || tsb.model)
+                );
+                if (existant) {
+                    if (tsb.dtc && !existant.dtc.includes(tsb.dtc)) {
+                        existant.dtc.push(tsb.dtc);
+                    }
+                    if (tsb.titre && !existant.notes) {
+                        existant.notes = tsb.titre;
+                    }
+                }
+            }
+        });
+    }
+    
+    // Convertir modelsExtra
+    if (data.modelsExtra && Array.isArray(data.modelsExtra)) {
+        data.modelsExtra.forEach(model => {
+            if (model && (model.marque || model.brand)) {
+                result.push({
+                    marque: model.marque || model.brand,
+                    modele: model.modele || model.model || 'Modèle',
+                    motorisation: model.motorisation || 'Standard',
+                    codeMoteur: model.codeMoteur || genererCodeMoteur(model.marque || model.brand),
+                    puissance: model.puissance || 'Auto',
+                    annee: model.annee || 'À définir',
+                    typeCarburant: model.typeCarburant || 'Essence',
+                    entretiens: { "30000":["Vidange"] },
+                    dtc: [],
+                    rappels: [],
+                    notes: ''
+                });
+            }
+        });
+    }
+    
+    return result;
+}
+
 function importerJSON(input) {
     const file = input.files[0];
     if (!file) return;
@@ -500,7 +615,7 @@ function importerJSON(input) {
 }
 
 // ==========================================
-// 13. OVERLAY IMPORT + AUTO-CONTRÔLE
+// 14. OVERLAY IMPORT + AUTO-CONTRÔLE
 // ==========================================
 function ouvrirOverlayImport() {
     const overlay = document.getElementById('import-overlay');
@@ -570,11 +685,27 @@ async function importAvecAutoControle(file) {
         }
         await sleep(300);
 
-        mettreAJourProgress(35, "Analyse structure...");
-        logImport("🔬 Analyse structure...", "step");
-        const items = Array.isArray(data) ? data : (typeof data === 'object' ? Object.values(data) : []);
-        logImport(`📊 ${items.length} éléments détectés`, "info");
-        if (items.length === 0) throw new Error("Aucun élément valide");
+        mettreAJourProgress(35, "Détection format...");
+        logImport("🔬 Détection format...", "step");
+        const format = detecterFormat(data);
+        logImport(`📊 Format détecté: ${format}`, "info");
+        
+        let items = [];
+        if (format === 'auto-diagnostic') {
+            items = convertirFormatAutoDiagnostic(data);
+            logImport(`🔄 Conversion format auto-diagnostic: ${items.length} éléments`, "info");
+        } else if (format === 'tableau') {
+            items = data;
+        } else if (format === 'vehicles') {
+            items = data.vehicles;
+        } else if (format === 'data') {
+            items = data.data;
+        } else {
+            items = Object.values(data);
+        }
+        
+        logImport(`📊 ${items.length} éléments à traiter`, "info");
+        if (items.length === 0) throw new Error("Aucun élément valide trouvé");
         await sleep(400);
 
         mettreAJourProgress(50, "Vérification doublons...");
@@ -645,6 +776,7 @@ async function importAvecAutoControle(file) {
         msgEl.textContent = `Import terminé - Base APK mise à jour`;
         detailsEl.innerHTML = `
             <div style="color:#4ade80;font-weight:bold;margin-bottom:.5rem">📊 RAPPORT FINAL</div>
+            <div>• Format: <strong>${format}</strong></div>
             <div>• Avant: <strong>${avant}</strong></div>
             <div>• Ajouts: <strong style="color:#4ade80">+${ajouts}</strong></div>
             <div>• Fusions: <strong style="color:#fbbf24">~${fusions}</strong></div>
@@ -700,36 +832,26 @@ function normaliserItem(item) {
 }
 
 // ==========================================
-// 14. SYNCHRONISATION (CORRIGÉE - PAS BLOQUÉE)
+// 15. SYNCHRONISATION
 // ==========================================
 async function forcerSynchro() {
     const syncEl = document.getElementById('sync-status');
     if (!syncEl) return;
-    
     showNotification('🔄 Synchronisation...', 'info');
-    
-    // État ACTIF avec icône qui tourne
     syncEl.className = 'sync-indicator sync-active';
     syncEl.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 sync-icon"></i><span>Synchro...</span>';
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    
     await sleep(800);
-    
-    // État INACTIF avec icône statique (PAS d'animation)
     syncEl.className = 'sync-indicator sync-inactive';
     syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    
     syncStatus.lastSync = new Date().toISOString();
     showNotification(`✅ ${megaBase.length} véhicules en base`, 'success');
-    
-    if (!document.getElementById('view-stats').classList.contains('hidden')) {
-        afficherStats();
-    }
+    if (!document.getElementById('view-stats').classList.contains('hidden')) afficherStats();
 }
 
 // ==========================================
-// 15. STATISTIQUES
+// 16. STATISTIQUES
 // ==========================================
 function afficherStats() {
     const container = document.getElementById('stats-container');
@@ -763,7 +885,7 @@ function afficherStats() {
 }
 
 // ==========================================
-// 16. INITIALISATION (CORRIGÉE MULTI-NIVEAUX)
+// 17. INITIALISATION
 // ==========================================
 function chargerBase() {
     try {
@@ -788,34 +910,18 @@ function chargerBase() {
 
 function initialiser() {
     console.log('🚀 Initialisation KEV FUSION 2026...');
-    
     try {
-        // 1. Forcer l'affichage du statut réseau IMMÉDIATEMENT
         updateNetworkStatus();
-        
-        // 2. Initialiser le hash admin
         initAdminHash();
-        
-        // 3. Charger la base
         chargerBase();
-        
-        // 4. Mettre à jour l'interface
         initFiltresEntretien();
-        
-        // 5. Mettre à jour l'indicateur de synchro avec le nombre de véhicules (PAS d'animation)
         const syncEl = document.getElementById('sync-status');
         if (syncEl) {
             syncEl.className = 'sync-indicator sync-inactive';
             syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
         }
-        
-        // 6. Initialiser les icônes
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         console.log('✅ Initialisation terminée:', megaBase.length, 'véhicules');
-        
     } catch (error) {
         console.error('❌ Erreur initialisation:', error);
         megaBase = [...MEGA_BASE_INITIALE];
@@ -830,45 +936,31 @@ function initialiser() {
 }
 
 // ==========================================
-// 17. DÉMARRAGE MULTI-NIVEAUX
+// 18. DÉMARRAGE MULTI-NIVEAUX
 // ==========================================
-
-// Niveau 1 : Initialisation immédiate
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialiser);
 } else {
     initialiser();
 }
 
-// Niveau 2 : Secours après 2 secondes si l'initialisation a échoué
 setTimeout(() => {
     const networkText = document.getElementById('network-text');
-    if (networkText && networkText.textContent === 'Connexion...') {
-        console.warn('⚠️ Initialisation réseau manquante, correction...');
-        updateNetworkStatus();
-    }
-    
+    if (networkText && networkText.textContent === 'Connexion...') updateNetworkStatus();
     const syncEl = document.getElementById('sync-status');
     if (syncEl && syncEl.querySelector('.sync-icon')) {
-        console.warn('⚠️ Synchro bloquée détectée, correction...');
         syncEl.className = 'sync-indicator sync-inactive';
         syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
-    
     updateNetworkStatus();
 }, 2000);
 
-// Niveau 3 : Vérification périodique pendant les 10 premières secondes
 let initCheckCount = 0;
 const initCheckInterval = setInterval(() => {
     initCheckCount++;
-    
     const networkText = document.getElementById('network-text');
-    if (networkText && networkText.textContent === 'Connexion...') {
-        updateNetworkStatus();
-    }
-    
+    if (networkText && networkText.textContent === 'Connexion...') updateNetworkStatus();
     const syncEl = document.getElementById('sync-status');
     if (syncEl && syncEl.className.includes('sync-active')) {
         const hasSpinningIcon = syncEl.querySelector('.sync-icon');
@@ -878,14 +970,12 @@ const initCheckInterval = setInterval(() => {
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
     }
-    
     if (initCheckCount >= 10) {
         clearInterval(initCheckInterval);
         console.log('✅ Vérifications initiales terminées');
     }
 }, 1000);
 
-// Listeners réseau
 window.addEventListener('online', () => {
     updateNetworkStatus();
     showNotification('🌐 Connexion rétablie', 'success');
@@ -896,9 +986,6 @@ window.addEventListener('offline', () => {
     showNotification('📡 Mode hors ligne', 'warning');
 });
 
-// Touche Enter sur le champ sécurisé
 document.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && e.target.id === 'secure-code-input') {
-        verifierAcces(e);
-    }
+    if (e.key === 'Enter' && e.target.id === 'secure-code-input') verifierAcces(e);
 });
