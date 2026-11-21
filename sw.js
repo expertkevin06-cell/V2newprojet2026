@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kev-fusion-v2026-final';
+const CACHE_NAME = 'kev-fusion-v2026-integrity';
 const ASSETS = [
     '/newprojet2026/',
     '/newprojet2026/index.html',
