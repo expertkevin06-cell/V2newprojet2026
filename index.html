@@ -1,363 +1,300 @@
-<!-- ========================================== -->
-<!-- OVERLAY AUTO-CONTRÔLE IMPORT MASSIF        -->
-<!-- ========================================== -->
-<div id="import-overlay" class="import-overlay hidden">
-    <div class="import-modal">
-        <div class="import-header">
-            <div class="import-icon">
-                <i data-lucide="upload-cloud" class="w-12 h-12 text-cyan-400"></i>
-            </div>
-            <h2 class="import-title" id="import-title">Import massif en cours...</h2>
-            <p class="import-subtitle" id="import-subtitle">Vérification et intégration des données</p>
-        </div>
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KEV FUSION 2026 - Méga Base Technique</title>
+    <meta name="theme-color" content="#0a0e27">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --primary:#06b6d4; --success:#10b981; --danger:#ef4444; --warning:#f59e0b; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:linear-gradient(135deg,#0a0e27 0%,#1e1b4b 50%,#0a0e27 100%); background-attachment:fixed; color:#e2e8f0; font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; overflow-x:hidden; }
+        body::before { content:''; position:fixed; inset:0; background:radial-gradient(circle at 20% 50%,rgba(6,182,212,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(139,92,246,0.15) 0%,transparent 50%); pointer-events:none; z-index:0; animation:pulse-bg 20s ease-in-out infinite; }
+        @keyframes pulse-bg { 0%,100%{opacity:.6} 50%{opacity:1} }
+        .glass { background:rgba(15,23,42,0.8); backdrop-filter:blur(20px) saturate(180%); border:1px solid rgba(255,255,255,0.1); box-shadow:0 8px 32px rgba(0,0,0,0.37); }
+        .glass-hover { transition:all .3s; }
+        .glass-hover:hover { background:rgba(15,23,42,0.95); border-color:var(--primary); transform:translateY(-2px); }
+        .tab-active { background:linear-gradient(135deg,rgba(6,182,212,0.25),rgba(139,92,246,0.25)); border-bottom:3px solid var(--primary); color:white!important; }
+        .fade-in { animation:fadeIn .6s; }
+        .slide-up { animation:slideUp .7s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(50px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+        .pulse-dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:8px; animation:pulse 2s infinite; }
+        .online { background:var(--success); box-shadow:0 0 20px var(--success); }
+        .offline { background:var(--danger); box-shadow:0 0 20px var(--danger); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+        .gradient-text { background:linear-gradient(135deg,#06b6d4,#8b5cf6,#f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:900; }
+        .btn-primary { background:linear-gradient(135deg,#06b6d4,#0891b2); box-shadow:0 4px 20px rgba(6,182,212,0.5); transition:all .3s; }
+        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(6,182,212,0.7); }
+        .btn-danger { background:linear-gradient(135deg,#ef4444,#dc2626); }
+        .btn-success { background:linear-gradient(135deg,#10b981,#059669); }
+        .btn-warning { background:linear-gradient(135deg,#f59e0b,#d97706); }
+        .input-field { background:rgba(30,41,59,0.6); border:2px solid rgba(255,255,255,0.1); transition:all .3s; }
+        .input-field:focus { background:rgba(30,41,59,0.9); border-color:var(--primary); box-shadow:0 0 0 4px rgba(6,182,212,0.2); outline:none; }
+        .card-shine { position:relative; overflow:hidden; }
+        .card-shine::before { content:''; position:absolute; inset:-50%; width:200%; height:200%; background:linear-gradient(45deg,transparent 30%,rgba(255,255,255,0.08) 50%,transparent 70%); transform:rotate(45deg); transition:all .8s; pointer-events:none; }
+        .card-shine:hover::before { left:100%; }
+        .km-badge { background:linear-gradient(135deg,#0891b2,#06b6d4); box-shadow:0 4px 20px rgba(6,182,212,0.6); font-weight:800; }
+        .dtc-badge { background:linear-gradient(135deg,#dc2626,#ef4444); font-family:'Courier New',monospace; }
+        .recall-badge { background:linear-gradient(135deg,#d97706,#f59e0b); }
+        .success-badge { background:linear-gradient(135deg,#059669,#10b981); }
+        .loading-spinner { border:4px solid rgba(6,182,212,0.15); border-top:4px solid var(--primary); border-radius:50%; width:50px; height:50px; animation:spin .8s linear infinite; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        .sync-indicator { display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; text-transform:uppercase; }
+        .sync-active { background:rgba(16,185,129,0.25); color:var(--success); border:2px solid var(--success); }
+        .sync-inactive { background:rgba(100,116,139,0.25); color:#94a3b8; border:2px solid #64748b; }
+        .sync-icon { animation:rotate 1.5s linear infinite; }
+        @keyframes rotate { to{transform:rotate(360deg)} }
+        .stat-card { background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(139,92,246,0.15)); border:2px solid rgba(6,182,212,0.3); transition:all .4s; }
+        .stat-card:hover { transform:translateY(-6px); box-shadow:0 12px 40px rgba(6,182,212,0.4); border-color:var(--primary); }
+        .no-scrollbar::-webkit-scrollbar { display:none; }
+        .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+        .admin-locked { opacity:0.5; pointer-events:none; filter:blur(2px); }
+        .admin-unlocked { opacity:1; pointer-events:all; animation:unlock .6s; }
+        @keyframes unlock { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+        .progress-bar { height:8px; background:rgba(30,41,59,0.8); border-radius:10px; overflow:hidden; }
+        .progress-fill { height:100%; background:linear-gradient(90deg,#06b6d4,#8b5cf6,#f59e0b); transition:width .8s; }
+        .honeypot-field { position:absolute!important; left:-9999px!important; top:-9999px!important; width:1px!important; height:1px!important; opacity:0!important; pointer-events:none!important; }
+        .notification { position:fixed; top:100px; right:20px; z-index:9999; animation:slideInRight .5s; max-width:90vw; }
+        @keyframes slideInRight { from{transform:translateX(400px);opacity:0} to{transform:translateX(0);opacity:1} }
+        input:-webkit-autofill { -webkit-box-shadow:0 0 0 30px rgba(30,41,59,0.9) inset!important; -webkit-text-fill-color:#e2e8f0!important; transition:background-color 5000s ease-in-out 0s; }
+        
+        /* OVERLAY IMPORT */
+        .import-overlay { position:fixed; inset:0; background:rgba(10,14,39,0.95); backdrop-filter:blur(20px); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px; }
+        .import-overlay.hidden { display:none; }
+        .import-modal { background:linear-gradient(135deg,#1e293b,#0f172a); border:2px solid rgba(6,182,212,0.4); border-radius:24px; padding:2rem; max-width:600px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(6,182,212,0.3); animation:slideUp .4s cubic-bezier(0.34,1.56,0.64,1); }
+        .progress-bar-large { position:relative; height:16px; background:rgba(15,23,42,0.8); border-radius:10px; overflow:hidden; border:1px solid rgba(6,182,212,0.3); }
+        .progress-fill-large { height:100%; background:linear-gradient(90deg,#06b6d4,#8b5cf6,#f59e0b); background-size:200% 100%; border-radius:10px; width:0%; transition:width .5s; animation:gradient-flow 3s linear infinite; box-shadow:0 0 20px rgba(6,182,212,0.5); }
+        @keyframes gradient-flow { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }
+        .import-log { background:rgba(15,23,42,0.8); border-radius:12px; padding:1rem; max-height:200px; overflow-y:auto; font-family:'Courier New',monospace; font-size:.8rem; line-height:1.6; }
+        .log-info { color:#38bdf8; }
+        .log-success { color:#4ade80; }
+        .log-warning { color:#fbbf24; }
+        .log-error { color:#f87171; }
+        .log-step { color:#c084fc; font-weight:bold; }
+        .stat-mini { background:rgba(30,41,59,0.6); border-radius:12px; padding:.75rem; text-align:center; border:1px solid rgba(255,255,255,0.1); }
+        .import-result { text-align:center; padding:1.5rem; background:rgba(30,41,59,0.6); border-radius:16px; border:2px solid rgba(16,185,129,0.4); }
+        .import-result.hidden { display:none; }
+        .import-result.error { border-color:rgba(239,68,68,0.4); }
+        .result-details { background:rgba(15,23,42,0.6); border-radius:12px; padding:1rem; margin-top:1rem; text-align:left; font-family:'Courier New',monospace; font-size:.85rem; color:#cbd5e1; line-height:1.6; }
+    </style>
+</head>
+<body class="flex flex-col relative">
+    <form autocomplete="off" style="display:none" aria-hidden="true">
+        <input type="text" name="fake_user" tabindex="-1" autocomplete="username">
+        <input type="password" name="fake_pwd" tabindex="-1" autocomplete="current-password">
+    </form>
 
-        <!-- Progress Bar Principale -->
-        <div class="progress-container">
-            <div class="progress-header">
-                <span id="progress-step" class="text-sm font-bold text-cyan-400">Étape 1/7</span>
-                <span id="progress-percent" class="text-sm font-bold text-white">0%</span>
+    <header class="glass sticky top-0 z-50 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 via-purple-600 to-amber-500 flex items-center justify-center">
+                    <i data-lucide="zap" class="w-7 h-7 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold gradient-text">KEV FUSION 2026</h1>
+                    <p class="text-xs text-slate-400 font-semibold">Méga Base Technique</p>
+                </div>
             </div>
-            <div class="progress-bar-large">
-                <div id="progress-fill" class="progress-fill-large"></div>
-                <div id="progress-shine" class="progress-shine"></div>
-            </div>
-            <p id="progress-detail" class="text-xs text-slate-400 mt-2">Initialisation...</p>
-        </div>
-
-        <!-- Log en temps réel -->
-        <div class="import-log-container">
-            <div class="import-log-header">
-                <i data-lucide="terminal" class="w-4 h-4"></i>
-                <span>Journal d'import</span>
-            </div>
-            <div id="import-log" class="import-log"></div>
-        </div>
-
-        <!-- Statistiques en direct -->
-        <div class="import-stats">
-            <div class="stat-mini">
-                <span class="stat-label">Avant</span>
-                <span class="stat-value" id="stat-before">0</span>
-            </div>
-            <div class="stat-mini">
-                <span class="stat-label">Ajoutés</span>
-                <span class="stat-value text-green-400" id="stat-added">+0</span>
-            </div>
-            <div class="stat-mini">
-                <span class="stat-label">Fusionnés</span>
-                <span class="stat-value text-amber-400" id="stat-merged">~0</span>
-            </div>
-            <div class="stat-mini">
-                <span class="stat-label">Après</span>
-                <span class="stat-value text-cyan-400" id="stat-after">0</span>
+            <div class="flex items-center gap-3">
+                <div id="sync-status" class="sync-indicator sync-inactive">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 sync-icon"></i><span>Synchro</span>
+                </div>
+                <div id="network-status" class="flex items-center text-sm font-bold px-4 py-2 rounded-xl glass">
+                    <span class="pulse-dot offline"></span><span>Init</span>
+                </div>
             </div>
         </div>
+    </header>
 
-        <!-- Résultat final -->
-        <div id="import-result" class="import-result hidden">
-            <div class="result-icon" id="result-icon">
-                <i data-lucide="check-circle" class="w-16 h-16"></i>
+    <nav class="glass sticky top-[84px] z-40 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex overflow-x-auto no-scrollbar">
+                <button onclick="showTab('vin')" id="tab-vin" class="tab-btn flex-1 py-4 px-6 text-sm font-bold text-center tab-active flex items-center justify-center gap-2 whitespace-nowrap"><i data-lucide="search" class="w-5 h-5"></i> VIN & Rappels</button>
+                <button onclick="showTab('entretien')" id="tab-entretien" class="tab-btn flex-1 py-4 px-6 text-sm font-bold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap"><i data-lucide="wrench" class="w-5 h-5"></i> Préconisations</button>
+                <button onclick="showTab('megabase')" id="tab-megabase" class="tab-btn flex-1 py-4 px-6 text-sm font-bold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap"><i data-lucide="database" class="w-5 h-5"></i> Méga Base</button>
+                <button onclick="showTab('stats')" id="tab-stats" class="tab-btn flex-1 py-4 px-6 text-sm font-bold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap"><i data-lucide="bar-chart-3" class="w-5 h-5"></i> Stats</button>
+                <button onclick="showTab('secure')" id="tab-secure" class="tab-btn flex-1 py-4 px-6 text-sm font-bold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap"><i data-lucide="shield" class="w-5 h-5"></i> Accès</button>
             </div>
-            <h3 class="result-title" id="result-title">Import réussi</h3>
-            <p class="result-message" id="result-message"></p>
-            <div id="result-details" class="result-details"></div>
-            <button onclick="fermerOverlayImport()" class="btn-primary w-full mt-4 text-white px-8 py-4 rounded-2xl font-black text-lg">
-                Fermer
-            </button>
+        </div>
+    </nav>
+
+    <main class="flex-1 relative z-10">
+        <div class="max-w-7xl mx-auto p-4 md:p-8">
+
+            <section id="view-vin" class="view-section fade-in">
+                <div class="glass rounded-3xl p-8 mb-8 card-shine">
+                    <div class="flex items-start gap-4 mb-8">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center"><i data-lucide="car" class="w-7 h-7 text-white"></i></div>
+                        <div><h2 class="text-3xl font-black mb-3">Recherche VIN</h2><p class="text-slate-400 text-lg">Campagnes de rappel officielles</p></div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <input type="text" id="vin-input" placeholder="VIN 17 caractères" maxlength="17" autocomplete="off" class="input-field flex-1 rounded-2xl px-6 py-5 text-white text-lg font-mono uppercase">
+                        <button onclick="rechercherVIN()" class="btn-primary text-white px-10 py-5 rounded-2xl font-black flex items-center justify-center gap-3"><i data-lucide="search" class="w-6 h-6"></i>Analyser</button>
+                    </div>
+                </div>
+                <div id="vin-results" class="space-y-6"></div>
+            </section>
+
+            <section id="view-entretien" class="view-section hidden fade-in">
+                <div class="glass rounded-3xl p-8 mb-8 card-shine">
+                    <div class="flex items-start gap-4 mb-8">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center"><i data-lucide="settings" class="w-7 h-7 text-white"></i></div>
+                        <div><h2 class="text-3xl font-black mb-3">Préconisations</h2><p class="text-slate-400 text-lg">Entretien jusqu'à 160 000 km</p></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <select id="filter-marque" onchange="updateModeles()" class="input-field rounded-2xl px-6 py-5 text-white text-lg font-semibold"><option value="">🏷️ Marque</option></select>
+                        <select id="filter-modele" onchange="updateMotorisations()" class="input-field rounded-2xl px-6 py-5 text-white text-lg font-semibold" disabled><option value="">🚗 Modèle</option></select>
+                        <select id="filter-moteur" onchange="afficherEntretien()" class="input-field rounded-2xl px-6 py-5 text-white text-lg font-semibold" disabled><option value="">⚙️ Motorisation</option></select>
+                    </div>
+                </div>
+                <div id="entretien-results" class="space-y-6"></div>
+            </section>
+
+            <section id="view-megabase" class="view-section hidden fade-in">
+                <div class="glass rounded-3xl p-8 mb-8 card-shine">
+                    <div class="flex items-start gap-4 mb-8">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center"><i data-lucide="brain" class="w-7 h-7 text-white"></i></div>
+                        <div><h2 class="text-3xl font-black mb-3">Méga Base</h2><p class="text-slate-400 text-lg">Recherche intelligente</p></div>
+                    </div>
+                    <input type="search" id="mega-search" oninput="rechercherMegaBase()" placeholder="🔍 DTC, panne, modèle..." autocomplete="off" class="input-field w-full rounded-2xl px-6 py-5 text-white text-lg mb-6">
+                    <button onclick="forcerSynchro()" class="btn-warning w-full text-white px-8 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 mb-8"><i data-lucide="refresh-cw" class="w-6 h-6"></i>Forcer synchronisation</button>
+                    <div id="megabase-results" class="space-y-4"></div>
+                    <div class="mt-10 pt-8 border-t-2 border-white/10">
+                        <h3 class="font-black text-xl mb-6 flex items-center gap-3"><i data-lucide="database" class="w-6 h-6 text-cyan-400"></i>Gestion Base</h3>
+                        <div class="flex flex-wrap gap-4">
+                            <button onclick="exporterJSON()" class="glass-hover rounded-2xl px-8 py-4 flex items-center gap-3 font-bold"><i data-lucide="download" class="w-5 h-5"></i>Exporter JSON</button>
+                            <label class="glass-hover rounded-2xl px-8 py-4 flex items-center gap-3 cursor-pointer font-bold">
+                                <i data-lucide="upload" class="w-5 h-5"></i>Importer / Fusionner
+                                <input type="file" id="import-file" accept=".json" onchange="importerJSON(this)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-stats" class="view-section hidden fade-in">
+                <div class="glass rounded-3xl p-8 mb-8">
+                    <div class="flex items-start gap-4 mb-10">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center"><i data-lucide="bar-chart-3" class="w-7 h-7 text-white"></i></div>
+                        <div><h2 class="text-3xl font-black mb-3">Statistiques</h2><p class="text-slate-400 text-lg">Base fusionnée temps réel</p></div>
+                    </div>
+                    <div id="stats-container" class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10"></div>
+                    <div class="pt-8 border-t-2 border-white/10 mb-10">
+                        <h3 class="font-black text-xl mb-6">📊 Par Carburant</h3>
+                        <div id="fuel-stats" class="space-y-5"></div>
+                    </div>
+                    <div class="pt-8 border-t-2 border-white/10">
+                        <h3 class="font-black text-xl mb-6">🔄 Synchronisation</h3>
+                        <div id="sync-details" class="space-y-5"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-secure" class="view-section hidden fade-in">
+                <div id="secure-auth" class="glass rounded-3xl p-10 text-center">
+                    <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-500 via-purple-600 to-amber-500 flex items-center justify-center mx-auto mb-8"><i data-lucide="shield" class="w-12 h-12 text-white"></i></div>
+                    <h2 class="text-4xl font-black mb-4 gradient-text">Accès Sécurisé</h2>
+                    <p class="text-slate-400 text-lg mb-10">Zone privée</p>
+                    <div class="max-w-md mx-auto">
+                        <form id="secure-form" onsubmit="verifierAcces(event)" autocomplete="off">
+                            <input type="text" name="usr_decoy" tabindex="-1" autocomplete="username" class="honeypot-field" aria-hidden="true">
+                            <input type="password" name="pwd_decoy" tabindex="-1" autocomplete="current-password" class="honeypot-field" aria-hidden="true">
+                            <input type="password" id="secure-code-input" name="kf_code_v3" placeholder="••••••••" autocomplete="new-password" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" class="input-field w-full rounded-2xl px-6 py-5 text-white text-center text-xl mb-6 tracking-widest">
+                            <button type="submit" class="btn-primary w-full text-white px-10 py-5 rounded-2xl font-black text-xl">Déverrouiller</button>
+                        </form>
+                        <p id="secure-error" class="text-red-400 mt-6 hidden font-bold text-lg">⚠️ Code incorrect</p>
+                    </div>
+                </div>
+                <div id="secure-panel" class="hidden space-y-8 admin-locked">
+                    <div class="glass rounded-3xl p-8 border-l-4 border-green-500 admin-unlocked">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-green-500/30 flex items-center justify-center"><i data-lucide="check-circle" class="w-7 h-7 text-green-400"></i></div>
+                            <div class="flex-1"><h3 class="text-2xl font-black text-green-400">Mode Sécurisé Actif</h3><p class="text-sm text-slate-400 font-semibold">Session • <span id="secure-session-time"></span></p></div>
+                        </div>
+                        <button onclick="fermerSessionSecurisee()" class="btn-danger w-full text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3"><i data-lucide="log-out" class="w-5 h-5"></i>Fermer</button>
+                    </div>
+                    <div class="glass rounded-3xl p-8">
+                        <h3 class="text-2xl font-black mb-6 flex items-center gap-3"><i data-lucide="plus-circle" class="w-7 h-7 text-cyan-400"></i>Ajouter fiche</h3>
+                        <form id="add-entry-form" onsubmit="ajouterEntree(event)" autocomplete="off" class="space-y-5">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <input name="marque" placeholder="Marque" required class="input-field rounded-2xl px-6 py-4 text-white text-lg">
+                                <input name="modele" placeholder="Modèle" required class="input-field rounded-2xl px-6 py-4 text-white text-lg">
+                                <input name="codeMoteur" placeholder="Code moteur" required class="input-field rounded-2xl px-6 py-4 text-white text-lg">
+                                <input name="puissance" placeholder="Puissance" required class="input-field rounded-2xl px-6 py-4 text-white text-lg">
+                            </div>
+                            <textarea name="preconisations" placeholder="Préconisations JSON" class="input-field w-full rounded-2xl px-6 py-4 text-white text-lg" rows="5"></textarea>
+                            <button type="submit" class="btn-success w-full text-white py-5 rounded-2xl font-black text-xl">Ajouter</button>
+                        </form>
+                    </div>
+                    <div class="glass rounded-3xl p-8">
+                        <h3 class="text-2xl font-black mb-6 flex items-center gap-3"><i data-lucide="refresh-cw" class="w-7 h-7 text-amber-400"></i>Synchronisation</h3>
+                        <div class="space-y-4">
+                            <button onclick="forcerSynchro()" class="btn-warning w-full text-white px-8 py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-lg"><i data-lucide="refresh-cw" class="w-6 h-6"></i>Synchroniser</button>
+                            <button onclick="reinitialiserBase()" class="btn-danger w-full text-white px-8 py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-lg"><i data-lucide="trash-2" class="w-6 h-6"></i>Réinitialiser</button>
+                            <button onclick="sauvegarderLocalStorage()" class="glass-hover w-full rounded-2xl px-8 py-5 flex items-center justify-center gap-3 font-bold text-lg"><i data-lucide="save" class="w-6 h-6"></i>Sauvegarder</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div id="notification-container"></div>
+
+    <!-- OVERLAY IMPORT (caché par défaut) -->
+    <div id="import-overlay" class="import-overlay hidden">
+        <div class="import-modal">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4"><i data-lucide="upload-cloud" class="w-10 h-10 text-cyan-400"></i></div>
+                <h2 class="text-2xl font-black mb-2" id="import-title">Import en cours...</h2>
+                <p class="text-slate-400" id="import-subtitle">Vérification et intégration</p>
+            </div>
+            <div class="glass rounded-2xl p-5 mb-4">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-bold text-cyan-400" id="progress-step">Étape 1/7</span>
+                    <span class="text-sm font-bold text-white" id="progress-percent">0%</span>
+                </div>
+                <div class="progress-bar-large">
+                    <div id="progress-fill" class="progress-fill-large"></div>
+                </div>
+                <p class="text-xs text-slate-400 mt-2" id="progress-detail">Initialisation...</p>
+            </div>
+            <div class="import-log" id="import-log"></div>
+            <div class="grid grid-cols-4 gap-2 my-4">
+                <div class="stat-mini"><span class="block text-xs text-slate-400">Avant</span><span class="block text-xl font-black" id="stat-before">0</span></div>
+                <div class="stat-mini"><span class="block text-xs text-slate-400">Ajoutés</span><span class="block text-xl font-black text-green-400" id="stat-added">+0</span></div>
+                <div class="stat-mini"><span class="block text-xs text-slate-400">Fusionnés</span><span class="block text-xl font-black text-amber-400" id="stat-merged">~0</span></div>
+                <div class="stat-mini"><span class="block text-xs text-slate-400">Après</span><span class="block text-xl font-black text-cyan-400" id="stat-after">0</span></div>
+            </div>
+            <div id="import-result" class="import-result hidden">
+                <div class="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4"><i data-lucide="check-circle" class="w-12 h-12 text-green-400"></i></div>
+                <h3 class="text-2xl font-black text-green-400 mb-2">Import réussi</h3>
+                <p class="text-slate-400 mb-4" id="result-message"></p>
+                <div id="result-details" class="result-details"></div>
+                <button onclick="fermerOverlayImport()" class="btn-primary w-full mt-4 text-white px-8 py-4 rounded-2xl font-black">Fermer</button>
+            </div>
         </div>
     </div>
-</div>
 
-<style>
-/* ========================================== */
-/* STYLES OVERLAY IMPORT                       */
-/* ========================================== */
-.import-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 14, 39, 0.95);
-    backdrop-filter: blur(20px);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    animation: fadeIn 0.3s ease;
-}
-
-.import-overlay.hidden {
-    display: none;
-}
-
-.import-modal {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border: 2px solid rgba(6, 182, 212, 0.4);
-    border-radius: 24px;
-    padding: 2rem;
-    max-width: 600px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(6, 182, 212, 0.3);
-    animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.import-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.import-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 1rem;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2));
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: pulse-icon 2s ease-in-out infinite;
-}
-
-@keyframes pulse-icon {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
-    50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(6, 182, 212, 0.6); }
-}
-
-.import-title {
-    font-size: 1.75rem;
-    font-weight: 900;
-    color: white;
-    margin-bottom: 0.5rem;
-}
-
-.import-subtitle {
-    color: #94a3b8;
-    font-size: 0.95rem;
-}
-
-.progress-container {
-    background: rgba(30, 41, 59, 0.6);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.progress-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-}
-
-.progress-bar-large {
-    position: relative;
-    height: 16px;
-    background: rgba(15, 23, 42, 0.8);
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid rgba(6, 182, 212, 0.3);
-}
-
-.progress-fill-large {
-    height: 100%;
-    background: linear-gradient(90deg, #06b6d4, #8b5cf6, #f59e0b);
-    background-size: 200% 100%;
-    border-radius: 10px;
-    width: 0%;
-    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: gradient-flow 3s linear infinite;
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
-}
-
-@keyframes gradient-flow {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 200% 0%; }
-}
-
-.progress-shine {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: shine 2s infinite;
-}
-
-@keyframes shine {
-    0% { left: -100%; }
-    100% { left: 200%; }
-}
-
-.import-log-container {
-    background: rgba(15, 23, 42, 0.8);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.import-log-header {
-    background: rgba(30, 41, 59, 0.8);
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: #94a3b8;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.import-log {
-    padding: 1rem;
-    max-height: 200px;
-    overflow-y: auto;
-    font-family: 'Courier New', monospace;
-    font-size: 0.8rem;
-    line-height: 1.6;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(6, 182, 212, 0.5) transparent;
-}
-
-.import-log::-webkit-scrollbar {
-    width: 6px;
-}
-
-.import-log::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.import-log::-webkit-scrollbar-thumb {
-    background: rgba(6, 182, 212, 0.5);
-    border-radius: 3px;
-}
-
-.log-entry {
-    padding: 2px 0;
-    animation: log-appear 0.3s ease;
-}
-
-@keyframes log-appear {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-
-.log-info { color: #38bdf8; }
-.log-success { color: #4ade80; }
-.log-warning { color: #fbbf24; }
-.log-error { color: #f87171; }
-.log-step { color: #c084fc; font-weight: bold; }
-
-.import-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-
-.stat-mini {
-    background: rgba(30, 41, 59, 0.6);
-    border-radius: 12px;
-    padding: 0.75rem;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.stat-label {
-    display: block;
-    font-size: 0.7rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
-}
-
-.stat-value {
-    display: block;
-    font-size: 1.25rem;
-    font-weight: 900;
-    color: white;
-}
-
-.import-result {
-    text-align: center;
-    padding: 1.5rem;
-    background: rgba(30, 41, 59, 0.6);
-    border-radius: 16px;
-    border: 2px solid rgba(16, 185, 129, 0.4);
-    animation: result-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.import-result.hidden {
-    display: none;
-}
-
-@keyframes result-appear {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-.import-result.error {
-    border-color: rgba(239, 68, 68, 0.4);
-}
-
-.result-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 1rem;
-    background: rgba(16, 185, 129, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #10b981;
-}
-
-.import-result.error .result-icon {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-}
-
-.result-title {
-    font-size: 1.5rem;
-    font-weight: 900;
-    color: #10b981;
-    margin-bottom: 0.5rem;
-}
-
-.import-result.error .result-title {
-    color: #ef4444;
-}
-
-.result-message {
-    color: #94a3b8;
-    margin-bottom: 1rem;
-    font-size: 0.95rem;
-}
-
-.result-details {
-    background: rgba(15, 23, 42, 0.6);
-    border-radius: 12px;
-    padding: 1rem;
-    margin-top: 1rem;
-    text-align: left;
-    font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
-    color: #cbd5e1;
-    line-height: 1.6;
-}
-
-@media (max-width: 640px) {
-    .import-modal {
-        padding: 1.5rem;
-    }
-    .import-stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .import-title {
-        font-size: 1.4rem;
-    }
-}
-</style>
+    <script src="script.js"></script>
+    <script>
+        // Protection anti-autofill
+        (function() {
+            function nettoyer() {
+                const i = document.getElementById('secure-code-input');
+                if (i && i.value && i.value.toLowerCase().includes('admin')) i.value = '';
+            }
+            document.addEventListener('DOMContentLoaded', () => {
+                nettoyer();
+                [100,500,1000,2000].forEach(t => setTimeout(nettoyer, t));
+            });
+        })();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    </script>
+</body>
+</html>
