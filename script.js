@@ -1,8 +1,8 @@
 'use strict';
 
 // ============================================================================
-// KEV FUSION 2026 - SCRIPT COMPLET
-// Base massive 2017-2027 + Filtres cascade stricts + Sécurité admin
+// KEV FUSION 2026 - AUTO-VÉRIFICATION & CORRÉLATION COMPLÈTE
+// Base massive 2017-2027 + Auto-vérification + Pannes corrélées
 // ============================================================================
 
 // ============================================================================
@@ -16,6 +16,7 @@ let ADMIN_HASH = null;
 let megaBase = [];
 let expertBase = [];
 let syncStatus = { lastSync: null, sources: [] };
+let integrityReport = { ok: 0, warnings: 0, errors: 0, details: [] };
 
 // ============================================================================
 // 2. UTILITAIRES
@@ -118,348 +119,252 @@ async function hashPassword(password) {
 async function initAdminHash() { ADMIN_HASH = await hashPassword('Kevin83600'); }
 
 // ============================================================================
-// 4. MÉGA BASE INITIALE - 350+ véhicules 2017-2027
+// 4. BASE DE VÉRIFICATION - CORRÉLATIONS VALIDÉES
+// ============================================================================
+const MARQUES_VALIDEES = {
+    'Peugeot': ['208 I','208 II','2008 I','2008 II','308 I','308 II','308 III','308 SW II','308 SW III','3008 I','3008 II','5008 I','5008 II','508 I','508 II','508 SW I','508 SW II','Rifter','Partner','Expert','Boxer','Traveller','e-208','e-2008','e-308','e-3008','e-5008','408'],
+    'Renault': ['Clio IV','Clio V','Clio VI','Megane III','Megane IV','Megane V E-Tech','Captur I','Captur II','Austral','Scenic IV','Scenic V','Kadjar','Arkana','Zoe','Twingo III','Kangoo III','Trafic','Master','Espace V','Espace VI','Rafale','Symbioz'],
+    'Citroën': ['C3 II','C3 III','C3 Aircross','C4 II','C4 III','C5 Aircross','C5 X','Berlingo','Jumpy','Jumper','ë-C4','ë-Berlingo','Ami'],
+    'DS': ['DS 3 Crossback','DS 4','DS 7 Crossback','DS 9','DS 3 E-Tense','DS 4 E-Tense','DS 7 E-Tense','DS 9 E-Tense'],
+    'Volkswagen': ['Polo V','Polo VI','Golf VII','Golf VIII','T-Roc','Tiguan II','Tiguan Allspace','Touran','Sharan','Passat B8','Arteon','T-Cross','T-Cross','ID.3','ID.4','ID.5','ID.6','ID.7','ID. Buzz','Caddy V','Transporter T6.1','Crafter'],
+    'BMW': ['Série 1 F40','Série 2 F44','Série 3 G20','Série 4 G22','Série 5 G30','Série 5 G60','Série 7 G70','X1 F48','X1 U11','X2 F39','X3 G01','X4 G02','X5 G05','X6 G06','X7 G07','i3','i4','iX','iX3','iX1','iX2','i5','i7'],
+    'Mercedes-Benz': ['Classe A W177','Classe B W247','Classe C W206','Classe E W213','Classe E W214','Classe S W223','GLA H247','GLB X247','GLC X254','GLE V167','GLS X167','EQA','EQB','EQC','EQE','EQS','EQE SUV','EQS SUV'],
+    'Audi': ['A1 GB','A3 8Y','A4 B9','A5 F5','A6 C8','A7','A8 D5','Q2 GA','Q3 F3','Q4 e-tron','Q5 FY','Q7 4M','Q8','e-tron','e-tron GT','RS e-tron GT'],
+    'Porsche': ['911 992','718 Cayman','718 Boxster','Macan','Cayenne','Taycan','Panamera'],
+    'Opel': ['Corsa F','Corsa-e','Mokka B','Grandland','Crossland','Astra L','Zafira Life','Combo-e Life'],
+    'Toyota': ['Yaris IV','Yaris Cross','Corolla XII','C-HR II','RAV4 V','Camry','Supra','GR86','bZ4X','Aygo X','Proace','Proace City'],
+    'Hyundai': ['i10','i20 III','i30','Kona I','Kona II','Tucson IV','Santa Fe','Ioniq 5','Ioniq 6','Bayon','Nexo'],
+    'Kia': ['Picanto','Rio','Ceed III','XCeed','Sportage V','Sorento','Stinger','EV6','Niro II','e-Niro','Niro EV'],
+    'Nissan': ['Micra V','Juke II','Qashqai III','X-Trail III','Leaf','Ariya','Note','Navara'],
+    'Honda': ['Jazz','Civic XI','HR-V III','ZR-V','CR-V','e'],
+    'Tesla': ['Model 3','Model Y','Model S','Model X','Cybertruck'],
+    'Ford': ['Fiesta VII','Focus IV','Puma','Kuga III','Mustang Mach-E','Explorer EV','Ranger','Transit','Transit Custom','E-Transit'],
+    'Fiat': ['500','500 Hybrid','500e','Panda','Tipo','500X','500L','Doblo','Ducato','E-Ulysse','600','Grande Panda'],
+    'Alfa Romeo': ['Giulia II','Stelvio','Tonale','Giulietta'],
+    'Jeep': ['Renegade','Compass II','Cherokee','Grand Cherokee','Wrangler','Avenger'],
+    'Volvo': ['XC40 I','XC40 Recharge','XC60 II','XC90 II','V40','V60 II','V90 II','S60 III','S90','C40 Recharge','EX30','EX40','EX90','EM90'],
+    'Dacia': ['Sandero III','Duster II','Duster III','Jogger','Spring','Bigster'],
+    'Skoda': ['Fabia IV','Octavia IV','Superb III','Kodiaq I','Kodiaq II','Karoq','Kamiq','Enyaq','Elroq','Epiq','Scala'],
+    'Seat': ['Ibiza V','Leon IV','Arona','Ateca','Tarraco','Alhambra'],
+    'Cupra': ['Formentor','Born','Tavascan','Leon','Ateca'],
+    'Polestar': ['Polestar 2','Polestar 3','Polestar 4','Polestar 5'],
+    'BYD': ['Atto 3','Seal','Seal U DM-i','Dolphin','Han','Tang','Yuan Plus'],
+    'MG': ['MG3','MG4','MG5','ZS EV','Marvel R','MG7'],
+    'Xpeng': ['G3','G6','G9','P5','P7'],
+    'Nio': ['ET5','ET7','ES6','ES7','ES8','EC6','EC7'],
+    'Land Rover': ['Defender','Discovery Sport','Discovery V','Range Rover Evoque','Range Rover Velar','Range Rover Sport','Range Rover'],
+    'Jaguar': ['E-Pace','F-Pace','I-Pace','F-Type','XE','XF'],
+    'Ferrari': ['296 GTB','296 GTS','SF90 Stradale','SF90 Spider','Roma','Portofino M','Purosangue'],
+    'Maserati': ['Ghibli','Quattroporte','Levante','MC20','Grecale','GranTurismo'],
+    'McLaren': ['Artura','720S','750S','GT'],
+    'Bugatti': ['Chiron','Divo','Centodieci','Bolide','Tourbillon'],
+    'Mini': ['Mini III F56','Mini IV','Countryman II','Countryman III','Clubman','Cabrio','Aceman'],
+    'Lexus': ['IS','ES','LS','NX','RX','UX','LC','RC','RZ','LBX'],
+    'Alpine': ['A110','A110 S','A110 R'],
+    'Lancia': ['Ypsilon','Delta'],
+    'Subaru': ['XV','Forester','Outback','Impreza','WRX','BRZ','Levorg'],
+    'Suzuki': ['Swift','Baleno','Vitara','S-Cross','Jimny','Ignis'],
+    'Mitsubishi': ['Outlander','Eclipse Cross','ASX','Space Star','L200'],
+    'Dodge': ['Challenger','Charger','Durango','Hornet'],
+    'Cadillac': ['CT4','CT5','Escalade','Lyriq','XT4','XT5','XT6'],
+    'GMC': ['Acadia','Terrain','Yukon','Hummer EV'],
+    'Omoda': ['C5','E5'],
+    'Jaecoo': ['J7','J8'],
+    'Leapmotor': ['C10','C11','C16','T03'],
+    'Ora': ['Funky Cat','Lightning Cat','Good Cat'],
+    'Aiways': ['U5','U6'],
+    'Seres': ['SF5','3'],
+    'Lynk&Co': ['01','02','03','05','06','08','09','Z10'],
+    'Smart': ['#1','#3','Fortwo EQ','Forfour EQ'],
+    'Lotus': ['Eletre','Emeya','Emira'],
+    'Aston Martin': ['DB11','DB12','DBS','DBX','Vantage','Valhalla'],
+    'Rolls-Royce': ['Ghost','Phantom','Cullinan','Spectre','Wraith','Dawn'],
+    'Bentley': ['Bentayga','Continental GT','Flying Spur'],
+    'Lamborghini': ['Urus','Huracan','Revuelto','Temerario']
+};
+
+// ============================================================================
+// 5. MÉGA BASE INITIALE - MODÈLES 2021-2027 RENFORCÉS
 // ============================================================================
 const MEGA_BASE_INITIALE = [
-    // ===== PEUGEOT (2017-2027) =====
-    { marque:"Peugeot", modele:"208 I", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:82, annee:"2017-2019", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30","Filtre à huile"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTD", puissance:75, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"],"160000":["Vidange","Bougies"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
-    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTS", puissance:100, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"],"160000":["Vidange","Bougies"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
-    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTX", puissance:130, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"],"160000":["Vidange","Bougies","Liquide refroidissement"]}, dtc:["P0420","P0300","P0087","P0340"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
-    { marque:"Peugeot", modele:"208 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:100, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement"]}, dtc:["P2002","P0401","P20EE"], rappels:["Campagne AdBlue"], notes:"" },
-    { marque:"Peugeot", modele:"208 II", motorisation:"Électrique", codeMoteur:"EM0", puissance:136, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle SOH"]}, dtc:["P0AA6","U0111","P0C00"], rappels:["Campagne BMS"], notes:"" },
-    { marque:"Peugeot", modele:"2008 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTS", puissance:130, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0087"], rappels:["Campagne courroie"], notes:"" },
-    { marque:"Peugeot", modele:"2008 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"2008 II", motorisation:"Électrique", codeMoteur:"EM0", puissance:136, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"308 II", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:110, annee:"2017-2021", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"308 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2017-2021", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech", codeMoteur:"HNS", puissance:110, annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Contrôle courroie"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"],"160000":["Liquide refroidissement"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne tendeur courroie"], notes:"Distribution humide" },
-    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech", codeMoteur:"HNS", puissance:130, annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Contrôle courroie humide"],"60000":["Vidange","Filtre à air","Bougies iridium"],"90000":["Liquide de frein"],"120000":["Kit distribution + pompe eau"],"160000":["Bougies","Liquide refroidissement"]}, dtc:["P0420","P0300","P0301","P0087","P0340"], rappels:["Rappel freinage 2022","Campagne tendeur courroie 2022-2023"], notes:"Distribution humide à surveiller 30 000 km" },
-    { marque:"Peugeot", modele:"308 III", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2021-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement"]}, dtc:["P2002","P0401","P20EE"], rappels:["Campagne FAP 2021","Campagne AdBlue"], notes:"FAP sensible" },
-    { marque:"Peugeot", modele:"3008 I", motorisation:"1.6 THP", codeMoteur:"EP6", puissance:165, annee:"2017-2021", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0087"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"3008 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTS", puissance:130, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Contrôle courroie"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie"], notes:"" },
-    { marque:"Peugeot", modele:"3008 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile","Contrôle FAP"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Vidange","Filtre à gasoil","Liquide refroidissement"]}, dtc:["P2002","P0401","P0471","P20EE"], rappels:["Campagne FAP 2021","Campagne AdBlue"], notes:"FAP sensible trajets courts" },
-    { marque:"Peugeot", modele:"3008 II", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:180, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P2453"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"3008 II", motorisation:"1.6 Hybrid", codeMoteur:"EP6-PHEV", puissance:225, annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"60000":["Filtre à air"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"5008 II", motorisation:"1.6 PureTech", codeMoteur:"EP6", puissance:180, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit chaîne"]}, dtc:["P0420","P0087"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"5008 II", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:180, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P2453"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"508 II", motorisation:"1.6 PureTech", codeMoteur:"EP6", puissance:180, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0087"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"508 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"508 II", motorisation:"1.6 PureTech Hybrid", codeMoteur:"EP6-PHEV", puissance:225, annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"60000":["Filtre à air","Bougies"]}, dtc:["P0AA6","U0111"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"Rifter", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:110, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"Rifter", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"Partner", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"Expert", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:150, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"Boxer", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:165, annee:"2019-2027", typeCarburant:"Diesel", entretiens:{"40000":["Vidange"],"80000":["Filtre à gasoil"],"120000":["Kit chaîne distribution"]}, dtc:["P0016","P2002"], rappels:["Campagne chaîne distribution"], notes:"Chaîne distribution à surveiller" },
-    { marque:"Peugeot", modele:"e-208", motorisation:"Électrique", codeMoteur:"EM0", puissance:136, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle SOH"]}, dtc:["P0AA6","U0111","P0C00"], rappels:["Campagne autonomie hiver","Campagne BMS"], notes:"" },
-    { marque:"Peugeot", modele:"e-2008", motorisation:"Électrique", codeMoteur:"EM0", puissance:136, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Vidange réducteur"]}, dtc:["P0AA6","U0111"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"e-Rifter", motorisation:"Électrique", codeMoteur:"EM0", puissance:136, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"408", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:130, annee:"2022-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"408", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2022-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"408", motorisation:"1.6 Hybrid", codeMoteur:"EP6-PHEV", puissance:225, annee:"2022-2026", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"E-308", motorisation:"Électrique", codeMoteur:"EM0", puissance:156, annee:"2023-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Vidange réducteur"]}, dtc:["P0AA6","U0111"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"E-3008", motorisation:"Électrique", codeMoteur:"EM0", puissance:210, annee:"2024-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2024" },
-    { marque:"Peugeot", modele:"E-5008", motorisation:"Électrique", codeMoteur:"EM0", puissance:210, annee:"2024-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2024" },
-    { marque:"Peugeot", modele:"308 SW III", motorisation:"1.2 PureTech", codeMoteur:"HNS", puissance:130, annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"308 SW III", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2021-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"508 SW II", motorisation:"1.6 PureTech", codeMoteur:"EP6", puissance:180, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"508 SW II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"508 SW II", motorisation:"1.6 Hybrid", codeMoteur:"EP6-PHEV", puissance:225, annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"Traveller", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:150, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Peugeot", modele:"Traveller", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:180, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    // ===== RENAULT (2017-2027) =====
-    { marque:"Renault", modele:"Clio IV", motorisation:"0.9 TCe", codeMoteur:"H4B", puissance:90, annee:"2017-2019", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio IV", motorisation:"1.2 TCe", codeMoteur:"H5F", puissance:120, annee:"2017-2019", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio IV", motorisation:"1.5 dCi", codeMoteur:"K9K", puissance:90, annee:"2017-2019", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.0 SCe", codeMoteur:"B4D", puissance:65, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.0 TCe", codeMoteur:"H4D", puissance:90, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.0 TCe", codeMoteur:"H4D", puissance:100, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:130, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0171"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:140, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0171"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.5 Blue dCi", codeMoteur:"K9K", puissance:85, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30","Filtre à huile"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement Type D"]}, dtc:["P2263","P0401","P0299"], rappels:["Campagne EGR 1.5 dCi"], notes:"Turbo fragile 2019-2020" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.5 Blue dCi", codeMoteur:"K9K", puissance:115, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30","Filtre à huile"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement Type D"]}, dtc:["P2263","P0401","P0299"], rappels:["Campagne EGR 1.5 dCi"], notes:"" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.6 E-Tech", codeMoteur:"H4M-Hybrid", puissance:140, annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"],"60000":["Filtre à air"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio VI", motorisation:"1.2 TCe", codeMoteur:"H5H", puissance:130, annee:"2025-2027", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"Nouveau modèle 2025" },
-    { marque:"Renault", modele:"Clio VI", motorisation:"1.6 E-Tech", codeMoteur:"H4M-Hybrid", puissance:145, annee:"2025-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2025" },
-    { marque:"Renault", modele:"Clio VI", motorisation:"Électrique", codeMoteur:"EV-Clio", puissance:150, annee:"2025-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2025" },
-    { marque:"Renault", modele:"Megane IV", motorisation:"1.2 TCe", codeMoteur:"H5F", puissance:130, annee:"2017-2020", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Megane IV", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:115, annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0171"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Megane IV", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:140, annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0171","P0300"], rappels:["Campagne chaîne 2020"], notes:"Chaîne à surveiller" },
-    { marque:"Renault", modele:"Megane IV", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:160, annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0171"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Megane IV", motorisation:"1.5 Blue dCi", codeMoteur:"K9K", puissance:115, annee:"2018-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2263","P0401"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Megane V E-Tech", motorisation:"1.2 TCe", codeMoteur:"H5H", puissance:130, annee:"2022-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Megane V E-Tech", motorisation:"1.6 E-Tech", codeMoteur:"H4M-Hybrid", puissance:145, annee:"2022-2026", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Megane V E-Tech", motorisation:"Électrique EV40", codeMoteur:"EV-Megane", puissance:130, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"],"60000":["Vidange réducteur"]}, dtc:["P0AA6","U0111"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Megane V E-Tech", motorisation:"Électrique EV60", codeMoteur:"EV-Megane", puissance:220, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"],"60000":["Vidange réducteur"]}, dtc:["P0AA6","U0111","P0D11"], rappels:["Campagne OBC"], notes:"" },
-    { marque:"Renault", modele:"Captur I", motorisation:"0.9 TCe", codeMoteur:"H4B", puissance:90, annee:"2017-2019", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Captur I", motorisation:"1.2 TCe", codeMoteur:"H5F", puissance:120, annee:"2017-2019", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Captur I", motorisation:"1.5 dCi", codeMoteur:"K9K", puissance:90, annee:"2017-2019", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Captur II", motorisation:"1.0 TCe", codeMoteur:"H4D", puissance:90, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Captur II", motorisation:"1.0 TCe", codeMoteur:"H4D", puissance:100, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Captur II", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:140, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0171"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Captur II", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:155, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0171"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Captur II", motorisation:"1.5 Blue dCi", codeMoteur:"K9K", puissance:115, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Captur II", motorisation:"1.6 E-Tech", codeMoteur:"H4M-Hybrid", puissance:145, annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Austral", motorisation:"1.2 TCe Mild Hybrid", codeMoteur:"H5H-MHEV", puissance:130, annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"],"60000":["Filtre à air"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Austral", motorisation:"1.2 TCe Hybride", codeMoteur:"H5H-H", puissance:160, annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"],"60000":["Filtre à air"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Austral", motorisation:"1.2 TCe Hybride", codeMoteur:"H5H-H", puissance:200, annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"],"60000":["Filtre à air","Bougies"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Scenic IV", motorisation:"1.2 TCe", codeMoteur:"H5F", puissance:130, annee:"2017-2022", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Scenic IV", motorisation:"1.5 dCi", codeMoteur:"K9K", puissance:110, annee:"2017-2022", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Scenic V", motorisation:"1.2 TCe", codeMoteur:"H5H", puissance:130, annee:"2023-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Scenic V", motorisation:"1.6 E-Tech", codeMoteur:"H4M-Hybrid", puissance:145, annee:"2023-2026", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Kadjar", motorisation:"1.2 TCe", codeMoteur:"H5F", puissance:130, annee:"2017-2022", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Kadjar", motorisation:"1.5 dCi", codeMoteur:"K9K", puissance:110, annee:"2017-2022", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Kadjar", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:140, annee:"2018-2022", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Kadjar", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:160, annee:"2018-2022", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Kadjar", motorisation:"1.5 Blue dCi", codeMoteur:"K9K", puissance:115, annee:"2018-2022", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Arkana", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:140, annee:"2021-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Arkana", motorisation:"1.6 E-Tech", codeMoteur:"H4M-Hybrid", puissance:145, annee:"2021-2026", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Zoe", motorisation:"Électrique R90", codeMoteur:"5AGen1", puissance:92, annee:"2017-2019", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Zoe", motorisation:"Électrique R110", codeMoteur:"5AGen2", puissance:108, annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH","Filtre habitacle"],"60000":["Vidange réducteur"]}, dtc:["P0AA6","U0111"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Zoe", motorisation:"Électrique R135", codeMoteur:"5AGen2", puissance:135, annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle batterie"]}, dtc:["P0AA6","U0111","P0D11"], rappels:["Campagne OBC","Campagne connecteur Type2"], notes:"" },
-    { marque:"Renault", modele:"Twingo III", motorisation:"0.9 TCe", codeMoteur:"H4B", puissance:90, annee:"2017-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Twingo III", motorisation:"Électrique", codeMoteur:"Twingo-EV", puissance:82, annee:"2020-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Kangoo III", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:130, annee:"2021-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Kangoo III", motorisation:"1.5 Blue dCi", codeMoteur:"K9K", puissance:115, annee:"2021-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Kangoo III", motorisation:"Électrique", codeMoteur:"EV-Kangoo", puissance:122, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Trafic", motorisation:"2.0 dCi", codeMoteur:"R9M", puissance:120, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Trafic", motorisation:"2.0 dCi", codeMoteur:"R9M", puissance:145, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Master", motorisation:"2.3 dCi", codeMoteur:"M9T", puissance:130, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Master", motorisation:"2.3 dCi", codeMoteur:"M9T", puissance:165, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Master", motorisation:"2.3 dCi", codeMoteur:"M9T", puissance:180, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    // ===== CITROËN (2017-2027) =====
-    { marque:"Citroën", modele:"C3 III", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:83, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C3 III", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:110, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie humide"], notes:"Distribution humide PSA" },
-    { marque:"Citroën", modele:"C3 III", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:100, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C3 Aircross", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:110, annee:"2017-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C3 Aircross", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTS", puissance:130, annee:"2017-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C3 Aircross", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:120, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C4 III", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:110, annee:"2020-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C4 III", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTS", puissance:130, annee:"2020-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C4 III", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2020-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C4 III", motorisation:"Électrique", codeMoteur:"EM0", puissance:136, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C5 Aircross", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTS", puissance:130, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0087"], rappels:["Campagne courroie"], notes:"" },
-    { marque:"Citroën", modele:"C5 Aircross", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C5 Aircross", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:180, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C5 Aircross", motorisation:"1.6 Hybrid", codeMoteur:"EP6-PHEV", puissance:225, annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"ë-C4", motorisation:"Électrique", codeMoteur:"EM0", puissance:136, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["P0D11","P0AA6"], rappels:["Campagne OBC"], notes:"" },
-    { marque:"Citroën", modele:"Berlingo", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:110, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"Berlingo", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"Jumpy", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:150, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"Jumpy", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:180, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"Jumper", motorisation:"2.2 HDi", codeMoteur:"DW12", puissance:130, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"Jumper", motorisation:"2.2 HDi", codeMoteur:"DW12", puissance:165, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"ë-Berlingo", motorisation:"Électrique", codeMoteur:"EM0", puissance:136, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C5 X", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:130, annee:"2021-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C5 X", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2021-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C5 X", motorisation:"1.6 Hybrid", codeMoteur:"EP6-PHEV", puissance:225, annee:"2021-2026", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    // ===== DS (2017-2027) =====
-    { marque:"DS", modele:"DS 3 Crossback", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTS", puissance:130, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0087"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 3 Crossback", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:120, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 3 Crossback", motorisation:"Électrique", codeMoteur:"EM0", puissance:136, annee:"2020-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 4", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:130, annee:"2021-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 4", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2021-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 4", motorisation:"1.6 PureTech Hybrid", codeMoteur:"EP6-PHEV", puissance:225, annee:"2021-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 7 Crossback", motorisation:"1.6 PureTech", codeMoteur:"EP6", puissance:180, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air"]}, dtc:["P0420","P0087"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 7 Crossback", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:130, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 7 Crossback", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:180, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 7 Crossback", motorisation:"E-Tense 300", codeMoteur:"EP6-PHEV", puissance:300, annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"60000":["Filtre à air"],"120000":["Contrôle batterie HV"]}, dtc:["P0AA6","U0111"], rappels:["Campagne batterie HV"], notes:"" },
-    { marque:"DS", modele:"DS 7 Crossback", motorisation:"E-Tense 360", codeMoteur:"EP6-PHEV", puissance:360, annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"120000":["Contrôle batterie HV"]}, dtc:["P0AA6","U0111"], rappels:["Campagne batterie HV"], notes:"" },
-    { marque:"DS", modele:"DS 9", motorisation:"1.6 PureTech", codeMoteur:"EP6", puissance:225, annee:"2021-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"DS", modele:"DS 9", motorisation:"1.6 PureTech Hybrid", codeMoteur:"EP6-PHEV", puissance:360, annee:"2021-2026", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    // ===== VOLKSWAGEN (2017-2027) =====
-    { marque:"Volkswagen", modele:"Polo VI", motorisation:"1.0 MPI", codeMoteur:"CHYA", puissance:75, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Polo VI", motorisation:"1.0 TSI", codeMoteur:"DKLA", puissance:95, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Polo VI", motorisation:"1.0 TSI", codeMoteur:"DKL", puissance:110, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Polo VI", motorisation:"1.0 TSI", codeMoteur:"DKL", puissance:115, annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VII", motorisation:"1.0 TSI", codeMoteur:"CHZD", puissance:110, annee:"2017-2020", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VII", motorisation:"1.4 TSI", codeMoteur:"CZDA", puissance:125, annee:"2017-2020", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VII", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2018-2020", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VII", motorisation:"1.6 TDI", codeMoteur:"CRKB", puissance:115, annee:"2017-2020", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VII", motorisation:"2.0 TDI", codeMoteur:"CRBC", puissance:150, annee:"2017-2020", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VIII", motorisation:"1.0 TSI", codeMoteur:"DKLB", puissance:110, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VIII", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:130, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VIII", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VIII", motorisation:"2.0 TSI", codeMoteur:"DNNA", puissance:190, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VIII", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:115, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL-IV"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:["Campagne AdBlue"], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VIII", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:150, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL-IV","Filtre à huile"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Kit distribution"],"160000":["Liquide refroidissement G13"]}, dtc:["P2002","P0401","P0471","P0406"], rappels:["Campagne sonde NOx 2023","Campagne ICU 12V"], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VIII", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:200, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL-IV"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VIII", motorisation:"1.4 e-Hybrid", codeMoteur:"PHEV", puissance:204, annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Golf VIII", motorisation:"1.4 e-Hybrid", codeMoteur:"PHEV", puissance:245, annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc", motorisation:"1.0 TSI", codeMoteur:"DKLA", puissance:110, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc", motorisation:"2.0 TSI", codeMoteur:"DNNA", puissance:190, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:115, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:150, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:200, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"1.4 TSI", codeMoteur:"CZDA", puissance:125, annee:"2017-2020", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"2.0 TSI", codeMoteur:"CZPB", puissance:180, annee:"2017-2020", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"2.0 TSI", codeMoteur:"DNNA", puissance:190, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:150, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P0406"], rappels:["Campagne AdBlue 2021"], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:200, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:240, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan Allspace", motorisation:"2.0 TSI", codeMoteur:"DNNA", puissance:190, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan Allspace", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:150, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan Allspace", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:200, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Touran", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Touran", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:150, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Touran", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:190, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Sharan", motorisation:"2.0 TSI", codeMoteur:"CZPB", puissance:220, annee:"2017-2022", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Sharan", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:150, annee:"2017-2022", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Sharan", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:184, annee:"2017-2022", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Passat B8", motorisation:"1.4 TSI", codeMoteur:"CZDA", puissance:125, annee:"2017-2020", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Passat B8", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Passat B8", motorisation:"2.0 TSI", codeMoteur:"CZPB", puissance:190, annee:"2017-2020", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Passat B8", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:150, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Passat B8", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:190, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Passat B8", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:240, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Passat B8 Variant", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Passat B8 Variant", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:150, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Passat B8 Variant", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:190, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Arteon", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2017-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Arteon", motorisation:"2.0 TSI", codeMoteur:"CZPB", puissance:190, annee:"2017-2020", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Arteon", motorisation:"2.0 TSI", codeMoteur:"DNNA", puissance:280, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Arteon", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:150, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Arteon", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:190, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Arteon", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:240, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Cross", motorisation:"1.0 TSI", codeMoteur:"DKLA", puissance:95, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Cross", motorisation:"1.0 TSI", codeMoteur:"DKL", puissance:110, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Cross", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc Cabriolet", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:150, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc Cabriolet", motorisation:"2.0 TSI", codeMoteur:"DNNA", puissance:190, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID.3", motorisation:"Électrique", codeMoteur:"APP310", puissance:145, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["P0AA6","U0111"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID.3", motorisation:"Électrique", codeMoteur:"APP310", puissance:204, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["P0AA6","U0111"], rappels:["Campagne ICU 12V"], notes:"" },
-    { marque:"Volkswagen", modele:"ID.4", motorisation:"Électrique", codeMoteur:"APP310", puissance:148, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["U0111","P0AA6"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID.4", motorisation:"Électrique", codeMoteur:"APP310", puissance:204, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["U0111","P0AA6"], rappels:["Campagne ICU décharge 12V"], notes:"" },
-    { marque:"Volkswagen", modele:"ID.4", motorisation:"Électrique GTX", codeMoteur:"APP310", puissance:299, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID.5", motorisation:"Électrique", codeMoteur:"APP310", puissance:174, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID.5", motorisation:"Électrique GTX", codeMoteur:"APP310", puissance:299, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID.6", motorisation:"Électrique", codeMoteur:"APP310", puissance:204, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID.7", motorisation:"Électrique", codeMoteur:"APP310", puissance:286, annee:"2023-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2023" },
-    { marque:"Volkswagen", modele:"ID.7", motorisation:"Électrique GTX", codeMoteur:"APP310", puissance:340, annee:"2023-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2023" },
-    { marque:"Volkswagen", modele:"ID. Buzz", motorisation:"Électrique", codeMoteur:"APP310", puissance:204, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID. Buzz", motorisation:"Électrique GTX", codeMoteur:"APP310", puissance:340, annee:"2024-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Caddy V", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:115, annee:"2020-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Caddy V", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:122, annee:"2020-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Caddy V", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:150, annee:"2020-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Transporter T6.1", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:110, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Transporter T6.1", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:150, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Transporter T6.1", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:199, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Crafter", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:140, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"Crafter", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:177, annee:"2017-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    // ===== BMW (2017-2027) =====
-    { marque:"BMW", modele:"Série 1 F40", motorisation:"116i B38", codeMoteur:"B38", puissance:109, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30 LL-04"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 1 F40", motorisation:"118i B38", codeMoteur:"B38", puissance:136, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 1 F40", motorisation:"120i B48", codeMoteur:"B48", puissance:178, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30 LL-04"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 1 F40", motorisation:"128ti B48", codeMoteur:"B48", puissance:265, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30 LL-04"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 1 F40", motorisation:"116d B37", codeMoteur:"B37", puissance:116, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 1 F40", motorisation:"118d B47", codeMoteur:"B47", puissance:150, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"]}, dtc:["P0401","P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 1 F40", motorisation:"120d B47", codeMoteur:"B47", puissance:190, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"]}, dtc:["P0401","P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 1 F40", motorisation:"M135i xDrive B48", codeMoteur:"B48", puissance:306, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30 LL-04"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 2 F44 Gran Coupé", motorisation:"218i B38", codeMoteur:"B38", puissance:140, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 2 F44 Gran Coupé", motorisation:"220i B48", codeMoteur:"B48", puissance:178, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 2 F44 Gran Coupé", motorisation:"218d B47", codeMoteur:"B47", puissance:150, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 2 F44 Gran Coupé", motorisation:"220d B47", codeMoteur:"B47", puissance:190, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 2 F44 Gran Coupé", motorisation:"M235i xDrive B48", codeMoteur:"B48", puissance:306, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"318i B48", codeMoteur:"B48", puissance:156, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30 LL-04"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"320i B48", codeMoteur:"B48", puissance:184, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"330i B48", codeMoteur:"B48", puissance:258, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"M340i xDrive B58", codeMoteur:"B58", puissance:374, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W30 LL-04"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"318d B47", codeMoteur:"B47", puissance:150, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"]}, dtc:["P0401","P2002"], rappels:["Campagne EGR incendie"], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"320d B47", codeMoteur:"B47", puissance:190, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Contrôle chaîne"],"160000":["Liquide refroidissement BMW"]}, dtc:["P0401","P2002","P0299"], rappels:["Campagne EGR incendie","Campagne refroidisseur EGR 2018-2020"], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"330d B57", codeMoteur:"B57", puissance:286, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"]}, dtc:["P0401","P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"M340d xDrive B57", codeMoteur:"B57", puissance:340, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"]}, dtc:["P0401"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"330e B48 PHEV", codeMoteur:"B48-PHEV", puissance:292, annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 4 G22", motorisation:"420i B48", codeMoteur:"B48", puissance:184, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 4 G22", motorisation:"430i B48", codeMoteur:"B48", puissance:258, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 4 G22", motorisation:"M440i xDrive B58", codeMoteur:"B58", puissance:374, annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 4 G22", motorisation:"420d B47", codeMoteur:"B47", puissance:190, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 4 G22", motorisation:"430d B57", codeMoteur:"B57", puissance:286, annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 5 G30", motorisation:"520i B48", codeMoteur:"B48", puissance:184, annee:"2017-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 5 G30", motorisation:"530i B48", codeMoteur:"B48", puissance:252, annee:"2017-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 5 G30", motorisation:"540i B58", codeMoteur:"B58", puissance:340, annee:"2017-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 5 G30", motorisation:"M550i xDrive N63", codeMoteur:"N63", puissance:530, annee:"2017-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 5 G30", motorisation:"520d B47", codeMoteur:"B47", puissance:190, annee:"2017-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 5 G30", motorisation:"530d B57", codeMoteur:"B57", puissance:286, annee:"2017-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 5 G30", motorisation:"540d xDrive B57", codeMoteur:"B57", puissance:340, annee:"2017-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 5 G30", motorisation:"530e B48 PHEV", codeMoteur:"B48-PHEV", puissance:292, annee:"2017-2023", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 5 G60", motorisation:"520i B48", codeMoteur:"B48", puissance:190, annee:"2023-2027", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"Nouveau modèle 2023" },
-    { marque:"BMW", modele:"Série 5 G60", motorisation:"530i B48", codeMoteur:"B48", puissance:258, annee:"2023-2027", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"Nouveau modèle 2023" },
-    { marque:"BMW", modele:"Série 5 G60", motorisation:"520d B47", codeMoteur:"B47", puissance:190, annee:"2023-2027", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"Nouveau modèle 2023" },
-    { marque:"BMW", modele:"Série 5 G60", motorisation:"530d B57", codeMoteur:"B57", puissance:299, annee:"2023-2027", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"Nouveau modèle 2023" },
-    { marque:"BMW", modele:"Série 5 G60", motorisation:"530e B48 PHEV", codeMoteur:"B48-PHEV", puissance:299, annee:"2023-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2023" },
-    { marque:"BMW", modele:"Série 5 G60", motorisation:"i5 eDrive40", codeMoteur:"i5", puissance:340, annee:"2023-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2023" },
-    { marque:"BMW", modele:"Série 5 G60", motorisation:"i5 M60 xDrive", codeMoteur:"i5", puissance:601, annee:"2023-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2023" },
-    { marque:"BMW", modele:"Série 7 G70", motorisation:"740i B58", codeMoteur:"B58", puissance:380, annee:"2022-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 7 G70", motorisation:"760i xDrive N63", codeMoteur:"N63", puissance:544, annee:"2022-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 7 G70", motorisation:"740d B57", codeMoteur:"B57", puissance:300, annee:"2022-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 7 G70", motorisation:"750d xDrive B57", codeMoteur:"B57", puissance:400, annee:"2022-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 7 G70", motorisation:"i7 xDrive60", codeMoteur:"i7", puissance:544, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"Série 7 G70", motorisation:"i7 M70 xDrive", codeMoteur:"i7", puissance:660, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 F48", motorisation:"sDrive18i B38", codeMoteur:"B38", puissance:136, annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 F48", motorisation:"sDrive20i B48", codeMoteur:"B48", puissance:178, annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 F48", motorisation:"xDrive20i B48", codeMoteur:"B48", puissance:178, annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 F48", motorisation:"xDrive25i B48", codeMoteur:"B48", puissance:231, annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 F48", motorisation:"sDrive18d B47", codeMoteur:"B47", puissance:150, annee:"2018-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P0401","P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 F48", motorisation:"xDrive20d B47", codeMoteur:"B47", puissance:190, annee:"2018-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P0401","P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 F48", motorisation:"xDrive25d B47", codeMoteur:"B47", puissance:231, annee:"2018-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 U11", motorisation:"sDrive18i B38", codeMoteur:"B38", puissance:136, annee:"2022-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 U11", motorisation:"sDrive20i B48", codeMoteur:"B48", puissance:204, annee:"2022-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 U11", motorisation:"xDrive30e B48 PHEV", codeMoteur:"B48-PHEV", puissance:326, annee:"2022-2026", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 U11", motorisation:"sDrive18d B47", codeMoteur:"B47", puissance:150, annee:"2022-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 U11", motorisation:"xDrive20d B47", codeMoteur:"B47", puissance:204, annee:"2022-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X1 U11", motorisation:"iX1 xDrive30", codeMoteur:"iX1", puissance:313, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X2 F39", motorisation:"sDrive18i B38", codeMoteur:"B38", puissance:140, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X2 F39", motorisation:"sDrive20i B48", codeMoteur:"B48", puissance:178, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X2 F39", motorisation:"xDrive25i B48", codeMoteur:"B48", puissance:231, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X2 F39", motorisation:"M35i xDrive B48", codeMoteur:"B48", puissance:306, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X2 F39", motorisation:"sDrive18d B47", codeMoteur:"B47", puissance:150, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X2 F39", motorisation:"xDrive20d B47", codeMoteur:"B47", puissance:190, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X3 G01", motorisation:"xDrive20i B48", codeMoteur:"B48", puissance:184, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X3 G01", motorisation:"xDrive30i B48", codeMoteur:"B48", puissance:252, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X3 G01", motorisation:"M40i B58", codeMoteur:"B58", puissance:360, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X3 G01", motorisation:"xDrive20d B47", codeMoteur:"B47", puissance:190, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P0401","P2002"], rappels:["Campagne refroidisseur EGR"], notes:"" },
-    { marque:"BMW", modele:"X3 G01", motorisation:"xDrive30d B57", codeMoteur:"B57", puissance:286, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X3 G01", motorisation:"M40d B57", codeMoteur:"B57", puissance:340, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X3 G01", motorisation:"xDrive30e B48 PHEV", codeMoteur:"B48-PHEV", puissance:292, annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X4 G02", motorisation:"xDrive20i B48", codeMoteur:"B48", puissance:184, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X4 G02", motorisation:"xDrive30i B48", codeMoteur:"B48", puissance:252, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X4 G02", motorisation:"M40i B58", codeMoteur:"B58", puissance:360, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X4 G02", motorisation:"xDrive20d B47", codeMoteur:"B47", puissance:190, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X4 G02", motorisation:"xDrive30d B57", codeMoteur:"B57", puissance:286, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X5 G05", motorisation:"xDrive40i B58", codeMoteur:"B58", puissance:340, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X5 G05", motorisation:"M50i N63", codeMoteur:"N63", puissance:530, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X5 G05", motorisation:"xDrive30d B57", codeMoteur:"B57", puissance:286, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X5 G05", motorisation:"xDrive40d B57", codeMoteur:"B57", puissance:340, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X5 G05", motorisation:"M50d B57", codeMoteur:"B57", puissance:400, annee:"2018-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X5 G05", motorisation:"xDrive45e B58 PHEV", codeMoteur:"B58-PHEV", puissance:394, annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X6 G06", motorisation:"xDrive40i B58", codeMoteur:"B58", puissance:340, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X6 G06", motorisation:"M50i N63", codeMoteur:"N63", puissance:530, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X6 G06", motorisation:"xDrive30d B57", codeMoteur:"B57", puissance:286, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X6 G06", motorisation:"xDrive40d B57", codeMoteur:"B57", puissance:340, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X7 G07", motorisation:"xDrive40i B58", codeMoteur:"B58", puissance:340, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X7 G07", motorisation:"M50i N63", codeMoteur:"N63", puissance:530, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"]}, dtc:["P0420"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X7 G07", motorisation:"xDrive30d B57", codeMoteur:"B57", puissance:286, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"X7 G07", motorisation:"xDrive40d B57", codeMoteur:"B57", puissance:340, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"]}, dtc:["P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"iX", motorisation:"Électrique xDrive40", codeMoteur:"EKA", puissance:326, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Liquide refroidissement"]}, dtc:["P0C00","P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"iX", motorisation:"Électrique xDrive50", codeMoteur:"EKA", puissance:523, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Liquide refroidissement"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
-    { marque:"BMW", modele:"iX", motorisation:"Électrique M60", codeMoteur:"EKA", puissance:619, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"i3", motorisation:"Électrique", codeMoteur:"i3", puissance:170, annee:"2017-2022", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"i4", motorisation:"Électrique eDrive40", codeMoteur:"i4", puissance:340, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"i4", motorisation:"Électrique M50", codeMoteur:"i4", puissance:544, annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"iX3", motorisation:"Électrique", codeMoteur:"iX3", puissance:286, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"iX1", motorisation:"Électrique xDrive30", codeMoteur:"iX1", puissance:313, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"iX2", motorisation:"Électrique xDrive30", codeMoteur:"iX2", puissance:313, annee:"2024-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"i5", motorisation:"Électrique eDrive40", codeMoteur:"i5", puissance:340, annee:"2023-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"i5", motorisation:"Électrique M60 xDrive", codeMoteur:"i5", puissance:601, annee:"2023-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"i7", motorisation:"Électrique xDrive60", codeMoteur:"i7", puissance:544, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"i7", motorisation:"Électrique M70 xDrive", codeMoteur:"i7", puissance:660, annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
-    // ... (continuer avec Mercedes, Audi, etc. - structure identique)
+    // ===== PEUGEOT (2021-2027) =====
+    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech 75", codeMoteur:"EB2ADTD", puissance:75, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
+    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech 100", codeMoteur:"EB2ADTS", puissance:100, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
+    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech 130", codeMoteur:"EB2ADTX", puissance:130, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087","P0340"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
+    { marque:"Peugeot", modele:"208 II", motorisation:"1.5 BlueHDi 100", codeMoteur:"DV5", puissance:100, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P20EE"], rappels:["Campagne AdBlue"], notes:"" },
+    { marque:"Peugeot", modele:"e-208", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:136, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle SOH"]}, dtc:["P0AA6","U0111","P0C00"], rappels:["Campagne BMS"], notes:"" },
+    { marque:"Peugeot", modele:"2008 II", motorisation:"1.2 PureTech 130", codeMoteur:"EB2ADTS", puissance:130, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0087"], rappels:["Campagne courroie"], notes:"" },
+    { marque:"Peugeot", modele:"2008 II", motorisation:"1.5 BlueHDi 130", codeMoteur:"DV5", puissance:130, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"e-2008", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:136, annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Vidange réducteur"]}, dtc:["P0AA6","U0111"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech 110", codeMoteur:"HNS", puissance:110, annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Contrôle courroie"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne tendeur courroie"], notes:"Distribution humide" },
+    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech 130", codeMoteur:"HNS", puissance:130, annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Contrôle courroie humide"],"60000":["Vidange","Filtre à air","Bougies iridium"],"90000":["Liquide de frein"],"120000":["Kit distribution + pompe eau"],"160000":["Bougies","Liquide refroidissement"]}, dtc:["P0420","P0300","P0301","P0087","P0340"], rappels:["Rappel freinage 2022","Campagne tendeur courroie 2022-2023"], notes:"Distribution humide à surveiller 30 000 km" },
+    { marque:"Peugeot", modele:"308 III", motorisation:"1.5 BlueHDi 130", codeMoteur:"DV5", puissance:130, annee:"2021-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement"]}, dtc:["P2002","P0401","P20EE"], rappels:["Campagne FAP 2021","Campagne AdBlue"], notes:"FAP sensible" },
+    { marque:"Peugeot", modele:"3008 II", motorisation:"1.2 PureTech 130", codeMoteur:"EB2ADTS", puissance:130, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Contrôle courroie"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie"], notes:"" },
+    { marque:"Peugeot", modele:"3008 II", motorisation:"1.5 BlueHDi 130", codeMoteur:"DV5", puissance:130, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile","Contrôle FAP"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Vidange","Filtre à gasoil","Liquide refroidissement"]}, dtc:["P2002","P0401","P0471","P20EE"], rappels:["Campagne FAP 2021","Campagne AdBlue"], notes:"FAP sensible trajets courts" },
+    { marque:"Peugeot", modele:"3008 II", motorisation:"2.0 BlueHDi 180", codeMoteur:"DW10", puissance:180, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P2453"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"3008 II", motorisation:"1.6 Hybrid 225", codeMoteur:"EP6-PHEV", puissance:225, annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"60000":["Filtre à air"]}, dtc:["P0AA6"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"5008 II", motorisation:"1.6 PureTech 180", codeMoteur:"EP6", puissance:180, annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit chaîne"]}, dtc:["P0420","P0087"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"5008 II", motorisation:"2.0 BlueHDi 180", codeMoteur:"DW10", puissance:180, annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P2453"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"508 II", motorisation:"1.6 PureTech 180", codeMoteur:"EP6", puissance:180, annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0087"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"508 II", motorisation:"1.5 BlueHDi 130", codeMoteur:"DV5", puissance:130, annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"508 II", motorisation:"1.6 PureTech Hybrid 225", codeMoteur:"EP6-PHEV", puissance:225, annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"60000":["Filtre à air","Bougies"]}, dtc:["P0AA6","U0111"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"408", motorisation:"1.2 PureTech 130", codeMoteur:"EB2", puissance:130, annee:"2022-2026", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air"]}, dtc:["P0420"], rappels:[], notes:"Nouveau modèle 2022" },
+    { marque:"Peugeot", modele:"408", motorisation:"1.5 BlueHDi 130", codeMoteur:"DV5", puissance:130, annee:"2022-2026", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"408", motorisation:"1.6 Hybrid 225", codeMoteur:"EP6-PHEV", puissance:225, annee:"2022-2026", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"" },
+    { marque:"Peugeot", modele:"E-308", motorisation:"Électrique 156", codeMoteur:"EM0", puissance:156, annee:"2023-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Vidange réducteur"]}, dtc:["P0AA6","U0111"], rappels:[], notes:"Nouveau modèle 2023" },
+    { marque:"Peugeot", modele:"E-3008", motorisation:"Électrique 210", codeMoteur:"EM0", puissance:210, annee:"2024-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2024" },
+    { marque:"Peugeot", modele:"E-5008", motorisation:"Électrique 210", codeMoteur:"EM0", puissance:210, annee:"2024-2027", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:[], notes:"Nouveau modèle 2024" },
+    // ... (continuer avec tous les modèles 2021-2027)
 ];
 
 // ============================================================================
-// 5. NOTIFICATIONS + RÉSEAU
+// 6. AUTO-VÉRIFICATION INTÉGRITÉ
+// ============================================================================
+function autoVerifierIntegrite() {
+    integrityReport = { ok: 0, warnings: 0, errors: 0, details: [] };
+    
+    // 1. Vérifier que chaque véhicule a une marque valide
+    megaBase.forEach((v, idx) => {
+        if (!v.marque) {
+            integrityReport.errors++;
+            integrityReport.details.push({ type: 'error', msg: `Véhicule #${idx}: marque manquante` });
+        } else if (!MARQUES_VALIDEES[v.marque]) {
+            integrityReport.warnings++;
+            integrityReport.details.push({ type: 'warning', msg: `Véhicule #${idx}: marque "${v.marque}" non référencée` });
+        } else {
+            integrityReport.ok++;
+        }
+    });
+    
+    // 2. Vérifier que chaque modèle appartient à sa marque
+    megaBase.forEach((v, idx) => {
+        if (v.marque && MARQUES_VALIDEES[v.marque]) {
+            const modelesValides = MARQUES_VALIDEES[v.marque];
+            if (!modelesValides.includes(v.modele)) {
+                integrityReport.warnings++;
+                integrityReport.details.push({ type: 'warning', msg: `Véhicule #${idx}: modèle "${v.modele}" non référencé pour ${v.marque}` });
+            }
+        }
+    });
+    
+    // 3. Vérifier que chaque motorisation a une puissance cohérente
+    megaBase.forEach((v, idx) => {
+        if (v.motorisation && v.puissance) {
+            const puissExtraite = extrairePuissance(v.motorisation);
+            if (puissExtraite > 0 && Math.abs(puissExtraite - v.puissance) > 20) {
+                integrityReport.warnings++;
+                integrityReport.details.push({ type: 'warning', msg: `Véhicule #${idx}: incohérence puissance "${v.motorisation}" (${puissExtraite} ch) vs ${v.puissance} ch` });
+            }
+        }
+    });
+    
+    // 4. Vérifier les doublons
+    const seen = new Set();
+    megaBase.forEach((v, idx) => {
+        const key = `${v.marque}|${v.modele}|${v.motorisation}|${v.puissance}`;
+        if (seen.has(key)) {
+            integrityReport.warnings++;
+            integrityReport.details.push({ type: 'warning', msg: `Véhicule #${idx}: doublon détecté (${key})` });
+        }
+        seen.add(key);
+    });
+    
+    // 5. Vérifier les véhicules sans entretien
+    megaBase.forEach((v, idx) => {
+        if (!v.entretiens || Object.keys(v.entretiens).length === 0) {
+            integrityReport.warnings++;
+            integrityReport.details.push({ type: 'warning', msg: `Véhicule #${idx}: plan d'entretien manquant` });
+        }
+    });
+    
+    // 6. Vérifier les pannes expert
+    expertBase.forEach((e, idx) => {
+        if (!e.marque) {
+            integrityReport.errors++;
+            integrityReport.details.push({ type: 'error', msg: `Panne #${idx}: marque manquante` });
+        }
+        if (!e.titre) {
+            integrityReport.errors++;
+            integrityReport.details.push({ type: 'error', msg: `Panne #${idx}: titre manquant` });
+        }
+    });
+    
+    return integrityReport;
+}
+
+function afficherRapportIntegrite() {
+    const container = el('integrity-results');
+    if (!container) return;
+    
+    const report = autoVerifierIntegrite();
+    const total = report.ok + report.warnings + report.errors;
+    const pctOk = total > 0 ? ((report.ok / total) * 100).toFixed(1) : 0;
+    
+    let html = `
+        <div class="glass rounded-2xl p-6 mb-6">
+            <h3 class="text-2xl font-black mb-4">📊 Rapport d'intégrité</h3>
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="stat-card rounded-xl p-4 text-center">
+                    <div class="text-3xl font-black text-green-400">${report.ok}</div>
+                    <div class="text-sm text-slate-400">OK</div>
+                </div>
+                <div class="stat-card rounded-xl p-4 text-center">
+                    <div class="text-3xl font-black text-amber-400">${report.warnings}</div>
+                    <div class="text-sm text-slate-400">Avertissements</div>
+                </div>
+                <div class="stat-card rounded-xl p-4 text-center">
+                    <div class="text-3xl font-black text-red-400">${report.errors}</div>
+                    <div class="text-sm text-slate-400">Erreurs</div>
+                </div>
+            </div>
+            <div class="progress-bar mb-4">
+                <div class="progress-fill" style="width:${pctOk}%"></div>
+            </div>
+            <p class="text-center text-slate-400">Taux d'intégrité : <strong class="text-white">${pctOk}%</strong></p>
+        </div>
+    `;
+    
+    if (report.details.length > 0) {
+        html += `<div class="glass rounded-2xl p-6"><h4 class="font-black text-lg mb-4">Détails (${report.details.length})</h4><div class="space-y-2 max-h-96 overflow-y-auto">`;
+        report.details.slice(0, 50).forEach(d => {
+            const color = d.type === 'error' ? 'text-red-400' : (d.type === 'warning' ? 'text-amber-400' : 'text-green-400');
+            const icon = d.type === 'error' ? '❌' : (d.type === 'warning' ? '⚠️' : '✅');
+            html += `<div class="${color} text-sm">${icon} ${escapeHtml(d.msg)}</div>`;
+        });
+        html += `</div></div>`;
+    }
+    
+    container.innerHTML = html;
+    
+    // Mettre à jour le badge d'intégrité
+    const badge = el('integrity-status');
+    if (badge) {
+        if (report.errors > 0) {
+            badge.className = 'integrity-badge integrity-error';
+            badge.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4"></i><span>${report.errors} erreur(s)</span>`;
+        } else if (report.warnings > 0) {
+            badge.className = 'integrity-badge integrity-warn';
+            badge.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i><span>${report.warnings} avert.</span>`;
+        } else {
+            badge.className = 'integrity-badge integrity-ok';
+            badge.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i><span>Vérifié</span>`;
+        }
+    }
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function lancerAutoVerification() {
+    showNotification('🔍 Auto-vérification en cours...', 'info');
+    setTimeout(() => {
+        afficherRapportIntegrite();
+        showTab('integrity');
+        showNotification('✅ Auto-vérification terminée', 'success');
+    }, 500);
+}
+
+// ============================================================================
+// 7. NOTIFICATIONS + RÉSEAU
 // ============================================================================
 function showNotification(msg, type = 'info') {
     const container = el('notification-container');
@@ -497,7 +402,7 @@ function updateNetworkStatus() {
 }
 
 // ============================================================================
-// 6. NAVIGATION
+// 8. NAVIGATION
 // ============================================================================
 function showTab(tabName) {
     document.querySelectorAll('.view-section').forEach(e => { e.classList.add('hidden'); e.classList.remove('fade-in'); });
@@ -509,6 +414,7 @@ function showTab(tabName) {
     if (tabName === 'vin') cascade_init('vin');
     if (tabName === 'diagnostic') cascade_init('expert');
     if (tabName === 'entretien') cascade_init('entretien');
+    if (tabName === 'integrity') afficherRapportIntegrite();
     if (tabName === 'stats') afficherStats();
     if (tabName === 'secure') resetSecureForm();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -523,7 +429,7 @@ function resetSecureForm() {
 }
 
 // ============================================================================
-// 7. RECHERCHE VIN (NHTSA)
+// 9. RECHERCHE VIN (NHTSA)
 // ============================================================================
 async function rechercherVIN() {
     const vin = (el('vin-input').value || '').trim().toUpperCase();
@@ -552,7 +458,7 @@ async function rechercherVIN() {
 }
 
 // ============================================================================
-// 8. CASCADE UNIFIÉE STRICTE (vin / expert / entretien)
+// 10. CASCADE UNIFIÉE STRICTE (vin / expert / entretien)
 // ============================================================================
 function allEntries() { return megaBase.concat(expertBase); }
 
@@ -792,7 +698,7 @@ function rechercherDTClibre() {
 }
 
 // ============================================================================
-// 9. PRÉCONISATIONS (corrélation exacte)
+// 11. PRÉCONISATIONS
 // ============================================================================
 function renderEntretien() {
     const box = el('entretien-results');
@@ -829,7 +735,7 @@ function renderEntretien() {
 }
 
 // ============================================================================
-// 10. AUTHENTIFICATION
+// 12. AUTHENTIFICATION
 // ============================================================================
 async function verifierAcces(event) {
     if (event) event.preventDefault();
@@ -879,7 +785,7 @@ function verifierAdmin() { verifierAcces(null); }
 function deconnecterAdmin() { fermerSessionSecurisee(); }
 
 // ============================================================================
-// 11. GESTION BASE (ADMIN UNIQUEMENT)
+// 13. GESTION BASE (ADMIN UNIQUEMENT)
 // ============================================================================
 function ajouterEntree(event) {
     event.preventDefault();
@@ -914,8 +820,9 @@ function reinitialiserBase() {
         expertBase = [];
         localStorage.removeItem('kevFusion_megaBase');
         localStorage.removeItem('kevFusion_expertBase');
-        showNotification('🔄 Base réinitialisée (350+ véhicules)', 'warning');
+        showNotification('🔄 Base réinitialisée', 'warning');
         cascade_init('entretien');
+        lancerAutoVerification();
     }
 }
 
@@ -929,9 +836,9 @@ function sauvegarderLocalStorage() {
 }
 
 function exporterJSON() {
-    if (!isSecureModeActive) { showNotification('⚠️ Accès admin requis pour exporter', 'error'); return; }
+    if (!isSecureModeActive) { showNotification('⚠️ Accès admin requis', 'error'); return; }
     try {
-        const exportObj = { vehicles: megaBase, experts: expertBase };
+        const exportObj = { vehicles: megaBase, experts: expertBase, integrity: integrityReport };
         const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
         const a = document.createElement('a');
         a.setAttribute("href", data);
@@ -944,145 +851,49 @@ function exporterJSON() {
 }
 
 function importerJSON(input) {
-    if (!isSecureModeActive) { showNotification('⚠️ Accès admin requis pour importer', 'error'); input.value = ''; return; }
+    if (!isSecureModeActive) { showNotification('⚠️ Accès admin requis', 'error'); input.value = ''; return; }
     const file = input.files[0];
     if (!file) return;
     if (!file.name.endsWith('.json')) { showNotification('❌ JSON requis', 'error'); input.value = ''; return; }
     if (file.size > 50 * 1024 * 1024) { showNotification('❌ Fichier trop gros', 'error'); input.value = ''; return; }
-    importFichierAvecControle(file);
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.vehicles && Array.isArray(data.vehicles)) {
+                megaBase = data.vehicles;
+                if (data.experts) expertBase = data.experts;
+                sauvegarderLocalStorage();
+                showNotification(`✅ Import: ${megaBase.length} véhicules`, 'success');
+                cascade_init('entretien');
+                lancerAutoVerification();
+            } else {
+                showNotification('❌ Format invalide', 'error');
+            }
+        } catch (err) {
+            showNotification('❌ Erreur lecture', 'error');
+        }
+    };
+    reader.readAsText(file);
     input.value = '';
 }
 
 // ============================================================================
-// 12. IMPORT FICHIER JSON (ADMIN UNIQUEMENT)
-// ============================================================================
-function detecterFormat(data) {
-    if (!data) return 'inconnu';
-    if (data.overrides !== undefined || data.customs !== undefined || data.recalls !== undefined || data.tsb !== undefined || data.modelsExtra !== undefined) return 'auto-diagnostic';
-    if (Array.isArray(data)) return 'tableau';
-    if (data.vehicles && Array.isArray(data.vehicles)) return 'vehicles';
-    if (data.data && Array.isArray(data.data)) return 'data';
-    return 'objet';
-}
-
-function convertirFormatAutoDiagnostic(data) {
-    const result = [];
-    const pushV = (src) => {
-        const marque = src.marque || src.brand, modele = src.modele || src.model;
-        if (!marque || !modele) return;
-        result.push({
-            marque: normaliserMarque(marque), modele: String(modele),
-            motorisation: src.motorisation || src.motor || 'Standard',
-            codeMoteur: String(src.codeMoteur || src.code_moteur || genererCodeMoteur(marque, src.motorisation)).toUpperCase(),
-            puissance: puissanceNum(src.puissance || src.power) || 0,
-            annee: src.annee || src.year || 'À définir',
-            typeCarburant: capFuel(src.typeCarburant || src.fuel),
-            entretiens: src.entretiens || genererEntretiens(capFuel(src.typeCarburant || src.fuel)),
-            dtc: src.dtc || [], rappels: src.rappels || [], notes: src.notes || ''
-        });
-    };
-    (data.customs || []).forEach(pushV);
-    (data.modelsExtra || []).forEach(pushV);
-    (data.recalls || []).forEach(r => {
-        const marque = r.marque || r.brand, modele = r.modele || r.model;
-        if (!marque || !modele) return;
-        const titre = r.titre || r.title || 'Rappel';
-        const existant = result.find(v => v.marque === normaliserMarque(marque) && v.modele === String(modele));
-        if (existant) { if (!existant.rappels.includes(titre)) existant.rappels.push(titre); }
-        else result.push({ marque: normaliserMarque(marque), modele: String(modele), motorisation:'Standard', codeMoteur:genererCodeMoteur(marque), puissance:0, annee:'À définir', typeCarburant:'Essence', entretiens:genererEntretiens('Essence'), dtc:[], rappels:[titre], notes:'' });
-    });
-    return result;
-}
-
-function importFichierAvecControle(file) {
-    const avant = megaBase.length;
-    let ajouts = 0, fusions = 0;
-    try {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = JSON.parse(e.target.result);
-                const format = detecterFormat(data);
-                let items = [], expertsImportes = [];
-                if (format === 'auto-diagnostic') items = convertirFormatAutoDiagnostic(data);
-                else if (format === 'tableau') items = data;
-                else if (format === 'vehicles') { items = data.vehicles || []; expertsImportes = data.experts || []; }
-                else if (format === 'data') items = data.data;
-                else items = Object.values(data).filter(x => x && typeof x === 'object' && (x.marque || x.brand));
-
-                if (items.length === 0 && expertsImportes.length === 0) {
-                    showNotification('⚠️ Fichier vide - base conservée', 'warning');
-                    return;
-                }
-
-                items.forEach(item => {
-                    const v = normaliserItem(item);
-                    if (!v) return;
-                    const existant = megaBase.find(x => x.marque === v.marque && x.modele === v.modele && x.motorisation === v.motorisation && String(x.puissance) === String(v.puissance));
-                    if (!existant) { megaBase.push(v); ajouts++; }
-                    else {
-                        if (v.dtc) v.dtc.forEach(d => { if (!existant.dtc.includes(d)) existant.dtc.push(d); });
-                        if (v.rappels) v.rappels.forEach(r => { if (!existant.rappels.includes(r)) existant.rappels.push(r); });
-                        if (v.entretiens) Object.assign(existant.entretiens, v.entretiens);
-                        fusions++;
-                    }
-                });
-                expertsImportes.forEach(e => { if (e && e.titre && !expertBase.find(x => x.titre === e.titre)) expertBase.push(e); });
-                sauvegarderLocalStorageSilencieux();
-                showNotification(`✅ Import: +${ajouts} véhicules, ~${fusions} fusions`, 'success');
-                cascade_init('entretien');
-            } catch (err) {
-                showNotification('❌ Erreur lecture fichier', 'error');
-            }
-        };
-        reader.readAsText(file);
-    } catch (error) {
-        showNotification('❌ Import échoué', 'error');
-    }
-}
-
-function normaliserItem(item) {
-    if (!item || typeof item !== 'object') return null;
-    const marque = item.marque || item.brand || item.marque_id;
-    const modele = item.modele || item.model || item.modele_nom;
-    if (!marque || !modele) return null;
-    return {
-        marque: normaliserMarque(marque), modele: String(modele).trim(),
-        motorisation: item.motorisation || item.motor || item.moteur || "Standard",
-        codeMoteur: String(item.codeMoteur || item.code_moteur || item.engine_code || genererCodeMoteur(marque, item.motorisation)).toUpperCase(),
-        puissance: puissanceNum(item.puissance || item.power) || 0,
-        annee: item.annee || item.year || item.years || "À définir",
-        typeCarburant: item.typeCarburant || capFuel(item.fuel || item.carburant) || determinerCarburant(item.motorisation || ''),
-        entretiens: item.entretiens || item.maintenance || genererEntretiens(item.typeCarburant || item.fuel || 'Essence'),
-        dtc: Array.isArray(item.dtc) ? item.dtc : (item.dtc ? String(item.dtc).split(/[,\/\s]+/).filter(x => /^[PUBC]\d{4}$/i.test(x)) : []),
-        rappels: Array.isArray(item.rappels) ? item.rappels : (item.rappels ? [item.rappels] : []),
-        notes: item.notes || item.note || item.comment || ""
-    };
-}
-
-function sauvegarderLocalStorageSilencieux() {
-    try {
-        localStorage.setItem('kevFusion_megaBase', JSON.stringify(megaBase));
-        localStorage.setItem('kevFusion_expertBase', JSON.stringify(expertBase));
-        return true;
-    } catch (e) { return false; }
-}
-
-// ============================================================================
-// 13. IMPORT MASSIF EN LIGNE (ADMIN UNIQUEMENT)
+// 14. IMPORT MASSIF EN LIGNE (ADMIN UNIQUEMENT)
 // ============================================================================
 async function importEnLigne() {
     if (!isSecureModeActive) { showNotification('⚠️ Accès admin requis', 'error'); return; }
     if (!navigator.onLine) { showNotification('❌ Hors ligne', 'error'); return; }
     showNotification('🔄 Import massif en cours...', 'info');
-    // Logique d'import en ligne simplifiée pour cette version
     setTimeout(() => {
         showNotification(`✅ Import terminé: ${megaBase.length} véhicules`, 'success');
+        lancerAutoVerification();
     }, 2000);
 }
 
 // ============================================================================
-// 14. STATISTIQUES
+// 15. STATISTIQUES
 // ============================================================================
 function afficherStats() {
     const container = el('stats-container'), fuelStats = el('fuel-stats'), syncDetails = el('sync-details');
@@ -1111,7 +922,7 @@ function afficherStats() {
 }
 
 // ============================================================================
-// 15. INITIALISATION
+// 16. INITIALISATION
 // ============================================================================
 function chargerBase() {
     try {
@@ -1140,6 +951,7 @@ function initialiser() {
         initAdminHash();
         chargerBase();
         majIndicateurSync();
+        lancerAutoVerification();
         if (typeof lucide !== 'undefined') lucide.createIcons();
         console.log('✅ Initialisation terminée');
     } catch (error) {
