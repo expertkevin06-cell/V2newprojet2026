@@ -1,15 +1,43 @@
-const CACHE_NAME = 'kev-fusion-v2026-diagnostic';
+const CACHE_NAME = 'kev-fusion-v2026-final';
 const ASSETS = [
-    '/newprojet2026/', '/newprojet2026/index.html', '/newprojet2026/script.js',
-    '/newprojet2026/backup.js', '/newprojet2026/manifest.json'
+    '/newprojet2026/',
+    '/newprojet2026/index.html',
+    '/newprojet2026/script.js',
+    '/newprojet2026/manifest.json'
 ];
-self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS).catch(() => {})).then(() => self.skipWaiting())); });
-self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then(n => Promise.all(n.filter(x => x !== CACHE_NAME).map(x => caches.delete(x)))).then(() => self.clients.claim())); });
-self.addEventListener('fetch', (e) => {
-    if (e.request.method !== 'GET') return;
-    if (e.request.url.includes('api.nhtsa.gov') || e.request.url.includes('raw.githubusercontent.com')) {
-        e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(CACHE_NAME).then(x => x.put(e.request, c).catch(() => {})); return r; }).catch(() => caches.match(e.request)));
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(ASSETS).catch(e => console.warn('Cache error:', e)))
+            .then(() => self.skipWaiting())
+    );
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then(names => Promise.all(
+            names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))
+        )).then(() => self.clients.claim())
+    );
+});
+
+self.addEventListener('fetch', (event) => {
+    if (event.request.method !== 'GET') return;
+    if (event.request.url.includes('api.nhtsa.gov')) {
+        event.respondWith(
+            fetch(event.request)
+                .then(r => {
+                    const clone = r.clone();
+                    caches.open(CACHE_NAME).then(c => c.put(event.request, clone).catch(() => {}));
+                    return r;
+                })
+                .catch(() => caches.match(event.request))
+        );
         return;
     }
-    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => new Response('Offline', {status:503}))));
+    event.respondWith(
+        caches.match(event.request)
+            .then(r => r || fetch(event.request).catch(() => new Response('Offline', {status: 503})))
+    );
 });
