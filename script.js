@@ -12,74 +12,7 @@ let megaBase = [];
 let syncStatus = { autoDiagnostic: 'inactive', myTech: 'inactive', lastSync: null };
 
 // ==========================================
-// 2. MÉGA BASE INITIALE MASSIVE
-// ==========================================
-const MEGA_BASE_INITIALE = [
-    // FRANÇAISES
-    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech", codeMoteur:"HNS", puissance:"130 ch", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile","Contrôle courroie humide"],"60000":["Vidange","Filtre à huile","Filtre à air","Bougies iridium"],"90000":["Vidange","Filtre à huile","Liquide de frein DOT 4"],"120000":["Vidange","Kit distribution + pompe eau"],"160000":["Vidange","Bougies","Liquide refroidissement G12+"]}, dtc:["P0420","P0300","P0301","P0171","P0087","P0340"], rappels:["Rappel freinage 2022","Campagne tendeur courroie 2022-2023","Campagne pompe à huile 2017-2023"], notes:"Distribution humide à surveiller 30 000 km" },
-    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTD", puissance:"100 ch", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"],"160000":["Vidange","Bougies","Liquide refroidissement"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
-    { marque:"Peugeot", modele:"e-208", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle batterie HV","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle SOH","Liquide refroidissement HV"]}, dtc:["P0AA6","U0111","P0C00"], rappels:["Campagne autonomie hiver","Campagne BMS"], notes:"" },
-    { marque:"Peugeot", modele:"3008 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:"130 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile","Contrôle FAP"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Vidange","Filtre à gasoil","Liquide refroidissement"]}, dtc:["P2002","P0401","P0471","P20EE"], rappels:["Campagne FAP 2021","Campagne AdBlue"], notes:"FAP sensible trajets courts" },
-    { marque:"Peugeot", modele:"5008 II", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:"180 ch", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P2453"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Clio V", motorisation:"1.5 dCi", codeMoteur:"K9K", puissance:"85 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30","Filtre à huile"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement Type D"]}, dtc:["P2263","P0401","P0299"], rappels:["Campagne EGR 1.5 dCi"], notes:"Turbo fragile 2019-2020" },
-    { marque:"Renault", modele:"Megane IV", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:"140 ch", annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0171","P0300"], rappels:["Campagne chaîne 2020"], notes:"Chaîne à surveiller" },
-    { marque:"Renault", modele:"Captur II", motorisation:"1.0 TCe", codeMoteur:"H4D", puissance:"100 ch", annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Austral", motorisation:"1.2 TCe Hybride", codeMoteur:"H5H-H", puissance:"200 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"],"60000":["Filtre à air","Bougies"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Renault", modele:"Zoe", motorisation:"Électrique 135", codeMoteur:"5AGen2", puissance:"135 ch", annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle batterie"]}, dtc:["P0AA6","U0111","P0D11"], rappels:["Campagne OBC","Campagne connecteur Type2"], notes:"" },
-    { marque:"Citroën", modele:"C5 Aircross", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:"130 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Citroën", modele:"C3 III", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:"110 ch", annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie humide"], notes:"Distribution humide PSA" },
-    { marque:"Citroën", modele:"ë-C4", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["P0D11","P0AA6"], rappels:["Campagne OBC"], notes:"" },
-    { marque:"DS", modele:"DS 7 Crossback", motorisation:"E-Tense 300", codeMoteur:"EP6-PHEV", puissance:"300 ch", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"60000":["Filtre à air"],"120000":["Contrôle batterie HV"]}, dtc:["P0AA6","U0111"], rappels:["Campagne batterie HV"], notes:"" },
-    // ALLEMANDES
-    { marque:"Volkswagen", modele:"Golf 8", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL-IV","Filtre à huile"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Kit distribution"],"160000":["Liquide refroidissement G13"]}, dtc:["P2002","P0401","P0471","P0406"], rappels:["Campagne sonde NOx 2023","Campagne ICU 12V"], notes:"" },
-    { marque:"Volkswagen", modele:"T-Roc", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:"150 ch", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Volkswagen", modele:"ID.4", motorisation:"Électrique 204", codeMoteur:"APP310", puissance:"204 ch", annee:"2021-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["U0111","P0AA6"], rappels:["Campagne ICU décharge 12V"], notes:"" },
-    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:"150 ch", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P0406"], rappels:["Campagne AdBlue 2021"], notes:"" },
-    { marque:"BMW", modele:"Série 3 G20", motorisation:"2.0d B47", codeMoteur:"B47", puissance:"190 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Contrôle chaîne"],"160000":["Liquide refroidissement BMW"]}, dtc:["P0401","P2002","P0299"], rappels:["Campagne EGR incendie","Campagne refroidisseur EGR 2018-2020"], notes:"" },
-    { marque:"BMW", modele:"X1 F48", motorisation:"1.8d B47", codeMoteur:"B47", puissance:"150 ch", annee:"2018-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P0401","P2002"], rappels:[], notes:"" },
-    { marque:"BMW", modele:"iX", motorisation:"Électrique 523", codeMoteur:"EKA", puissance:"523 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Liquide refroidissement"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
-    { marque:"Mercedes-Benz", modele:"Classe A W177", motorisation:"A 200d OM654", codeMoteur:"OM654", puissance:"150 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"25000":["Vidange 5W30 MB"],"50000":["Filtre à gasoil"],"75000":["Liquide de frein"],"100000":["Filtre à air"],"125000":["Liquide refroidissement MB"]}, dtc:["P0401","P2002","P0234","P20EE"], rappels:["Campagne injecteur AdBlue","Campagne alterno-démarreur 48V"], notes:"" },
-    { marque:"Audi", modele:"A3 8Y", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P0406"], rappels:[], notes:"" },
-    { marque:"Audi", modele:"e-tron", motorisation:"Électrique 408", codeMoteur:"UA1", puissance:"408 ch", annee:"2019-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
-    { marque:"Porsche", modele:"Taycan", motorisation:"Électrique 761", codeMoteur:"Taycan", puissance:"761 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
-    { marque:"Opel", modele:"Corsa F", motorisation:"1.2 Turbo", codeMoteur:"EB2ADTD", puissance:"130 ch", annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0301","P0087"], rappels:["Campagne courroie humide"], notes:"" },
-    { marque:"Opel", modele:"Corsa-e", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2020-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11"], rappels:["Campagne OBC"], notes:"" },
-    // ASIATIQUES
-    { marque:"Toyota", modele:"Yaris Cross", motorisation:"1.5 Hybride", codeMoteur:"M15A-FXE", puissance:"116 ch", annee:"2021-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W16","Contrôle hybride"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"90000":["Liquide de frein"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"Chaîne - Très fiable" },
-    { marque:"Toyota", modele:"RAV4 V", motorisation:"2.5 Hybride", codeMoteur:"A25A-FXS", puissance:"218 ch", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W20"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies iridium"]}, dtc:[], rappels:["Campagne pompe à carburant 2019-2020"], notes:"Chaîne - Très fiable" },
-    { marque:"Toyota", modele:"Corolla XII", motorisation:"1.8 Hybride", codeMoteur:"2ZR-FXE", puissance:"122 ch", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Hyundai", modele:"Tucson IV", motorisation:"1.6 CRDi", codeMoteur:"D4FE", puissance:"136 ch", annee:"2021-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 C3"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:["Campagne logiciel FAP"], notes:"" },
-    { marque:"Hyundai", modele:"Ioniq 5", motorisation:"Électrique 325", codeMoteur:"EM17", puissance:"325 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111","P0AA6"], rappels:["Campagne ICCU"], notes:"ICCU défaillant" },
-    { marque:"Hyundai", modele:"Kona EV", motorisation:"Électrique 204", codeMoteur:"EM16", puissance:"204 ch", annee:"2018-2022", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne incendie batterie"], notes:"Risque incendie" },
-    { marque:"Kia", modele:"Sportage V", motorisation:"1.6 T-GDi Hybride", codeMoteur:"G4FT", puissance:"230 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W20"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
-    { marque:"Kia", modele:"EV6", motorisation:"Électrique 585", codeMoteur:"EM21", puissance:"585 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111"], rappels:["Campagne ICCU"], notes:"" },
-    { marque:"Nissan", modele:"Leaf", motorisation:"Électrique 150", codeMoteur:"EM57", puissance:"150 ch", annee:"2018-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH"]}, dtc:[], rappels:["Campagne SOH batterie"], notes:"Perte autonomie" },
-    { marque:"Nissan", modele:"Qashqai III", motorisation:"1.3 DIG-T", codeMoteur:"HR13DDT", puissance:"158 ch", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    { marque:"Honda", modele:"HR-V III", motorisation:"1.5 e:HEV", codeMoteur:"LEB", puissance:"131 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"20000":["Vidange 0W20"],"40000":["Filtre habitacle"],"60000":["Filtre à air"],"100000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
-    // AMÉRICAINES
-    { marque:"Tesla", modele:"Model 3/Y", motorisation:"Électrique", codeMoteur:"Tesla", puissance:"Multi", annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"]}, dtc:["U0101","P0AA6"], rappels:["Campagne freinage fantôme 2023","Campagne eMMC MCU","Campagne contacteurs HV","Campagne suspension AV"], notes:"Multiples campagnes NHTSA" },
-    { marque:"Ford", modele:"Kuga III", motorisation:"2.5 PHEV", codeMoteur:"PHEV", puissance:"225 ch", annee:"2020-2022", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne batterie HV incendie"], notes:"Risque incendie" },
-    { marque:"Ford", modele:"Puma", motorisation:"1.0 EcoBoost Hybrid", codeMoteur:"B3JA", puissance:"155 ch", annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange 5W20"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
-    // ITALIENNES
-    { marque:"Fiat", modele:"500e", motorisation:"Électrique 118", codeMoteur:"500e", puissance:"118 ch", annee:"2021-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11"], rappels:["Campagne OBC"], notes:"" },
-    { marque:"Alfa Romeo", modele:"Giulia II", motorisation:"2.2 JTDm", codeMoteur:"940A", puissance:"180 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Jeep", modele:"Compass II", motorisation:"1.6 Multijet", codeMoteur:"55283860", puissance:"120 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    // AUTRES EUROPÉENNES
-    { marque:"Volvo", modele:"XC40 I", motorisation:"D4", codeMoteur:"D4204T14", puissance:"190 ch", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W20 VCC"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Volvo", modele:"EX30", motorisation:"Électrique 428", codeMoteur:"EX30", puissance:"428 ch", annee:"2023-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6","P0C00"], rappels:["Campagne BMS surchauffe"], notes:"" },
-    { marque:"Dacia", modele:"Spring", motorisation:"Électrique 45", codeMoteur:"Spring", puissance:"45 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11","P0562","C1365"], rappels:["Campagne servofrein","Campagne OBC","Campagne DC-DC"], notes:"Multiples campagnes" },
-    { marque:"Dacia", modele:"Bigster", motorisation:"Hybrid 155", codeMoteur:"Bigster-H", puissance:"155 ch", annee:"2025-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange"]}, dtc:["P0700"], rappels:["Campagne ressorts AR","Campagne boîte DCT"], notes:"Ressorts AR diamètre fil insuffisant" },
-    { marque:"Skoda", modele:"Octavia IV", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Seat", modele:"Leon IV", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
-    { marque:"Cupra", modele:"Born", motorisation:"Électrique 231", codeMoteur:"Born", puissance:"231 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne logiciel HV"], notes:"" },
-    { marque:"Polestar", modele:"Polestar 2", motorisation:"Électrique 476", codeMoteur:"PS2", puissance:"476 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne capteurs isolement"], notes:"" },
-    // CHINOISES
-    { marque:"BYD", modele:"Seal U DM-i", motorisation:"DM-i 218", codeMoteur:"BYD-DMi", puissance:"218 ch", annee:"2026-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange"]}, dtc:["P0087"], rappels:["Campagne pompe huile DM-i"], notes:"" },
-    { marque:"MG", modele:"MG4", motorisation:"Électrique 204", codeMoteur:"MG4", puissance:"204 ch", annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111"], rappels:["Campagne 12V / DC-DC"], notes:"" }
-];
-
-// ==========================================
-// 3. FONCTIONS UTILITAIRES (DÉFINIES EN PREMIER)
+// 2. FONCTIONS UTILITAIRES (DÉFINIES EN PREMIER)
 // ==========================================
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -114,43 +47,102 @@ function genererCodeMoteur(brand, motor) {
 
 function determinerCarburant(motor, type, title) {
     const text = `${motor || ''} ${type || ''} ${title || ''}`.toLowerCase();
-    if (text.includes('electrique') || text.includes('év') || text.includes('ev') || text.includes('bms') || text.includes('o-b-c') || text.includes('iccu') || text.includes('électrique')) return 'Électrique';
+    if (text.includes('electrique') || text.includes('électrique') || text.includes('bms') || text.includes('iccu') || text.includes('obc')) return 'Électrique';
     if (text.includes('hybride') || text.includes('hybrid') || text.includes('phev') || text.includes('e-tech') || text.includes('dm-i') || text.includes('e:hev')) return 'Hybride';
     if (text.includes('diesel') || text.includes('tdi') || text.includes('dci') || text.includes('bluehdi') || text.includes('crdi') || text.includes('multijet') || text.includes('fap') || text.includes('adblue') || text.includes('jtd')) return 'Diesel';
     return 'Essence';
 }
 
 // ==========================================
-// 4. HASHAGE MOT DE PASSE
+// 3. HASHAGE MOT DE PASSE (avec fallback WebView)
 // ==========================================
 async function hashPassword(password) {
     try {
-        if (!window.crypto || !window.crypto.subtle) {
-            // Fallback pour APK WebView sans crypto.subtle
-            let hash = 0;
-            const str = password + SECURITY_SALT;
-            for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash |= 0;
-            }
-            return 'hash_' + Math.abs(hash).toString(16);
+        if (window.crypto && window.crypto.subtle) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password + SECURITY_SALT);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password + SECURITY_SALT);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     } catch (e) {
-        console.error('Hash error:', e);
-        return '';
+        console.warn('crypto.subtle indisponible, fallback utilisé');
     }
+    // Fallback pour WebView Android sans crypto.subtle
+    let hash = 0;
+    const str = password + SECURITY_SALT;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0;
+    }
+    return 'fallback_' + Math.abs(hash).toString(16).padStart(8, '0');
 }
 
 async function initAdminHash() {
     ADMIN_HASH = await hashPassword('Kevin83600');
-    console.log('✅ Hash admin initialisé:', ADMIN_HASH.substring(0, 16) + '...');
+    console.log('✅ Hash admin initialisé');
 }
+
+// ==========================================
+// 4. MÉGA BASE INITIALE MASSIVE (52 véhicules)
+// ==========================================
+const MEGA_BASE_INITIALE = [
+    { marque:"Peugeot", modele:"308 III", motorisation:"1.2 PureTech", codeMoteur:"HNS", puissance:"130 ch", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile","Contrôle courroie humide"],"60000":["Vidange","Filtre à huile","Filtre à air","Bougies iridium"],"90000":["Vidange","Filtre à huile","Liquide de frein DOT 4"],"120000":["Vidange","Kit distribution + pompe eau"],"160000":["Vidange","Bougies","Liquide refroidissement G12+"]}, dtc:["P0420","P0300","P0301","P0171","P0087","P0340"], rappels:["Rappel freinage 2022","Campagne tendeur courroie 2022-2023","Campagne pompe à huile 2017-2023"], notes:"Distribution humide à surveiller 30 000 km" },
+    { marque:"Peugeot", modele:"208 II", motorisation:"1.2 PureTech", codeMoteur:"EB2ADTD", puissance:"100 ch", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution humide"],"160000":["Vidange","Bougies","Liquide refroidissement"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie 2022-2023"], notes:"Distribution humide PSA" },
+    { marque:"Peugeot", modele:"e-208", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle batterie HV","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle SOH","Liquide refroidissement HV"]}, dtc:["P0AA6","U0111","P0C00"], rappels:["Campagne autonomie hiver","Campagne BMS"], notes:"" },
+    { marque:"Peugeot", modele:"3008 II", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:"130 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30","Filtre à huile","Contrôle FAP"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Vidange","Filtre à gasoil","Liquide refroidissement"]}, dtc:["P2002","P0401","P0471","P20EE"], rappels:["Campagne FAP 2021","Campagne AdBlue"], notes:"FAP sensible trajets courts" },
+    { marque:"Peugeot", modele:"5008 II", motorisation:"2.0 BlueHDi", codeMoteur:"DW10", puissance:"180 ch", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P2453"], rappels:[], notes:"" },
+    { marque:"Renault", modele:"Clio V", motorisation:"1.5 dCi", codeMoteur:"K9K", puissance:"85 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30","Filtre à huile"],"60000":["Vidange","Filtre à gasoil"],"120000":["Kit distribution"],"160000":["Liquide refroidissement Type D"]}, dtc:["P2263","P0401","P0299"], rappels:["Campagne EGR 1.5 dCi"], notes:"Turbo fragile 2019-2020" },
+    { marque:"Renault", modele:"Megane IV", motorisation:"1.3 TCe", codeMoteur:"H5H", puissance:"140 ch", annee:"2018-2023", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40","Filtre à huile"],"60000":["Vidange","Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0171","P0300"], rappels:["Campagne chaîne 2020"], notes:"Chaîne à surveiller" },
+    { marque:"Renault", modele:"Captur II", motorisation:"1.0 TCe", codeMoteur:"H4D", puissance:"100 ch", annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
+    { marque:"Renault", modele:"Austral", motorisation:"1.2 TCe Hybride", codeMoteur:"H5H-H", puissance:"200 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle hybride"],"60000":["Filtre à air","Bougies"]}, dtc:[], rappels:[], notes:"" },
+    { marque:"Renault", modele:"Zoe", motorisation:"Électrique 135", codeMoteur:"5AGen2", puissance:"135 ch", annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH","Filtre habitacle"],"60000":["Vidange réducteur"],"120000":["Contrôle batterie"]}, dtc:["P0AA6","U0111","P0D11"], rappels:["Campagne OBC","Campagne connecteur Type2"], notes:"" },
+    { marque:"Citroën", modele:"C5 Aircross", motorisation:"1.5 BlueHDi", codeMoteur:"DV5", puissance:"130 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Citroën", modele:"C3 III", motorisation:"1.2 PureTech", codeMoteur:"EB2", puissance:"110 ch", annee:"2018-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0087"], rappels:["Campagne courroie humide"], notes:"Distribution humide PSA" },
+    { marque:"Citroën", modele:"ë-C4", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["P0D11","P0AA6"], rappels:["Campagne OBC"], notes:"" },
+    { marque:"DS", modele:"DS 7 Crossback", motorisation:"E-Tense 300", codeMoteur:"EP6-PHEV", puissance:"300 ch", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"],"60000":["Filtre à air"],"120000":["Contrôle batterie HV"]}, dtc:["P0AA6","U0111"], rappels:["Campagne batterie HV"], notes:"" },
+    { marque:"Volkswagen", modele:"Golf 8", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL-IV","Filtre à huile"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Kit distribution"],"160000":["Liquide refroidissement G13"]}, dtc:["P2002","P0401","P0471","P0406"], rappels:["Campagne sonde NOx 2023","Campagne ICU 12V"], notes:"" },
+    { marque:"Volkswagen", modele:"T-Roc", motorisation:"1.5 TSI", codeMoteur:"DPCA", puissance:"150 ch", annee:"2019-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 5W40"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
+    { marque:"Volkswagen", modele:"ID.4", motorisation:"Électrique 204", codeMoteur:"APP310", puissance:"204 ch", annee:"2021-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"],"60000":["Vidange réducteur"]}, dtc:["U0111","P0AA6"], rappels:["Campagne ICU décharge 12V"], notes:"" },
+    { marque:"Volkswagen", modele:"Tiguan II", motorisation:"2.0 TDI", codeMoteur:"DFG", puissance:"150 ch", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P0406"], rappels:["Campagne AdBlue 2021"], notes:"" },
+    { marque:"BMW", modele:"Série 3 G20", motorisation:"2.0d B47", codeMoteur:"B47", puissance:"190 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W30 LL-04"],"60000":["Filtre à gasoil"],"90000":["Liquide de frein"],"120000":["Contrôle chaîne"],"160000":["Liquide refroidissement BMW"]}, dtc:["P0401","P2002","P0299"], rappels:["Campagne EGR incendie","Campagne refroidisseur EGR 2018-2020"], notes:"" },
+    { marque:"BMW", modele:"X1 F48", motorisation:"1.8d B47", codeMoteur:"B47", puissance:"150 ch", annee:"2018-2023", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P0401","P2002"], rappels:[], notes:"" },
+    { marque:"BMW", modele:"iX", motorisation:"Électrique 523", codeMoteur:"EKA", puissance:"523 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"],"60000":["Liquide refroidissement"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
+    { marque:"Mercedes-Benz", modele:"Classe A W177", motorisation:"A 200d OM654", codeMoteur:"OM654", puissance:"150 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"25000":["Vidange 5W30 MB"],"50000":["Filtre à gasoil"],"75000":["Liquide de frein"],"100000":["Filtre à air"],"125000":["Liquide refroidissement MB"]}, dtc:["P0401","P2002","P0234","P20EE"], rappels:["Campagne injecteur AdBlue","Campagne alterno-démarreur 48V"], notes:"" },
+    { marque:"Audi", modele:"A3 8Y", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 LL"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401","P0406"], rappels:[], notes:"" },
+    { marque:"Audi", modele:"e-tron", motorisation:"Électrique 408", codeMoteur:"UA1", puissance:"408 ch", annee:"2019-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
+    { marque:"Porsche", modele:"Taycan", motorisation:"Électrique 761", codeMoteur:"Taycan", puissance:"761 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0C00","P0AA6"], rappels:["Campagne charge DC bridée"], notes:"" },
+    { marque:"Opel", modele:"Corsa F", motorisation:"1.2 Turbo", codeMoteur:"EB2ADTD", puissance:"130 ch", annee:"2020-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange 0W20"],"120000":["Kit distribution humide"]}, dtc:["P0420","P0300","P0301","P0087"], rappels:["Campagne courroie humide"], notes:"" },
+    { marque:"Opel", modele:"Corsa-e", motorisation:"Électrique 136", codeMoteur:"EM0", puissance:"136 ch", annee:"2020-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11"], rappels:["Campagne OBC"], notes:"" },
+    { marque:"Toyota", modele:"Yaris Cross", motorisation:"1.5 Hybride", codeMoteur:"M15A-FXE", puissance:"116 ch", annee:"2021-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W16","Contrôle hybride"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"90000":["Liquide de frein"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"Chaîne - Très fiable" },
+    { marque:"Toyota", modele:"RAV4 V", motorisation:"2.5 Hybride", codeMoteur:"A25A-FXS", puissance:"218 ch", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W20"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies iridium"]}, dtc:[], rappels:["Campagne pompe à carburant 2019-2020"], notes:"Chaîne - Très fiable" },
+    { marque:"Toyota", modele:"Corolla XII", motorisation:"1.8 Hybride", codeMoteur:"2ZR-FXE", puissance:"122 ch", annee:"2019-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
+    { marque:"Hyundai", modele:"Tucson IV", motorisation:"1.6 CRDi", codeMoteur:"D4FE", puissance:"136 ch", annee:"2021-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 5W30 C3"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:["Campagne logiciel FAP"], notes:"" },
+    { marque:"Hyundai", modele:"Ioniq 5", motorisation:"Électrique 325", codeMoteur:"EM17", puissance:"325 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111","P0AA6"], rappels:["Campagne ICCU"], notes:"ICCU défaillant" },
+    { marque:"Hyundai", modele:"Kona EV", motorisation:"Électrique 204", codeMoteur:"EM16", puissance:"204 ch", annee:"2018-2022", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne incendie batterie"], notes:"Risque incendie" },
+    { marque:"Kia", modele:"Sportage V", motorisation:"1.6 T-GDi Hybride", codeMoteur:"G4FT", puissance:"230 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"15000":["Vidange 0W20"],"30000":["Filtre habitacle"],"60000":["Filtre à air"],"120000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
+    { marque:"Kia", modele:"EV6", motorisation:"Électrique 585", codeMoteur:"EM21", puissance:"585 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111"], rappels:["Campagne ICCU"], notes:"" },
+    { marque:"Nissan", modele:"Leaf", motorisation:"Électrique 150", codeMoteur:"EM57", puissance:"150 ch", annee:"2018-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle SOH"]}, dtc:[], rappels:["Campagne SOH batterie"], notes:"Perte autonomie" },
+    { marque:"Nissan", modele:"Qashqai III", motorisation:"1.3 DIG-T", codeMoteur:"HR13DDT", puissance:"158 ch", annee:"2021-2024", typeCarburant:"Essence", entretiens:{"30000":["Vidange"],"60000":["Filtre à air","Bougies"],"120000":["Kit distribution"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
+    { marque:"Honda", modele:"HR-V III", motorisation:"1.5 e:HEV", codeMoteur:"LEB", puissance:"131 ch", annee:"2022-2024", typeCarburant:"Hybride", entretiens:{"20000":["Vidange 0W20"],"40000":["Filtre habitacle"],"60000":["Filtre à air"],"100000":["Bougies"]}, dtc:[], rappels:[], notes:"" },
+    { marque:"Tesla", modele:"Model 3/Y", motorisation:"Électrique", codeMoteur:"Tesla", puissance:"Multi", annee:"2019-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV","Filtre habitacle"]}, dtc:["U0101","P0AA6"], rappels:["Campagne freinage fantôme 2023","Campagne eMMC MCU","Campagne contacteurs HV","Campagne suspension AV"], notes:"Multiples campagnes NHTSA" },
+    { marque:"Ford", modele:"Kuga III", motorisation:"2.5 PHEV", codeMoteur:"PHEV", puissance:"225 ch", annee:"2020-2022", typeCarburant:"Hybride", entretiens:{"30000":["Vidange","Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne batterie HV incendie"], notes:"Risque incendie" },
+    { marque:"Ford", modele:"Puma", motorisation:"1.0 EcoBoost Hybrid", codeMoteur:"B3JA", puissance:"155 ch", annee:"2020-2024", typeCarburant:"Hybride", entretiens:{"30000":["Vidange 5W20"],"60000":["Filtre à air","Bougies"]}, dtc:["P0420","P0300"], rappels:[], notes:"" },
+    { marque:"Fiat", modele:"500e", motorisation:"Électrique 118", codeMoteur:"500e", puissance:"118 ch", annee:"2021-2024", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11"], rappels:["Campagne OBC"], notes:"" },
+    { marque:"Alfa Romeo", modele:"Giulia II", motorisation:"2.2 JTDm", codeMoteur:"940A", puissance:"180 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Contrôle chaîne"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Jeep", modele:"Compass II", motorisation:"1.6 Multijet", codeMoteur:"55283860", puissance:"120 ch", annee:"2019-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Volvo", modele:"XC40 I", motorisation:"D4", codeMoteur:"D4204T14", puissance:"190 ch", annee:"2018-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange 0W20 VCC"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Volvo", modele:"EX30", motorisation:"Électrique 428", codeMoteur:"EX30", puissance:"428 ch", annee:"2023-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6","P0C00"], rappels:["Campagne BMS surchauffe"], notes:"" },
+    { marque:"Dacia", modele:"Spring", motorisation:"Électrique 45", codeMoteur:"Spring", puissance:"45 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle"]}, dtc:["P0D11","P0562","C1365"], rappels:["Campagne servofrein","Campagne OBC","Campagne DC-DC"], notes:"Multiples campagnes" },
+    { marque:"Dacia", modele:"Bigster", motorisation:"Hybrid 155", codeMoteur:"Bigster-H", puissance:"155 ch", annee:"2025-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange"]}, dtc:["P0700"], rappels:["Campagne ressorts AR","Campagne boîte DCT"], notes:"Ressorts AR diamètre fil insuffisant" },
+    { marque:"Skoda", modele:"Octavia IV", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Seat", modele:"Leon IV", motorisation:"2.0 TDI", codeMoteur:"DSR", puissance:"150 ch", annee:"2020-2024", typeCarburant:"Diesel", entretiens:{"30000":["Vidange"],"60000":["Filtre à gasoil"],"120000":["Kit distribution"]}, dtc:["P2002","P0401"], rappels:[], notes:"" },
+    { marque:"Cupra", modele:"Born", motorisation:"Électrique 231", codeMoteur:"Born", puissance:"231 ch", annee:"2021-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne logiciel HV"], notes:"" },
+    { marque:"Polestar", modele:"Polestar 2", motorisation:"Électrique 476", codeMoteur:"PS2", puissance:"476 ch", annee:"2020-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["P0AA6"], rappels:["Campagne capteurs isolement"], notes:"" },
+    { marque:"BYD", modele:"Seal U DM-i", motorisation:"DM-i 218", codeMoteur:"BYD-DMi", puissance:"218 ch", annee:"2026-2027", typeCarburant:"Hybride", entretiens:{"30000":["Vidange"]}, dtc:["P0087"], rappels:["Campagne pompe huile DM-i"], notes:"" },
+    { marque:"MG", modele:"MG4", motorisation:"Électrique 204", codeMoteur:"MG4", puissance:"204 ch", annee:"2022-2026", typeCarburant:"Électrique", entretiens:{"30000":["Contrôle HV"]}, dtc:["U0111"], rappels:["Campagne 12V / DC-DC"], notes:"" }
+];
 
 // ==========================================
 // 5. NOTIFICATIONS
@@ -172,17 +164,30 @@ function showNotification(msg, type = 'info') {
 }
 
 // ==========================================
-// 6. GESTION RÉSEAU
+// 6. GESTION RÉSEAU (CORRIGÉE)
 // ==========================================
 function updateNetworkStatus() {
     const statusEl = document.getElementById('network-status');
     if (!statusEl) return;
-    if (navigator.onLine) {
-        const conn = navigator.connection || navigator.mozConnection;
-        const type = conn ? conn.effectiveType.toUpperCase() : 'WIFI';
-        statusEl.innerHTML = `<span class="pulse-dot online"></span><span>${type}</span>`;
-    } else {
-        statusEl.innerHTML = `<span class="pulse-dot offline"></span><span>Offline</span>`;
+    
+    try {
+        if (navigator.onLine) {
+            let type = 'WIFI/4G/5G';
+            try {
+                const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                if (conn && conn.effectiveType) {
+                    type = conn.effectiveType.toUpperCase();
+                }
+            } catch (e) {
+                // navigator.connection non supporté
+            }
+            statusEl.innerHTML = `<span class="pulse-dot online"></span><span id="network-text">${type}</span>`;
+        } else {
+            statusEl.innerHTML = `<span class="pulse-dot offline"></span><span id="network-text">Hors ligne</span>`;
+        }
+    } catch (error) {
+        console.error('Erreur updateNetworkStatus:', error);
+        statusEl.innerHTML = `<span class="pulse-dot online"></span><span id="network-text">En ligne</span>`;
     }
 }
 
@@ -543,7 +548,6 @@ async function importAvecAutoControle(file) {
     const avant = megaBase.length;
     let ajouts = 0, fusions = 0;
     try {
-        // ÉTAPE 1: Lecture
         mettreAJourProgress(10, "Lecture fichier...");
         logImport(`📂 Lecture: ${file.name}`, "step");
         const content = await new Promise((resolve, reject) => {
@@ -555,7 +559,6 @@ async function importAvecAutoControle(file) {
         logImport(`✅ ${Math.round(file.size/1024)} KB lu`, "success");
         await sleep(300);
 
-        // ÉTAPE 2: Validation JSON
         mettreAJourProgress(20, "Validation JSON...");
         logImport("🔍 Validation JSON...", "step");
         let data;
@@ -567,7 +570,6 @@ async function importAvecAutoControle(file) {
         }
         await sleep(300);
 
-        // ÉTAPE 3: Analyse
         mettreAJourProgress(35, "Analyse structure...");
         logImport("🔬 Analyse structure...", "step");
         const items = Array.isArray(data) ? data : (typeof data === 'object' ? Object.values(data) : []);
@@ -575,7 +577,6 @@ async function importAvecAutoControle(file) {
         if (items.length === 0) throw new Error("Aucun élément valide");
         await sleep(400);
 
-        // ÉTAPE 4: Vérification doublons
         mettreAJourProgress(50, "Vérification doublons...");
         logImport("🔎 Vérification doublons...", "step");
         let doublons = 0;
@@ -587,7 +588,6 @@ async function importAvecAutoControle(file) {
         logImport(`⚠️ ${doublons} doublons`, doublons > 0 ? "warning" : "info");
         await sleep(400);
 
-        // ÉTAPE 5: Fusion
         mettreAJourProgress(75, "Fusion intelligente...");
         logImport("🔀 Fusion...", "step");
         for (let i = 0; i < items.length; i++) {
@@ -612,7 +612,6 @@ async function importAvecAutoControle(file) {
         logImport(`✅ +${ajouts} ajouts, ~${fusions} fusions`, "success");
         await sleep(400);
 
-        // ÉTAPE 6: Sauvegarde
         mettreAJourProgress(90, "Sauvegarde...");
         logImport("💾 Sauvegarde localStorage...", "step");
         try {
@@ -625,7 +624,6 @@ async function importAvecAutoControle(file) {
         }
         await sleep(400);
 
-        // ÉTAPE 7: Vérification intégrité
         mettreAJourProgress(100, "Vérification intégrité...");
         logImport("🛡️ Vérification intégrité...", "step");
         const saved = localStorage.getItem('kevFusion_megaBase');
@@ -640,13 +638,11 @@ async function importAvecAutoControle(file) {
 
         document.getElementById('stat-after').textContent = megaBase.length;
 
-        // RÉSULTAT FINAL
         const resultDiv = document.getElementById('import-result');
         const msgEl = document.getElementById('result-message');
         const detailsEl = document.getElementById('result-details');
         resultDiv.classList.remove('hidden', 'error');
         msgEl.textContent = `Import terminé - Base APK mise à jour`;
-        const duree = ((Date.now() - performance.now()) / 1000).toFixed(1);
         detailsEl.innerHTML = `
             <div style="color:#4ade80;font-weight:bold;margin-bottom:.5rem">📊 RAPPORT FINAL</div>
             <div>• Avant: <strong>${avant}</strong></div>
@@ -704,25 +700,32 @@ function normaliserItem(item) {
 }
 
 // ==========================================
-// 14. SYNCHRONISATION AUTO
+// 14. SYNCHRONISATION (CORRIGÉE - PAS BLOQUÉE)
 // ==========================================
 async function forcerSynchro() {
-    showNotification('🔄 Synchronisation...', 'info');
     const syncEl = document.getElementById('sync-status');
-    if (syncEl) {
-        syncEl.className = 'sync-indicator sync-active';
-        syncEl.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 sync-icon"></i><span>Synchro...</span>';
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
-    await sleep(500);
-    if (syncEl) {
-        syncEl.className = 'sync-indicator sync-inactive';
-        syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
+    if (!syncEl) return;
+    
+    showNotification('🔄 Synchronisation...', 'info');
+    
+    // État ACTIF avec icône qui tourne
+    syncEl.className = 'sync-indicator sync-active';
+    syncEl.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 sync-icon"></i><span>Synchro...</span>';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    await sleep(800);
+    
+    // État INACTIF avec icône statique (PAS d'animation)
+    syncEl.className = 'sync-indicator sync-inactive';
+    syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
     syncStatus.lastSync = new Date().toISOString();
     showNotification(`✅ ${megaBase.length} véhicules en base`, 'success');
-    if (!document.getElementById('view-stats').classList.contains('hidden')) afficherStats();
+    
+    if (!document.getElementById('view-stats').classList.contains('hidden')) {
+        afficherStats();
+    }
 }
 
 // ==========================================
@@ -760,15 +763,9 @@ function afficherStats() {
 }
 
 // ==========================================
-// 16. INITIALISATION
+// 16. INITIALISATION (CORRIGÉE MULTI-NIVEAUX)
 // ==========================================
-function initialiser() {
-    console.log('🚀 Initialisation KEV FUSION 2026...');
-    
-    // 1. Initialiser le hash admin en premier
-    initAdminHash();
-    
-    // 2. Charger la base depuis localStorage OU utiliser la base initiale
+function chargerBase() {
     try {
         const saved = localStorage.getItem('kevFusion_megaBase');
         if (saved) {
@@ -776,42 +773,124 @@ function initialiser() {
             if (Array.isArray(parsed) && parsed.length > 0) {
                 megaBase = parsed;
                 console.log('✅ Base chargée depuis localStorage:', megaBase.length);
-            } else {
-                megaBase = [...MEGA_BASE_INITIALE];
-                console.log('✅ Base initiale utilisée (localStorage vide)');
+                return;
             }
-        } else {
-            megaBase = [...MEGA_BASE_INITIALE];
-            console.log('✅ Base initiale utilisée (premier lancement)');
-            localStorage.setItem('kevFusion_megaBase', JSON.stringify(megaBase));
         }
     } catch (e) {
-        console.error('❌ Erreur chargement localStorage:', e);
-        megaBase = [...MEGA_BASE_INITIALE];
+        console.error('Erreur chargement localStorage:', e);
     }
-    
-    // 3. Mettre à jour l'interface
-    updateNetworkStatus();
-    initFiltresEntretien();
-    
-    // 4. Initialiser icônes
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    
-    console.log('✅ Initialisation terminée:', megaBase.length, 'véhicules');
+    megaBase = [...MEGA_BASE_INITIALE];
+    try {
+        localStorage.setItem('kevFusion_megaBase', JSON.stringify(megaBase));
+    } catch (e) {}
+    console.log('✅ Base initiale utilisée:', megaBase.length);
 }
 
-// Lancer l'initialisation au chargement
+function initialiser() {
+    console.log('🚀 Initialisation KEV FUSION 2026...');
+    
+    try {
+        // 1. Forcer l'affichage du statut réseau IMMÉDIATEMENT
+        updateNetworkStatus();
+        
+        // 2. Initialiser le hash admin
+        initAdminHash();
+        
+        // 3. Charger la base
+        chargerBase();
+        
+        // 4. Mettre à jour l'interface
+        initFiltresEntretien();
+        
+        // 5. Mettre à jour l'indicateur de synchro avec le nombre de véhicules (PAS d'animation)
+        const syncEl = document.getElementById('sync-status');
+        if (syncEl) {
+            syncEl.className = 'sync-indicator sync-inactive';
+            syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
+        }
+        
+        // 6. Initialiser les icônes
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+        
+        console.log('✅ Initialisation terminée:', megaBase.length, 'véhicules');
+        
+    } catch (error) {
+        console.error('❌ Erreur initialisation:', error);
+        megaBase = [...MEGA_BASE_INITIALE];
+        const syncEl = document.getElementById('sync-status');
+        if (syncEl) {
+            syncEl.className = 'sync-indicator sync-inactive';
+            syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
+        }
+        updateNetworkStatus();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+}
+
+// ==========================================
+// 17. DÉMARRAGE MULTI-NIVEAUX
+// ==========================================
+
+// Niveau 1 : Initialisation immédiate
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialiser);
 } else {
     initialiser();
 }
 
+// Niveau 2 : Secours après 2 secondes si l'initialisation a échoué
+setTimeout(() => {
+    const networkText = document.getElementById('network-text');
+    if (networkText && networkText.textContent === 'Connexion...') {
+        console.warn('⚠️ Initialisation réseau manquante, correction...');
+        updateNetworkStatus();
+    }
+    
+    const syncEl = document.getElementById('sync-status');
+    if (syncEl && syncEl.querySelector('.sync-icon')) {
+        console.warn('⚠️ Synchro bloquée détectée, correction...');
+        syncEl.className = 'sync-indicator sync-inactive';
+        syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    updateNetworkStatus();
+}, 2000);
+
+// Niveau 3 : Vérification périodique pendant les 10 premières secondes
+let initCheckCount = 0;
+const initCheckInterval = setInterval(() => {
+    initCheckCount++;
+    
+    const networkText = document.getElementById('network-text');
+    if (networkText && networkText.textContent === 'Connexion...') {
+        updateNetworkStatus();
+    }
+    
+    const syncEl = document.getElementById('sync-status');
+    if (syncEl && syncEl.className.includes('sync-active')) {
+        const hasSpinningIcon = syncEl.querySelector('.sync-icon');
+        if (hasSpinningIcon && initCheckCount > 3) {
+            syncEl.className = 'sync-indicator sync-inactive';
+            syncEl.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${megaBase.length} véh.</span>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    }
+    
+    if (initCheckCount >= 10) {
+        clearInterval(initCheckInterval);
+        console.log('✅ Vérifications initiales terminées');
+    }
+}, 1000);
+
 // Listeners réseau
 window.addEventListener('online', () => {
     updateNetworkStatus();
     showNotification('🌐 Connexion rétablie', 'success');
 });
+
 window.addEventListener('offline', () => {
     updateNetworkStatus();
     showNotification('📡 Mode hors ligne', 'warning');
@@ -819,5 +898,7 @@ window.addEventListener('offline', () => {
 
 // Touche Enter sur le champ sécurisé
 document.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && e.target.id === 'secure-code-input') verifierAcces(e);
+    if (e.key === 'Enter' && e.target.id === 'secure-code-input') {
+        verifierAcces(e);
+    }
 });
