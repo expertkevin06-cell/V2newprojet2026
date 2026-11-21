@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kev-fusion-v2026-final';
+const CACHE_NAME = 'kev-fusion-v2026-import-fix';
 const ASSETS = [
     '/newprojet2026/',
     '/newprojet2026/index.html',
@@ -24,7 +24,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
-    if (event.request.url.includes('api.nhtsa.gov')) {
+    if (event.request.url.includes('api.nhtsa.gov') || event.request.url.includes('raw.githubusercontent.com')) {
         event.respondWith(
             fetch(event.request)
                 .then(r => {
