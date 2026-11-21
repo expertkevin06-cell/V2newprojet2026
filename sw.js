@@ -24,7 +24,6 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
-    
     if (event.request.url.includes('api.nhtsa.gov')) {
         event.respondWith(
             fetch(event.request)
@@ -37,7 +36,6 @@ self.addEventListener('fetch', (event) => {
         );
         return;
     }
-    
     event.respondWith(
         caches.match(event.request)
             .then(r => r || fetch(event.request).catch(() => new Response('Offline', {status: 503})))
