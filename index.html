@@ -3,143 +3,544 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KEV FUSION 2026 - Méga Base Technique</title>
-    <meta name="theme-color" content="#0f172a">
+    <title>KEV FUSION 2026 - Méga Base Technique Ultime</title>
+    <meta name="theme-color" content="#0a0e27">
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .tab-active { border-bottom: 2px solid #06b6d4; color: #06b6d4; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .online { background-color: #22c55e; box-shadow: 0 0 8px #22c55e; }
-        .offline { background-color: #ef4444; }
+        :root {
+            --primary: #06b6d4;
+            --secondary: #8b5cf6;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-dark: #0a0e27;
+            --bg-card: rgba(15, 23, 42, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #1e1b4b 50%, #0a0e27 100%);
+            background-attachment: fixed;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+            animation: pulse-bg 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse-bg {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .glass {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-hover:hover {
+            background: rgba(15, 23, 42, 0.9);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+
+        .tab-active {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2));
+            border-bottom: 3px solid var(--primary);
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide-up {
+            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .online {
+            background: var(--success);
+            box-shadow: 0 0 20px var(--success), 0 0 40px var(--success);
+        }
+
+        .offline {
+            background: var(--danger);
+            box-shadow: 0 0 20px var(--danger);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #06b6d4, #8b5cf6, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.6);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .input-field {
+            background: rgba(30, 41, 59, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+            outline: none;
+        }
+
+        .card-shine {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-shine::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
+            transform: rotate(45deg);
+            transition: all 0.6s ease;
+        }
+
+        .card-shine:hover::before {
+            left: 100%;
+        }
+
+        .km-badge {
+            background: linear-gradient(135deg, #0891b2, #06b6d4);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.5);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .dtc-badge {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+        }
+
+        .recall-badge {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+        }
+
+        .success-badge {
+            background: linear-gradient(135deg, #059669, #10b981);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(6, 182, 212, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .admin-locked {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .admin-unlocked {
+            opacity: 1;
+            pointer-events: all;
+            animation: unlock 0.5s ease;
+        }
+
+        @keyframes unlock {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 2px solid var(--primary);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            animation: slideUp 0.4s ease;
+        }
+
+        @media (max-width: 640px) {
+            .mobile-stack {
+                flex-direction: column !important;
+            }
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="flex flex-col relative">
 
-    <!-- Barre de statut réseau -->
-    <div class="bg-slate-900 border-b border-slate-700 px-4 py-2 flex justify-between items-center text-xs">
-        <div class="flex items-center gap-2">
-            <i data-lucide="shield-check" class="w-4 h-4 text-cyan-400"></i>
-            <span class="font-bold text-cyan-400">KEV FUSION 2026</span>
+    <!-- Header avec statut réseau -->
+    <header class="glass sticky top-0 z-50 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <i data-lucide="zap" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold gradient-text">KEV FUSION 2026</h1>
+                    <p class="text-xs text-slate-400">Méga Base Technique Ultime</p>
+                </div>
+            </div>
+            <div id="network-status" class="flex items-center text-sm font-medium px-3 py-1.5 rounded-lg glass">
+                <span class="pulse-dot offline"></span>
+                <span>Initialisation...</span>
+            </div>
         </div>
-        <div id="network-status" class="flex items-center font-medium">
-            <span class="pulse-dot offline"></span> Vérification...
-        </div>
-    </div>
+    </header>
 
-    <!-- Navigation -->
-    <nav class="glass sticky top-0 z-50">
-        <div class="flex overflow-x-auto no-scrollbar">
-            <button onclick="showTab('vin')" id="tab-vin" class="tab-btn flex-1 py-4 px-4 text-sm font-semibold text-center tab-active flex items-center justify-center gap-2">
-                <i data-lucide="search" class="w-4 h-4"></i> VIN & Rappels
-            </button>
-            <button onclick="showTab('entretien')" id="tab-entretien" class="tab-btn flex-1 py-4 px-4 text-sm font-semibold text-center text-slate-400 flex items-center justify-center gap-2">
-                <i data-lucide="wrench" class="w-4 h-4"></i> Préconisations
-            </button>
-            <button onclick="showTab('megabase')" id="tab-megabase" class="tab-btn flex-1 py-4 px-4 text-sm font-semibold text-center text-slate-400 flex items-center justify-center gap-2">
-                <i data-lucide="database" class="w-4 h-4"></i> Méga Base
-            </button>
-            <button onclick="showTab('admin')" id="tab-admin" class="tab-btn flex-1 py-4 px-4 text-sm font-semibold text-center text-slate-400 flex items-center justify-center gap-2">
-                <i data-lucide="lock" class="w-4 h-4"></i> Admin
-            </button>
+    <!-- Navigation Tabs -->
+    <nav class="glass sticky top-[76px] z-40 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex overflow-x-auto no-scrollbar">
+                <button onclick="showTab('vin')" id="tab-vin" class="tab-btn flex-1 py-4 px-6 text-sm font-semibold text-center tab-active flex items-center justify-center gap-2 whitespace-nowrap transition-all">
+                    <i data-lucide="search" class="w-4 h-4"></i> VIN & Rappels
+                </button>
+                <button onclick="showTab('entretien')" id="tab-entretien" class="tab-btn flex-1 py-4 px-6 text-sm font-semibold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap transition-all">
+                    <i data-lucide="wrench" class="w-4 h-4"></i> Préconisations
+                </button>
+                <button onclick="showTab('megabase')" id="tab-megabase" class="tab-btn flex-1 py-4 px-6 text-sm font-semibold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap transition-all">
+                    <i data-lucide="database" class="w-4 h-4"></i> Méga Base
+                </button>
+                <button onclick="showTab('stats')" id="tab-stats" class="tab-btn flex-1 py-4 px-6 text-sm font-semibold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap transition-all">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Stats
+                </button>
+                <button onclick="showTab('admin')" id="tab-admin" class="tab-btn flex-1 py-4 px-6 text-sm font-semibold text-center text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap transition-all">
+                    <i data-lucide="shield" class="w-4 h-4"></i> Admin
+                </button>
+            </div>
         </div>
     </nav>
 
     <!-- Contenu Principal -->
-    <main class="flex-1 p-4 max-w-4xl mx-auto w-full">
+    <main class="flex-1 relative z-10">
+        <div class="max-w-7xl mx-auto p-4 md:p-6">
 
-        <!-- ONGLET 1 : Recherche VIN & Rappels Réels -->
-        <section id="view-vin" class="view-section fade-in">
-            <div class="glass rounded-2xl p-6 mb-6">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="car" class="text-cyan-400"></i> Recherche par VIN (Châssis)</h2>
-                <div class="flex gap-2">
-                    <input type="text" id="vin-input" placeholder="Ex: VF3XXXXXX..." maxlength="17" class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-400 uppercase">
-                    <button onclick="rechercherVIN()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded-lg font-bold transition flex items-center gap-2">
-                        <i data-lucide="search"></i> Rechercher
-                    </button>
-                </div>
-                <p class="text-xs text-slate-400 mt-2">* Corrélation avec les bases NHTSA (US) et structure prête pour API EU.</p>
-            </div>
-            <div id="vin-results" class="space-y-4"></div>
-        </section>
-
-        <!-- ONGLET 2 : Préconisations Constructeur (Corrélation) -->
-        <section id="view-entretien" class="view-section hidden fade-in">
-            <div class="glass rounded-2xl p-6 mb-6">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="settings" class="text-cyan-400"></i> Préconisations Constructeur</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <select id="filter-marque" onchange="updateModeles()" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
-                        <option value="">Sélectionner la Marque</option>
-                    </select>
-                    <select id="filter-modele" onchange="updateMotorisations()" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" disabled>
-                        <option value="">Sélectionner le Modèle</option>
-                    </select>
-                    <select id="filter-moteur" onchange="afficherEntretien()" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" disabled>
-                        <option value="">Sélectionner la Motorisation</option>
-                    </select>
-                </div>
-            </div>
-            <div id="entretien-results" class="space-y-4"></div>
-        </section>
-
-        <!-- ONGLET 3 : Méga Base Technique -->
-        <section id="view-megabase" class="view-section hidden fade-in">
-            <div class="glass rounded-2xl p-6 mb-6">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="brain" class="text-cyan-400"></i> Recherche Unifiée (DTC, Pannes, Experts)</h2>
-                <input type="text" id="mega-search" oninput="rechercherMegaBase()" placeholder="Rechercher un code DTC (ex: P0420), une panne ou un modèle..." class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-400">
-            </div>
-            <div id="megabase-results" class="space-y-4"></div>
-        </section>
-
-        <!-- ONGLET 4 : Administration -->
-        <section id="view-admin" class="view-section hidden fade-in">
-            <div id="admin-login" class="glass rounded-2xl p-8 text-center">
-                <i data-lucide="shield" class="w-16 h-16 text-cyan-400 mx-auto mb-4"></i>
-                <h2 class="text-2xl font-bold mb-4">Accès Administrateur</h2>
-                <input type="password" id="admin-password" placeholder="Mot de passe" class="w-full max-w-xs bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white mb-4 text-center">
-                <br>
-                <button onclick="verifierAdmin()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-8 py-3 rounded-lg font-bold transition">Déverrouiller</button>
-                <p id="admin-error" class="text-red-400 mt-3 hidden">Mot de passe incorrect.</p>
-            </div>
-
-            <div id="admin-panel" class="hidden space-y-6">
-                <div class="glass rounded-2xl p-6 border-l-4 border-green-500">
-                    <h3 class="text-lg font-bold text-green-400 mb-2">✅ Mode Administrateur Actif</h3>
-                    <p class="text-sm text-slate-300">Base du : <span id="db-date"></span> • Connexion permanente active</p>
-                </div>
-
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-lg font-bold mb-4">Gestion de la Méga Base</h3>
-                    <div class="flex flex-wrap gap-3">
-                        <button onclick="exporterJSON()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-                            <i data-lucide="download"></i> Exporter JSON Complet
+            <!-- ONGLET 1 : Recherche VIN & Rappels -->
+            <section id="view-vin" class="view-section fade-in">
+                <div class="glass rounded-3xl p-6 md:p-8 mb-6 card-shine">
+                    <div class="flex items-start gap-4 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="car" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-bold mb-2">Recherche par VIN</h2>
+                            <p class="text-slate-400">Campagnes de rappel officielles en temps réel</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row gap-3">
+                        <input type="text" id="vin-input" placeholder="Entrez le VIN (17 caractères)" maxlength="17" 
+                            class="input-field flex-1 rounded-xl px-5 py-4 text-white text-lg font-mono uppercase">
+                        <button onclick="rechercherVIN()" class="btn-primary text-white px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 whitespace-nowrap">
+                            <i data-lucide="search"></i> Analyser VIN
                         </button>
-                        <label class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer">
-                            <i data-lucide="upload"></i> Importer / Fusionner JSON
-                            <input type="file" id="import-file" accept=".json" onchange="importerJSON(this)" class="hidden">
-                        </label>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center gap-2 text-xs text-slate-500">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                        <span>Corrélation automatique avec NHTSA, Safety Gate EU, et bases constructeurs</span>
+                    </div>
+                </div>
+                
+                <div id="vin-results" class="space-y-4"></div>
+            </section>
+
+            <!-- ONGLET 2 : Préconisations Constructeur -->
+            <section id="view-entretien" class="view-section hidden fade-in">
+                <div class="glass rounded-3xl p-6 md:p-8 mb-6 card-shine">
+                    <div class="flex items-start gap-4 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="settings" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-bold mb-2">Préconisations Constructeur</h2>
+                            <p class="text-slate-400">Entretien complet jusqu'à 160 000 km avec corrélation intelligente</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <select id="filter-marque" onchange="updateModeles()" class="input-field rounded-xl px-5 py-4 text-white">
+                            <option value="">🏷️ Sélectionner la Marque</option>
+                        </select>
+                        <select id="filter-modele" onchange="updateMotorisations()" class="input-field rounded-xl px-5 py-4 text-white" disabled>
+                            <option value="">🚗 Sélectionner le Modèle</option>
+                        </select>
+                        <select id="filter-moteur" onchange="afficherEntretien()" class="input-field rounded-xl px-5 py-4 text-white" disabled>
+                            <option value="">⚙️ Motorisation</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="entretien-results" class="space-y-4"></div>
+            </section>
+
+            <!-- ONGLET 3 : Méga Base -->
+            <section id="view-megabase" class="view-section hidden fade-in">
+                <div class="glass rounded-3xl p-6 md:p-8 mb-6 card-shine">
+                    <div class="flex items-start gap-4 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="brain" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-bold mb-2">Méga Base Unifiée</h2>
+                            <p class="text-slate-400">Recherche intelligente : DTC, pannes, modèles, motorisations</p>
+                        </div>
+                    </div>
+                    
+                    <input type="text" id="mega-search" oninput="rechercherMegaBase()" 
+                        placeholder="🔍 Rechercher un code DTC, une panne, un modèle, une marque..." 
+                        class="input-field w-full rounded-xl px-5 py-4 text-white text-lg">
+                    
+                    <div id="megabase-results" class="mt-6 space-y-3"></div>
+                    
+                    <div class="mt-8 pt-6 border-t border-white/10">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                            <i data-lucide="database" class="text-cyan-400"></i>
+                            Gestion de la Base
+                        </h3>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="exporterJSON()" class="glass-hover rounded-xl px-5 py-3 flex items-center gap-2 text-sm font-semibold">
+                                <i data-lucide="download" class="w-4 h-4"></i> Exporter JSON
+                            </button>
+                            <label class="glass-hover rounded-xl px-5 py-3 flex items-center gap-2 cursor-pointer text-sm font-semibold">
+                                <i data-lucide="upload" class="w-4 h-4"></i> Importer / Fusionner
+                                <input type="file" id="import-file" accept=".json" onchange="importerJSON(this)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ONGLET 4 : Statistiques -->
+            <section id="view-stats" class="view-section hidden fade-in">
+                <div class="glass rounded-3xl p-6 md:p-8 mb-6">
+                    <div class="flex items-start gap-4 mb-8">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="bar-chart-3" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-bold mb-2">Statistiques en Temps Réel</h2>
+                            <p class="text-slate-400">Vue d'ensemble de la méga base technique</p>
+                        </div>
+                    </div>
+                    
+                    <div id="stats-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                    
+                    <div class="mt-8 pt-6 border-t border-white/10">
+                        <h3 class="font-bold text-lg mb-4">📊 Répartition par Type de Carburant</h3>
+                        <div id="fuel-stats" class="space-y-3"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ONGLET 5 : Administration (Sécurisé) -->
+            <section id="view-admin" class="view-section hidden fade-in">
+                <!-- Zone de connexion -->
+                <div id="admin-auth" class="glass rounded-3xl p-8 md:p-12 text-center">
+                    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                        <i data-lucide="shield" class="w-10 h-10 text-white"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold mb-3 gradient-text">Accès Administration</h2>
+                    <p class="text-slate-400 mb-8">Zone sécurisée pour gestion avancée de la base</p>
+                    
+                    <div class="max-w-md mx-auto">
+                        <input type="password" id="admin-password" placeholder="Entrez le mot de passe" 
+                            class="input-field w-full rounded-xl px-5 py-4 text-white text-center text-lg mb-4">
+                        <button onclick="verifierAdmin()" class="btn-primary w-full text-white px-8 py-4 rounded-xl font-bold text-lg">
+                            Déverrouiller l'accès
+                        </button>
+                        <p id="admin-error" class="text-red-400 mt-4 hidden font-semibold">
+                            ⚠️ Mot de passe incorrect
+                        </p>
                     </div>
                 </div>
 
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-lg font-bold mb-4">Ajouter une fiche technique corrélée</h3>
-                    <form id="add-entry-form" onsubmit="ajouterEntree(event)" class="space-y-3">
-                        <input name="marque" placeholder="Marque" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
-                        <input name="modele" placeholder="Modèle" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
-                        <input name="codeMoteur" placeholder="Code Moteur (ex: HNS)" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
-                        <textarea name="preconisations" placeholder="Préconisations (format JSON ou texte)" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white" rows="3"></textarea>
-                        <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-lg font-bold">Ajouter à la base</button>
-                    </form>
-                </div>
-            </div>
-        </section>
+                <!-- Panneau Admin (caché par défaut) -->
+                <div id="admin-panel" class="hidden space-y-6 admin-locked">
+                    <div class="glass rounded-3xl p-6 border-l-4 border-green-500 admin-unlocked">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                <i data-lucide="check-circle" class="w-6 h-6 text-green-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-green-400">Mode Administrateur Actif</h3>
+                                <p class="text-sm text-slate-400">Session sécurisée • <span id="admin-session-time"></span></p>
+                            </div>
+                        </div>
+                        <button onclick="deconnecterAdmin()" class="btn-danger text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 ml-auto">
+                            <i data-lucide="log-out" class="w-4 h-4"></i> Déconnexion
+                        </button>
+                    </div>
 
+                    <div class="glass rounded-3xl p-6">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="plus-circle" class="text-cyan-400"></i>
+                            Ajouter une fiche technique
+                        </h3>
+                        <form id="add-entry-form" onsubmit="ajouterEntree(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input name="marque" placeholder="Marque (ex: Peugeot)" required 
+                                    class="input-field rounded-xl px-5 py-3 text-white">
+                                <input name="modele" placeholder="Modèle (ex: 308)" required 
+                                    class="input-field rounded-xl px-5 py-3 text-white">
+                                <input name="codeMoteur" placeholder="Code Moteur (ex: HNS)" required 
+                                    class="input-field rounded-xl px-5 py-3 text-white">
+                                <input name="puissance" placeholder="Puissance (ex: 130 ch)" required 
+                                    class="input-field rounded-xl px-5 py-3 text-white">
+                            </div>
+                            <textarea name="preconisations" placeholder="Préconisations d'entretien (JSON ou texte libre)" 
+                                class="input-field w-full rounded-xl px-5 py-3 text-white" rows="4"></textarea>
+                            <button type="submit" class="btn-success w-full text-white py-4 rounded-xl font-bold text-lg">
+                                Ajouter à la Méga Base
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="glass rounded-3xl p-6">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="text-amber-400"></i>
+                            Gestion Avancée
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <button onclick="reinitialiserBase()" class="btn-danger text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i> Réinitialiser la base
+                            </button>
+                            <button onclick="sauvegarderLocalStorage()" class="glass-hover rounded-xl px-5 py-3 flex items-center justify-center gap-2 font-semibold">
+                                <i data-lucide="save" class="w-5 h-5"></i> Sauvegarder (Local)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
     </main>
+
+    <!-- Modal de confirmation -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modal-title" class="text-xl font-bold mb-3"></h3>
+            <p id="modal-message" class="text-slate-300 mb-6"></p>
+            <div class="flex gap-3">
+                <button onclick="fermerModal()" class="flex-1 glass-hover rounded-xl px-5 py-3 font-semibold">Annuler</button>
+                <button id="modal-confirm" class="flex-1 btn-primary text-white rounded-xl px-5 py-3 font-semibold">Confirmer</button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
     <script>lucide.createIcons();</script>
