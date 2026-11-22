@@ -1,7 +1,13 @@
 "use strict";
-window.addEventListener("error",e=>{try{const d=document.createElement("div");
+/* ═══ KEV FUSION 2026 — NOYAU v12 : démarrage robuste + auto-vérification + packs modèles ═══ */
+const KFERR=[];
+function kfReport(m){KFERR.push(String(m));if(KFERR.length>30)KFERR.shift();
+try{if($("selfBox")&&$("lStats"))renderSelf(selfCheck())}catch(e){}}
+window.addEventListener("error",e=>{kfReport((e.message||"erreur")+(e.filename?" @"+String(e.filename).split("/").pop():"")+(e.lineno?":"+e.lineno:""));
+try{const d=document.createElement("div");
 d.style.cssText="position:fixed;left:8px;bottom:8px;z-index:400;max-width:90vw;background:#450a0a;color:#fecaca;border:1px solid #ef4444;border-radius:10px;padding:8px 10px;font:12px monospace";
 d.textContent="ERREUR JS: "+(e.message||"inconnue");document.body.appendChild(d);setTimeout(()=>d.remove(),9000);}catch(_){}});
+window.addEventListener("unhandledrejection",e=>{kfReport("promesse rejetée : "+((e.reason&&e.reason.message)||e.reason))});
 const NFD=s=>String(s==null?"":s).normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const norm=s=>NFD(s).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const slug=s=>NFD(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -47,7 +53,7 @@ y0:Math.max(y0,m[2]),y1:Math.min(y1,m[3]),tech:t,brand:b.id,brandName:b.name,mod
 const sp=spec(o);o.gk=o.famKey+(sp.ev?"|"+(sp.kwh||""):"");o.disp=sp.ev?sp.kwh:sp.disp;engs.push(o);});});
 return{id:m[0],name:m[1],y0:m[2],y1:m[3],seg:m[4],brand:b.id,brandName:b.name,engines:engs};}
 function build(raw){return raw.map(b=>({id:b[0],name:b[1],country:b[2],models:b[3].map(m=>parseModel({id:b[0],name:b[1]},m))}));}
-/* ═══ PACK MILLÉSIMES 2024-2027 (modèles commercialisés manquants) ═══ */
+/* ═══ PACK 2024-2027 (nouveautés) ═══ */
 const EXT2024=[
 ["renault",[["twingo-e","Twingo E-Tech",2026,2027,"Micro-citadine électrique","Électrique|82:27.5,95:27.5|EV-TWI2|EV|26-27|AmpR City"],
 ["estafette","Estafette",2026,2027,"Fourgon électrique","Électrique|122:45,143:60|EV-EST|EV|26-27|Urbain LFP"]]],
@@ -86,6 +92,147 @@ const EXT2024=[
 ["smart",[["smart5","#5",2025,2027,"SUV électrique","Électrique|360:80,646:80|EV-SM5|EV|25-27|PMA 800V"]]],
 ["jeep",[["wagoneer","Wagoneer S",2024,2027,"SUV premium électrique","Électrique|600:100|EV-WGS|EV|24-27|STLA Large AWD"]]]
 ];
+/* ═══ PACK COMPLÉMENTAIRE : modèles manquants toutes marques (créé les marques absentes) ═══ */
+const EXTPLUS=[
+["renault","Renault","FR",[
+["r4","Renault 4 E-Tech",2025,2027,"SUV urbain électrique","Électrique|122:52,150:52|EV-R4|EV|25-27|AmpR City"],
+["symbioz","Symbioz",2024,2027,"SUV compact","1.3 TCe MHEV|140|H5Ht|H|24-27|Mild hybrid;1.6 E-Tech|145|H4M|H|24-27|Full hybrid"],
+["rafale","Rafale",2024,2027,"SUV coupé","1.2 E-Tech|200|HR12|H|24-27|Full hybrid;1.2 E-Tech 4C|300|HR12|P|24-27|PHEV AWD"],
+["espace6","Espace VI",2023,2027,"SUV 7 places","1.2 E-Tech|200|HR12|H|23-27|Full hybrid"],
+["arkana","Arkana",2021,2027,"SUV coupé","1.3 TCe MHEV|140,160|H5Ht|H|21-25|Mild hybrid;1.6 E-Tech|145|H4M|H|21-27|Full hybrid"],
+["scenic-e","Scenic E-Tech",2024,2027,"SUV familial","Électrique|170:60,220:87|6AK|EV|24-27|AmpR"],
+["kadjar","Kadjar",2015,2022,"SUV compact","1.2 TCe|130|H5Ft|E|17-19|Chaîne;1.3 TCe|140,160|H5Ht|E|18-22|Chaîne GPF;1.5 Blue dCi|115|K9K|D|18-22|SCR"],
+["twingo3","Twingo III",2014,2024,"Micro-citadine","0.9 TCe|90|H4Bt|E|17-20|Chaîne;1.0 SCe|65,70|H4D|E|17-20|Chaîne;Électrique|82:22|EV-TWI|EV|20-24|Urbain"],
+["trafic3","Trafic III",2014,2027,"Utilitaire","1.6 dCi|95,120,125,145|R9M|D|17-19|Chaîne;2.0 dCi|110,150,170|M9R|D|19-27|Chaîne SCR;Électrique|122:52|EV-TRA|EV|23-27|Urbain"],
+["captur1","Captur I",2013,2019,"SUV urbain","0.9 TCe|90|H4Bt|E|17-19|Chaîne;1.2 TCe|120|H5Ft|E|17-19|Chaîne;1.5 dCi|90,110|K9K|D|17-19|FAP"]]],
+["peugeot","Peugeot","FR",[
+["208-1","208 I",2012,2019,"Citadine","1.0 VTi|68|1KR-FE|E|17-19|Chaîne;1.2 PureTech|82,110|EB2|E|17-19|Courroie humide;1.6 BlueHDi|75,100|DV6|D|17-19|SCR"],
+["2008-1","2008 I",2013,2019,"SUV urbain","1.2 PureTech|82,110,130|EB2|E|17-19|Courroie humide;1.6 BlueHDi|75,100,120|DV6|D|17-19|SCR"],
+["2008-2","2008 II",2019,2027,"SUV urbain","1.2 PureTech|100,130|EB2|E|19-25|Courroie humide;1.2 Hybrid|136|EB2LTEDH|H|23-27|Chaîne;1.5 BlueHDi|110,130|DV5|D|19-24|SCR;Électrique|136:50,156:51|ZKX|EV|20-27|e-CMP"],
+["308-2","308 II",2013,2021,"Compacte","1.2 PureTech|110,130|EB2|E|17-21|Courroie humide;1.6 THP|205|EP6|E|17-20|Chaîne;1.5 BlueHDi|100,130|DV5|D|17-21|SCR;2.0 BlueHDi|150,180|DW10|D|17-20|SCR"],
+["5008-2","5008 II",2017,2024,"SUV 7 places","1.2 PureTech|130|EB2|E|17-23|Courroie humide;1.6 PureTech|180|EP6|E|17-21|Chaîne;1.5 BlueHDi|130|DV5|D|17-24|SCR;2.0 BlueHDi|180|DW10|D|17-21|SCR"],
+["5008-3","5008 III",2024,2027,"SUV 7 places","1.2 Hybrid|136|EB2LTEDH|H|24-27|Chaîne;Électrique|210:73,230:97|STLA|EV|24-27|STLA Medium"],
+["408","408",2022,2027,"Fastback","1.2 Hybrid|136|EB2LTEDH|H|23-27|Chaîne;1.6 PHEV|180,225|EP6|P|22-27|e-EAT8"],
+["expert3","Expert III",2016,2027,"Utilitaire","1.5 BlueHDi|100,120|DV5|D|17-24|SCR;2.0 BlueHDi|145,150,180|DW10|D|17-27|SCR;Électrique|136:75|ZKX|EV|21-27|e-CMP"]]],
+["citroen","Citroën","FR",[
+["c3air1","C3 Aircross I",2017,2024,"SUV urbain","1.2 PureTech|82,110,130|EB2|E|17-24|Courroie humide;1.5 BlueHDi|100,110,120|DV5|D|17-24|SCR"],
+["c3air2","C3 Aircross II",2024,2027,"SUV urbain","1.2 Hybrid|100,136|EB2LTEDH|H|24-27|Chaîne;Électrique|113:44|EV-C3|EV|24-27|LFP"],
+["c5x","C5 X",2021,2027,"Break surélevé","1.2 PureTech|130|EB2|E|21-24|Courroie humide;1.6 PureTech|180|EP6|E|21-25|Chaîne;1.6 PHEV|180,225|EP6|P|21-27|e-EAT8"],
+["jumpy3","Jumpy III",2016,2027,"Utilitaire","1.5 BlueHDi|100,120|DV5|D|17-25|SCR;2.0 BlueHDi|145,150,180|DW10|D|17-27|SCR;Électrique|136:75|ZKX|EV|21-27|e-CMP"],
+["ami","Ami",2020,2027,"Quadricycle","Électrique|8:5.5|AMI|EV|20-27|Urbain léger"]]],
+["ds","DS Automobiles","FR",[
+["ds4","DS 4 II",2021,2027,"Compacte premium","1.2 PureTech|130|EB2|E|21-24|Courroie humide;1.6 PureTech|180,225|EP6|E|21-25|Chaîne;1.5 BlueHDi|130|DV5|D|21-25|SCR;1.6 PHEV|180,225|EP6|P|21-27|e-EAT8"],
+["ds9","DS 9",2021,2027,"Berline premium","1.6 PureTech|225|EP6|E|21-27|Chaîne;E-Tense|250,360|EP6|P|21-27|PHEV / PSE"]]],
+["dacia","Dacia","RO",[["duster2","Duster II",2018,2024,"SUV","1.0 TCe|90,100|H4Dt|E|19-24|Chaîne;1.3 TCe|130,150|H5Ht|E|18-24|Chaîne GPF;1.5 Blue dCi|95,115|K9K|D|18-24|SCR"]]],
+["alpine","Alpine","FR",[
+["a110","A110",2017,2027,"Coupé sport","1.8 TCe|252,292,300|M5Pt|E|17-27|Chaîne DCT"],
+["a290","A290",2024,2027,"Citadine sport électrique","Électrique|180:52,220:52|EV-R5|EV|24-27|AmpR City"]]],
+["jaguar","Jaguar","GB",[
+["ipace","I-Pace",2018,2027,"SUV électrique","Électrique|400:90|EV-JLR|EV|18-27|EV AWD"],
+["fpace","F-Pace",2016,2027,"SUV premium","2.0 P250|250|PT204|E|17-27|Ingenium;2.0 D200|204|204DT|D|17-24|Diesel MHEV;3.0 P400|400|AJ300|E|20-27|6 cyl. MHEV"]]],
+["volkswagen","Volkswagen","DE",[
+["golf7","Golf VII",2012,2020,"Compacte","1.0 TSI|85,110|CHZ|E|17-20|EA211;1.4 TSI|125|CZC|E|17-20|ACT;1.5 TSI|130,150|DPCA|E|17-20|EA211 evo;1.6 TDI|115|DDY|D|17-20|SCR;2.0 TDI|150|CRL|D|17-20|SCR;2.0 TSI R|300|CJX|E|17-20|EA888"],
+["tcross","T-Cross",2019,2027,"SUV urbain","1.0 TSI|95,110,115|DKL|E|19-27|Chaîne GPF;1.5 TSI|150|DPCA|E|19-24|ACT"],
+["tiguan2","Tiguan II",2016,2024,"SUV compact","1.4 TSI|125,150|CZC|E|17-20|EA211;1.5 TSI|150|DPCA|E|18-24|EA211 evo;2.0 TSI|190,245|CZP|E|17-22|EA888;2.0 TDI|150,200,240|DFG|D|17-24|EA288;1.4 eHybrid|245|DGEA|P|21-24|PHEV"],
+["arteon","Arteon",2017,2024,"Fastback","2.0 TSI|190,280,320|CZP|E|17-24|EA888;2.0 TDI|150,200|DFG|D|17-24|EA288"],
+["caddy5","Caddy V",2020,2027,"Ludospace","1.5 TSI|114|DPB|E|20-27|EA211 evo;2.0 TDI|75,102,122|DTSA|D|20-27|EA288 evo;1.5 eHybrid|150|DUV|P|24-27|PHEV"],
+["transporter","Transporter T6/T6.1",2015,2024,"Utilitaire","2.0 TDI|90,110,150,199|CXH|D|17-24|EA288"],
+["crafter","Crafter",2016,2027,"Grand utilitaire","2.0 TDI|102,140,177|DMZ|D|17-27|EA288 SCR;Électrique|136:35|EV-CRA|EV|20-27|Urbain"],
+["id5","ID.5",2022,2027,"SUV coupé électrique","Électrique|174:77,204:77,299:77|APP310|EV|22-27|MEB"]]],
+["audi","Audi","DE",[
+["a4","A4 B9",2015,2024,"Berline premium","1.5 TFSI|150|DPCA|E|18-24|EA211 evo;2.0 TFSI|190,245,265|CVK|E|17-24|EA888;2.0 TDI|136,163,190,204|DEU|D|17-24|EA288 evo"],
+["a6","A6 C8",2018,2027,"Berline executive","2.0 TFSI|204,265|DNN|E|18-27|EA888;2.0 TDI|204|DETA|D|18-27|MHEV;3.0 TDI|286,344|DDVE|D|18-27|V6 MHEV;2.0 TFSI e|299,367|CYR|P|19-27|PHEV"],
+["q2","Q2",2016,2027,"SUV urbain premium","1.0 TFSI|110|DKL|E|17-27|EA211;1.5 TFSI|150|DPCA|E|17-24|EA211 evo;2.0 TDI|116,150|DSU|D|17-27|EA288"],
+["q3","Q3 F3",2018,2027,"SUV compact premium","1.5 TFSI|150|DPCA|E|18-27|EA211 evo;2.0 TFSI|190,230,245|DKT|E|18-27|EA888;2.0 TDI|150,200|DFG|D|18-27|EA288;1.4 TFSI e|245|DGEA|P|21-27|PHEV"],
+["q8","Q8 e-tron",2019,2027,"SUV électrique","Électrique|340:71,408:95,503:114|EAS|EV|19-27|e-tron"]]],
+["skoda","Škoda","CZ",[
+["scala","Scala",2019,2027,"Compacte","1.0 TSI|95,110,115|DKL|E|19-27|Chaîne;1.5 TSI|150|DPCA|E|19-27|EA211 evo"],
+["kamiq","Kamiq",2019,2027,"SUV urbain","1.0 TSI|95,110,115|DKL|E|19-27|Chaîne;1.5 TSI|150|DPCA|E|19-27|EA211 evo"],
+["karoq","Karoq",2017,2027,"SUV compact","1.0 TSI|110,115|DKL|E|19-24|Chaîne;1.5 TSI|150|DPCA|E|17-27|EA211 evo;2.0 TDI|115,150|DSU|D|17-27|EA288"],
+["superb","Superb IV",2024,2027,"Berline / break","1.5 TSI MHEV|150|DUV|H|24-27|MHEV 48V;2.0 TDI|150,193|DTU|D|24-27|EA288 evo;1.5 TSI iV|204,272|DUV|P|24-27|PHEV;2.0 TSI|265|DTU|E|24-27|EA888 4x4"]]],
+["seat","SEAT","ES",[
+["ibiza","Ibiza V",2017,2027,"Citadine","1.0 MPI|80|CHY|E|17-21|Chaîne;1.0 TSI|95,110,115|DKL|E|17-27|Chaîne GPF;1.5 TSI|150|DPCA|E|17-21|EA211 evo"],
+["arona","Arona",2017,2027,"SUV urbain","1.0 TSI|95,110,115|DKL|E|17-27|Chaîne;1.5 TSI|150|DPCA|E|17-24|EA211 evo"],
+["tarraco","Tarraco",2018,2027,"SUV 7 places","1.5 TSI|150|DPCA|E|18-27|EA211 evo;2.0 TSI|190,245|CZP|E|18-22|EA888;2.0 TDI|150,200|DFG|D|18-27|EA288;1.4 eHybrid|245|DGEA|P|21-27|PHEV"]]],
+["cupra","Cupra","ES",[
+["tavascan","Tavascan",2024,2027,"SUV coupé électrique","Électrique|286:77,340:77|APP550|EV|24-27|MEB"],
+["terramar","Terramar",2024,2027,"SUV compact","1.5 eTSI|150|DUV|H|24-27|MHEV 48V;2.0 TSI|204,272|DTU|E|24-27|EA888;1.5 e-Hybrid|272|DUV|P|24-27|PHEV"]]],
+["bmw","BMW","DE",[
+["s5","Série 5 G30/G60",2016,2027,"Berline executive","2.0 520i|184,208|B48|E|17-27|Chaîne / MHEV;3.0 540i|340,381|B58|E|17-27|6 cyl.;2.0 520d|190|B47|D|17-23|MHEV;3.0 530d|286|B57|D|17-27|6 cyl.;2.0 530e|292,299|B48|P|17-27|PHEV;3.0 550e|489|B58|P|23-27|PHEV"],
+["x5","X5 G05",2018,2027,"SUV premium","3.0 xDrive40i|340,381|B58|E|18-27|MHEV;3.0 xDrive30d|286,298|B57|D|18-27|6 cyl.;3.0 xDrive50e|489|B58|P|23-27|PHEV"],
+["i3","i3",2013,2022,"Citadine électrique","Électrique|170:42.2,184:42.2|IB1|EV|17-22|BMW i"],
+["i5","i5",2023,2027,"Berline électrique","Électrique|340:81.2,601:81.2|GEN5|EV|23-27|Gen5"]]],
+["mercedes","Mercedes-Benz","DE",[
+["classeb","Classe B W247",2018,2027,"Monospace compact","1.3 B180|136|M282|E|18-27|Chaîne;1.3 B200|163|M282|E|18-27|Chaîne;2.0 B200d|150|OM654|D|18-27|Diesel;1.3 B250e|218|M282|P|20-27|PHEV"],
+["classee","Classe E W214",2023,2027,"Berline executive","2.0 E200|204|M254|E|23-27|MHEV 48V;2.0 E220d|197|OM654|D|23-27|MHEV;2.0 E300e|312|M254|P|23-27|PHEV;3.0 E400e|381|M256|P|23-27|PHEV 6 cyl."],
+["glb","GLB X247",2019,2027,"SUV 7 places","1.3 GLB200|163|M282|E|19-27|Chaîne;2.0 GLB200d|150|OM654|D|19-27|Diesel;2.0 GLB220d|190|OM654|D|19-27|Diesel"],
+["vito","Vito / Classe V",2014,2027,"Utilitaire / van","1.6 110 CDI|102|OM622|D|17-24|Diesel;2.2 114 CDI|136|OM651|D|17-21|Diesel;2.2 116 CDI|163|OM651|D|17-24|Diesel;2.0 119 CDI|190|OM654|D|20-27|Diesel;Électrique|116:60|EV-VIT|EV|21-27|Urbain"]]],
+["opel","Opel","DE",[
+["mokka","Mokka B",2020,2027,"SUV urbain","1.2 Turbo|100,130|EB2|E|20-25|Courroie humide;1.5 Diesel|110|DV5|D|20-24|SCR;Électrique|136:50,156:54|ZKX|EV|20-27|e-CMP"],
+["crossland","Crossland",2017,2024,"SUV urbain","1.2|83|EB2|E|17-20|Courroie humide;1.2 Turbo|110,130|EB2|E|17-24|Courroie humide;1.5 Diesel|110,120|DV5|D|17-24|SCR"],
+["combo","Combo / Vivaro",2018,2027,"Utilitaire","1.5 Diesel|100,130|DV5|D|18-25|SCR;2.0 Diesel|145,180|DW10|D|19-27|SCR;Électrique|136:50|ZKX|EV|21-27|e-CMP"]]],
+["toyota","Toyota","JP",[
+["aygox","Aygo X",2022,2027,"Micro-citadine","1.0 VVT-i|72|1KR-FE|E|22-27|Chaîne"],
+["yariscross","Yaris Cross",2021,2027,"SUV urbain","1.5 Hybrid|116,130|M15A-FXE|H|21-27|e-CVT"],
+["chr2","C-HR II",2023,2027,"SUV coupé","1.8 Hybrid|140|2ZR-FXE|H|23-27|e-CVT;2.0 Hybrid|197|M20A-FXS|H|23-27|e-CVT;2.0 PHEV|223|M20A|P|23-27|PHEV"],
+["proace","Proace / Proace City",2016,2027,"Utilitaire","1.5 D-4D|100,120|DV5|D|17-25|SCR;2.0 D-4D|145,150,180|DW10|D|17-27|SCR;Électrique|136:50|ZKX|EV|21-27|e-CMP"]]],
+["nissan","Nissan","JP",[
+["juke2","Juke II",2019,2027,"SUV urbain","1.0 DIG-T|114,117|HR10DDT|E|19-27|Chaîne;1.6 Hybrid|143|HR16|H|22-27|Multimode"],
+["xtrail","X-Trail T33",2022,2027,"SUV 7 places","1.5 e-POWER|204,213|KR15|H|22-27|e-4ORCE"],
+["townstar","Townstar",2021,2027,"Ludospace","1.3 DIG-T|130|HR13DDT|E|21-27|Chaîne;Électrique|122:45|EV-KAN|EV|22-27|Urbain"]]],
+["honda","Honda","JP",[
+["jazz","Jazz IV",2020,2027,"Monospace compact","1.5 e:HEV|109|LEB|H|20-27|e-CVT"],
+["zrv","ZR-V",2023,2027,"SUV compact","2.0 e:HEV|184|LFA|H|23-27|e-CVT"],
+["crv","CR-V VI",2023,2027,"SUV familial","2.0 e:HEV|184|LFA|H|23-27|e-CVT;2.0 e:PHEV|184|LFA|P|23-27|PHEV"]]],
+["hyundai","Hyundai","KR",[
+["i30","i30 III",2017,2027,"Compacte","1.0 T-GDi|120|G3LC|E|17-27|Chaîne;1.5 T-GDi|160|G4LF|E|21-27|Chaîne;1.6 CRDi|115,136|D4FE|D|17-24|SCR;2.0 T-GDi N|280|G4KH|E|17-27|Performance"],
+["kona2","Kona II",2023,2027,"SUV urbain","1.0 T-GDi|120|G3LC|E|23-27|Chaîne;1.6 T-GDi|198|G4FT|E|23-27|Chaîne;1.6 Hybrid|141|G4LE|H|23-27|DCT6;Électrique|156:48.4,218:65.4|EM16|EV|23-27|EV"],
+["bayon","Bayon",2021,2027,"SUV urbain","1.2 MPi|84|G4LF|E|21-27|Chaîne;1.0 T-GDi|100,120|G3LC|E|21-27|Chaîne / MHEV"],
+["inster","Inster",2024,2027,"Micro-SUV électrique","Électrique|97:42,115:49|EM16|EV|24-27|Urbain LFP"]]],
+["kia","Kia","KR",[
+["ceed","Ceed III / XCeed",2018,2027,"Compacte","1.0 T-GDi|120|G3LC|E|18-27|Chaîne;1.5 T-GDi|160|G4LF|E|21-27|Chaîne;1.6 CRDi|115,136|D4FE|D|18-24|SCR;1.6 PHEV|141|G4LE|P|20-24|PHEV DCT6"],
+["niro2","Niro II",2022,2027,"SUV compact","1.6 Hybrid|141|G4LE|H|22-27|DCT6;1.6 PHEV|183|G4LE|P|22-27|PHEV;Électrique|204:64.8|EM16|EV|22-27|EV"],
+["stonic","Stonic",2017,2027,"SUV urbain","1.0 T-GDi|100,120|G3LC|E|17-27|Chaîne / MHEV;1.4 MPi|100|G4LC|E|17-21|Chaîne"],
+["ev3","EV3",2024,2027,"SUV urbain électrique","Électrique|204:58.3,204:81.4|EM16|EV|24-27|E-GMP 400V"]]],
+["mazda","Mazda","JP",[
+["cx30","CX-30",2019,2027,"SUV compact","2.0 Skyactiv-G|122,150|PE-VPS|E|19-27|M Hybrid;2.0 Skyactiv-X|186|SPCCI|E|19-24|SPCCI"],
+["mx30","MX-30",2020,2026,"SUV urbain électrique","Électrique|143:35.5|EV-MX|EV|20-26|Urbain;0.8 R-EV|170|RE-ROT|P|23-26|Rotatif extenseur"]]],
+["suzuki","Suzuki","JP",[["jimny","Jimny IV",2018,2027,"4x4 compact","1.5|102|K15|E|18-27|Chaîne AllGrip"]]],
+["ford","Ford","US",[["fiesta7","Fiesta VII",2017,2023,"Citadine","1.0 EcoBoost|100,125,140|B3CA|E|17-23|Courroie humide;1.0 EcoBoost MHEV|125,155|B7JA|H|20-23|MHEV 48V;1.5 EcoBlue|120|B7DA|D|18-21|SCR;1.5 ST|200|B3CA|E|18-23|Performance"]]],
+["volvo","Volvo","SE",[
+["xc60","XC60 II",2017,2027,"SUV premium","2.0 B4 MHEV|197|B4204|H|20-27|MHEV 48V;2.0 B5 MHEV|250|B4204|H|20-27|MHEV 48V;2.0 D4|190|D4204|D|17-20|Diesel;2.0 T6 PHEV|350|B4204|P|19-27|PHEV AWD;2.0 T8 PHEV|455|B4204|P|22-27|PHEV AWD"],
+["ex40","EX40 / EC40",2021,2027,"SUV compact électrique","Électrique|231:69,252:82,408:82|EV-EX4|EV|21-27|CMA"]]],
+["polestar","Polestar","SE",[["ps3","Polestar 3",2024,2027,"SUV électrique","Électrique|489:111,517:111|EV-PS3|EV|24-27|SPA2"]]],
+["mg","MG","CN",[
+["mg3","MG3 Hybrid+",2024,2027,"Citadine hybride","1.5 Hybrid+|194|MG3-HEV|H|24-27|Hybride 3 rapports"],
+["zsev","ZS EV",2019,2027,"SUV urbain électrique","Électrique|143:44.5,156:51,156:72|EV-ZS|EV|19-27|EV"]]],
+["byd","BYD","CN",[
+["dolphin","Dolphin",2023,2027,"Citadine électrique","Électrique|95:44.9,176:60.4,204:60.4|BYD|EV|23-27|Blade LFP"],
+["seal","Seal",2023,2027,"Berline électrique","Électrique|313:82.5,530:82.5|BYD|EV|23-27|Blade CTB"]]],
+["jeep","Jeep","US",[["renegade","Renegade",2014,2027,"SUV urbain","1.0 T3|120|GSE|E|19-24|Chaîne;1.3 T4|150,180|GSE|E|19-24|Chaîne;1.6 MultiJet|120,130|552|D|17-22|SCR;1.3 PHEV 4xe|190,240|GSE|P|20-27|PHEV AWD"]]],
+["fiat","Fiat","IT",[
+["500h","500 Hybrid",2020,2027,"Micro-citadine","1.0 FireFly Hybrid|70|GSE|H|20-27|MHEV 12V Chaîne"],
+["panda","Panda III",2012,2027,"Micro-citadine","1.0 FireFly Hybrid|70|GSE|H|20-27|MHEV 12V;1.2 Fire|69|169A4|E|17-21|Courroie;0.9 TwinAir|85|312A2|E|17-20|2 cyl."]]],
+["alfa","Alfa Romeo","IT",[["stelvio","Stelvio",2017,2027,"SUV sport","2.0 Turbo|200,280|GME|E|17-27|Q4 AWD;2.2 JTDm|190,210|552|D|17-22|SCR;2.9 V6 QV|510|690T|E|17-27|Biturbo"]]],
+["landrover","Land Rover","GB",[["velar","Range Rover Velar",2017,2027,"SUV premium","2.0 P250|250|PT204|E|17-27|Ingenium;2.0 D200|204|204DT|D|17-24|Diesel MHEV;3.0 D300|300|AJ200D|D|20-27|6 cyl. MHEV;2.0 P400e|404|PT204|P|20-27|PHEV"]]],
+["porsche","Porsche","DE",[
+["cayenne","Cayenne",2017,2027,"SUV premium","3.0 V6|340,353|CWV|E|18-27|Turbo;2.9 V6 S|440,474|CWV|E|18-27|Biturbo;3.0 E-Hybrid|462,470|CWV|P|18-27|PHEV;4.0 Turbo E-Hybrid|739|CWV|P|24-27|PHEV V8"],
+["911","911 992",2019,2027,"Coupé sport","3.0 Carrera|385,394|9A2|E|19-27|Biturbo flat-6;3.0 Carrera S|450,480|9A2|E|19-27|Biturbo;3.6 GTS T-Hybrid|541|9A2|H|24-27|T-Hybrid;3.7 Turbo S|650,711|9A2|E|19-27|Biturbo"]]],
+["mini","MINI","GB",[["aceman","Aceman",2024,2027,"SUV urbain électrique","Électrique|190:42.5,218:54.2,260:54.2|EV-ACE|EV|24-27|SEA"]]],
+["smart","smart","DE",[["smart3","#3",2023,2027,"SUV coupé électrique","Électrique|272:66,428:66|EV-SEA|EV|23-27|SEA"]]],
+["lexus","Lexus","JP",[
+["nx","NX",2021,2027,"SUV premium","2.5 Hybrid|244|A25A-FXS|H|21-27|e-CVT AWD;2.5 PHEV|309|A25A|P|21-27|PHEV AWD"],
+["lbx","LBX",2023,2027,"SUV urbain premium","1.5 Hybrid|136|M15A-FXE|H|23-27|e-CVT"]]],
+["mitsubishi","Mitsubishi","JP",[
+["outlander","Outlander",2012,2027,"SUV 7 places","2.4 PHEV|203,248|4B12|P|17-27|PHEV AWD"],
+["asx","ASX",2010,2027,"SUV urbain","1.6 MIVEC|117|4A9|E|17-22|Chaîne;2.0 MIVEC|150|4B11|E|17-21|Chaîne"]]],
+["subaru","Subaru","JP",[
+["forester","Forester",2018,2027,"SUV familial","2.0i e-Boxer|150|FB20|H|18-27|Boxer MHEV AWD"],
+["xv","XV / Crosstrek",2017,2027,"SUV compact","1.6i|114|FB16|E|17-21|Boxer Chaîne;2.0i e-Boxer|150|FB20|H|19-27|Boxer MHEV AWD"]]],
+["tesla","Tesla","US",[
+["models","Model S",2017,2027,"Berline électrique luxe","Électrique|670:100,1020:100|TS|EV|17-27|Tri-motor"],
+["modelx","Model X",2017,2027,"SUV électrique luxe","Électrique|670:100,1020:100|TX|EV|17-27|Tri-motor"]]]
+];
 const EXTF=[
 ["F-AMP-CITY","model","renault,nissan,dacia","r5,r4,twingo-e,micra6,leaf3","tsb","moyen",2024,2027,"AmpR / AmpR City — BMS SOC et préconditionnement","Jauge imprécise, charge lente à froid, delta cellules.","Lire delta cellules et SOH|Cycle de charge lente complet à 100 %|Appliquer la mise à jour BMS|Réapprendre l'estimation SOC|Contrôler le préconditionnement","BMS, modules, sondes température","P0AA6,P0C00,U0111","TSB AmpR","hv,autonomie,charge,thermique"],
 ["F-STLA-OBC","model","peugeot,citroen,ds,opel,fiat,alfa","c5air-2,e408,208-3,dsn4,frontera,panda2,fiat600,junior","campagne","eleve",2024,2027,"STLA Medium / e-CMP2 — OBC 11 kW et verrou de trappe","Charge AC interrompue, trappe qui ne verrouille pas.","Lire les codes OBC et actuateur de trappe|Tester sur plusieurs bornes AC|Contrôler le verrou et son faisceau|Appliquer la campagne OBC / trappe|Revalider charge AC et verrouillage","OBC, actuateur trappe, faisceau HV","P0D11,B1000,P0C00","Campagne Stellantis STLA","charge,hv,portes"],
@@ -113,17 +260,16 @@ const EXTR=[
 ["RV-STA-48","peugeot,citroen,ds,opel,fiat,alfa","1.2 Hybrid 48V|EB2LTEDH","Courroie d'accessoires + galets",0,90000,0,72,"TSB Stellantis 48V / e-DCS6","Contrôle ajouté à 90 000 km / 6 ans sur les 48 V e-DCS6."],
 ["RV-MEB-12LI","volkswagen,audi,skoda,seat,cupra,ford","APP310|APP550|MEB","Contrôle batterie 12 V lithium",0,60000,0,48,"TSB VAG MEB+","12 V Li-ion : contrôle SOH et connexions à 60 000 km / 4 ans."],
 ["RV-EGMP2","hyundai,kia","EM17|EM21|EM23|EM16","Contrôle ICCU gen2 + V2L",0,60000,0,48,"Campagne E-GMP","Contrôle ICCU et prise V2L ajouté à 60 000 km / 4 ans."],
-["RV-PPE-COOL","audi,porsche","PPE|J1","Liquide boucle 800 V",0,120000,0,96,"TSB PPE / J1","Remplacement du liquide de la boucle 800 V à 120 000 km / 8 ans."],
+["RV-PPE-COOL","audi,porsche","PPE|J1","Liquide boucle 800V",0,120000,0,96,"TSB PPE / J1","Remplacement du liquide de la boucle 800 V à 120 000 km / 8 ans."],
 ["RV-AMPR-BMS","renault,nissan,dacia","EV-R5|6AK|5AM|EV-TWI|EV-R4","Mise à jour BMS + contrôle SOH",0,30000,0,24,"TSB AmpR","Mise à jour BMS et contrôle SOH tous les 30 000 km / 2 ans."]
 ].map(r=>({id:r[0],brands:csv(r[1]),match:r[2],organ:r[3],oldKm:r[4],newKm:r[5],oldMo:r[6],newMo:r[7],src:r[8],note:r[9],y0:2017,y1:2027}));
-/* Protocoles de domaines supplémentaires */
 const DR2=[
 ["DR2-EPS",["geometrie","adas"],"panne","eleve","Direction assistée électrique — capteur de couple et calibration","Direction dure, assistance intermittente, volant qui tire.","Lire défauts EPS et capteur de couple|Contrôler alimentation et masses EPS|Vérifier l'absence de campagne de recalibration|Recalibrer le capteur après intervention|Essai routier","EPS, capteur de couple, faisceau","C1A00,U0121",()=>true],
 ["DR2-EPB",["freinage","elec12"],"panne","eleve","Frein de parking électrique — actuateurs et câbles","EPB ne serre / ne libère pas, voyant rouge.","Lire défauts EPB et courant des actuateurs|Contrôler câbles et étriers arrière|Tester commande et alimentation|Remplacer l'actuateur puis réinitialiser","Actuateurs EPB, câbles, étriers","C1365,P0562",()=>true],
 ["DR2-DPFS",["depol"],"panne","moyen","Capteur de pression différentielle FAP — dérive","Régénérations anormales, P2463 sans colmatage réel.","Comparer ΔP mesuré et valeur capteur|Contrôler les tuyaux de prise (fissure, bouchon)|Tester le capteur sous pression connue|Remplacer capteur et réinitialiser","Capteur ΔP, tuyaux, FAP","P2463,P2002",(e,s)=>e.fuel==="D"],
 ["DR2-TACT",["suralim","elec12"],"panne","eleve","Actuateur de turbo / wastegate pilotée — défaut","P00AF, puissance limitée, sifflement anormal.","Lire position consigne / réel de l'actuateur|Tester alimentation et masse de l'actuateur|Contrôler la course mécanique|Remplacer l'actuateur et réapprendre","Actuateur turbo, faisceau, turbo","P00AF,P0299",(e,s)=>!s.ev&&/turbo/i.test(s.feed)],
 ["DR2-DCTW",["transmission","acoups"],"tsb","moyen","Embrayages DCT / e-DCS6 — usure et apprentissage","Compteurs d'usure élevés, à-coups à chaud, patinage.","Lire les compteurs d'usure d'embrayage|Contrôler température et adaptations|Appliquer l'apprentissage constructeur|Planifier le remplacement si seuil atteint","Embrayages DCT, mécatronique","P0700,P1750",(e,s)=>!s.ev&&/DCT|DSG|e-DCS6|EDC|TCT|DCT6/i.test((e.tech||"")+" "+famL(e))],
-["DR2-HP EV",["thermique","hv","autonomie"],"panne","moyen","Pompe à chaleur EV — perte d'efficacité","Consommation hivernale élevée, chauffage habitacle faible.","Lire les codes du circuit thermique|Contrôler la charge de fluide (CO₂ / R1234yf)|Tester compresseur et vannes|Appliquer la mise à jour gestion thermique","Pompe à chaleur, compresseur, vannes","P0C00,P0AA6",(e,s)=>s.ev||e.fuel==="P"],
+["DR2-HPEV",["thermique","hv","autonomie"],"panne","moyen","Pompe à chaleur EV — perte d'efficacité","Consommation hivernale élevée, chauffage habitacle faible.","Lire les codes du circuit thermique|Contrôler la charge de fluide (CO₂ / R1234yf)|Tester compresseur et vannes|Appliquer la mise à jour gestion thermique","Pompe à chaleur, compresseur, vannes","P0C00,P0AA6",(e,s)=>s.ev||e.fuel==="P"],
 ["DR2-V2L",["charge","elec12"],"tsb","info","V2L / prise externe — protection et disponibilité","V2L indisponible, alerte surcharge, coupure en usage.","Lire l'état V2L et les protections|Contrôler la prise et le câblage|Vérifier le SOC minimum autorisé|Appliquer la mise à jour logicielle","Prise V2L, ICCU, protections","P1B77",(e,s)=>s.ev],
 ["DR2-WIRE",["tablette","elec12"],"panne","info","Chargeur sans fil / ports USB — surchauffe et coupures","Charge interrompue, téléphone chaud, port inopérant.","Contrôler le module de charge et sa ventilation|Tester les ports USB et leur alimentation|Vérifier l'absence d'objet métallique|Remplacer le module Qi","Module Qi, ports USB, alimentation","U0101",()=>true]
 ];
@@ -550,10 +696,11 @@ const rv=allRevs();rv.forEach(r=>{if(!r.brands.some(b=>bids.has(b)))add("wa","RB
 if(r.newKm<=0)add("ba","RK",`Révision ${r.id} : km invalide`);
 if(!r.src)add("wa","RS",`Révision ${r.id} sans source`)});
 const n24=CAT.reduce((a,b)=>a+b.models.filter(m=>m.y0>=2024).length,0);
+const packsOk=PACKS.some(x=>x.id==="pack2024")&&PACKS.some(x=>x.id==="packplus");
 const checks=[["Marques → modèles",CAT.every(b=>b.models.length>0),`${CAT.length} marques, ${CAT.reduce((a,b)=>a+b.models.length,0)} modèles`],
 ["Modèles → motorisations",CAT.every(b=>b.models.every(m=>m.engines.length>0)),`${eng.length} motorisations`],
-["Millésimes 2024+ intégrés",n24>=40,`${n24} modèles commercialisés dès 2024`],
-["Pack 2024-2027 appliqué",PACKS.some(x=>x.id==="pack2024"),PACKS.some(x=>x.id==="pack2024")?"Pack intégré":"Pack non intégré"],
+["Millésimes 2024+ intégrés",n24>=60,`${n24} modèles commercialisés dès 2024`],
+["Packs modèles appliqués",packsOk,packsOk?"pack2024 + packplus":"pack manquant"],
 ["Cylindrée / batterie renseignée",iss.filter(i=>i.code==="DISP"||i.code==="KWH").length===0,`${eng.filter(e=>{const s=spec(e);return s.ev?s.kwh:s.disp}).length}/${eng.length} documentées`],
 ["Années moteur ⊂ production",yf===0,yf?`${yf} dépassement(s)`:"Plages incluses"],
 ["Puissance ↔ libellé",hf===0,hf?`${hf} écart(s)`:"Cohérent"],
@@ -595,76 +742,122 @@ FAULTS.forEach(f=>{if(!(f.dom||[]).length){f.dom=["moteur"];n++}});
 saveDB();audit();renderAudit();sync();renderDom();renderAll();
 toast(n?`${n} correction(s) appliquée(s)`:"Aucune correction nécessaire",n?"ok":"in",
 n?()=>{const d=JSON.parse(before);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();audit();renderAudit();sync();renderDom();renderAll()}:null)}
-/* ═══ PACK 2024-2027 : intégration idempotente ═══ */
-function applyPack(auto){
-const already=PACKS.some(p=>p.id==="pack2024");
-if(!auto&&!canW()){toast("Réservé à l'administrateur","ba");return null}
-const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});
-let ma=0,me=0,fa=0,ra=0;
-EXT2024.forEach(([bid,arr])=>{const b=B(bid);if(!b)return;
+/* ═══ FUSION DES PACKS (idempotente, crée les marques absentes) ═══ */
+function mergeExt(list,withBrand){let ma=0,me=0;
+list.forEach(entry=>{let b,arr;
+if(withBrand){const bid=entry[0];b=B(bid);if(!b){b={id:bid,name:entry[1],country:entry[2],models:[]};CAT.push(b);}arr=entry[3];}
+else{b=B(entry[0]);if(!b)return;arr=entry[1];}
 arr.forEach(mt=>{const ex=b.models.find(x=>x.id===mt[0]);const pm=parseModel(b,mt);
 if(ex){pm.engines.forEach(en=>{const r=addEngTo(ex,b,en.fam,en.hp,en.code,en.fuel,en.y0,en.y1,en.tech);
 if(r==="add")ma++;else if(r==="merge")me++;});
 ex.y0=Math.min(ex.y0,pm.y0);ex.y1=Math.max(ex.y1,pm.y1);}
 else{b.models.push(pm);ma+=pm.engines.length;}});});
+return{ma,me};}
+function applyPack(auto){
+if(!auto&&!canW()){toast("Réservé à l'administrateur","ba");return null}
+const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});
+const r1=mergeExt(EXT2024,false);
+const r2=mergeExt(EXTPLUS,true);
+let fa=0,ra=0;
 EXTF.forEach(f=>{if(!FAULTS.some(x=>x.id===f.id)){FAULTS.push(Object.assign({},f));fa++;}});
 EXTR.forEach(r=>{if(!allRevs().some(x=>x.id===r.id)){REVC.push(Object.assign({},r));ra++;}});
-PACKS=PACKS.filter(p=>p.id!=="pack2024");
-PACKS.push({id:"pack2024",ts:Date.now(),added:{m:ma,f:fa,r:ra}});
+const ma=r1.ma+r2.ma;
+PACKS=PACKS.filter(p=>p.id!=="pack2024"&&p.id!=="packplus");
+PACKS.push({id:"pack2024",ts:Date.now(),added:{m:r1.ma,f:fa,r:ra}});
+PACKS.push({id:"packplus",ts:Date.now(),added:{m:r2.ma,f:0,r:0}});
 saveDB();
-if(!auto){makeBk("pack millésimes 2024-2027");audit();renderAudit();}
-sync();renderDom();renderAll();if(canW())renderPackPanel();
-return{added:ma+fa+ra,m:ma,f:fa,r:ra,snap,already};}
+if(!auto){makeBk("packs millésimes 2024-2027 + complémentaire");audit();renderAudit();}
+if(CO.brand){sync();renderDom();renderAll();if(canW())renderPackPanel();}
+return{added:ma+fa+ra,m:ma,f:fa,r:ra,snap};}
 function fetchPackOnline(){if(!canW()){toast("Réservé à l'administrateur","ba");return}
 if(!navigator.onLine){toast("Connexion requise","ba");return}
-ovlOn(true);$("ovT").textContent="Vérification des nouveautés en ligne";$("ovS").textContent="Pack distant + pack local 2024-2027";
+ovlOn(true);$("ovT").textContent="Vérification des nouveautés en ligne";$("ovS").textContent="Pack distant + packs locaux 2024-2027";
 const before=engines().length;$("ovB").textContent=before;$("ovA").textContent="+0";$("ovM").textContent="~0";$("ovAf").textContent=before;
 ostep(15,"Interrogation du dépôt");olog("GET "+PACK_URL,"t");
 fetch(PACK_URL,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(data=>{
 olog("Pack distant trouvé","s");ostep(45,"Fusion du pack distant");
 const res=ingest(data);$("ovA").textContent="+"+res.add;$("ovM").textContent="~"+res.merge;
 olog(`${res.add} motorisation(s), ${res.fadd} fiche(s), ${res.radd} révision(s) depuis le distant`,"s");
-ostep(70,"Application du pack local 2024-2027");
+ostep(70,"Application des packs locaux");
 const pr=applyPack(true);$("ovA").textContent="+"+(res.add+pr.m);
-olog(`Pack local : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`,"s");
+olog(`Packs locaux : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`,"s");
 ostep(90,"Sauvegarde + audit");makeBk("mise à jour en ligne 2024+");saveDB();audit();
 $("ovAf").textContent=engines().length;
 $("ovRes").innerHTML=`<div class="nt ok"><b>Mise à jour terminée.</b> Motorisations : ${nf(before)} → <b>${nf(engines().length)}</b> · Intégrité <b>${AUDIT.score}%</b></div>`;
 renderAudit();renderPackPanel();}).catch(e=>{
-olog("Pack distant indisponible : "+e.message+" — application du pack local embarqué","w");
-ostep(60,"Application du pack local 2024-2027");
+olog("Pack distant indisponible : "+e.message+" — application des packs locaux embarqués","w");
+ostep(60,"Application des packs locaux 2024-2027");
 const pr=applyPack(true);$("ovA").textContent="+"+pr.m;
-ostep(90,"Sauvegarde + audit");makeBk("pack local 2024-2027");saveDB();audit();
+ostep(90,"Sauvegarde + audit");makeBk("packs locaux 2024-2027");saveDB();audit();
 $("ovAf").textContent=engines().length;
-$("ovRes").innerHTML=`<div class="nt wa"><b>Pack distant injoignable.</b> Le pack local embarqué (modèles 2024-2027, fiches, révisions) a été appliqué : <b>+${pr.m}</b> motorisations, <b>+${pr.f}</b> fiches, <b>+${pr.r}</b> révisions. Intégrité <b>${AUDIT.score}%</b>.</div>`;
+$("ovRes").innerHTML=`<div class="nt wa"><b>Pack distant injoignable.</b> Les packs locaux embarqués (modèles 2024-2027 + complément toutes marques) ont été appliqués : <b>+${pr.m}</b> motorisations, <b>+${pr.f}</b> fiches, <b>+${pr.r}</b> révisions. Intégrité <b>${AUDIT.score}%</b>.</div>`;
 renderAudit();renderPackPanel();}).finally(()=>{ostep(100,"Terminé");$("ovX").style.display="block"});}
 function ensurePackPanel(){if($("packPanel"))return;
 const host=$("v-adm");const last=host.querySelector(".pn:last-of-type");
 const p=el("div","pn pd");p.id="packPanel";p.style.marginBottom="16px";p.style.borderColor="rgba(34,211,238,.32)";
 p.innerHTML=`<div class="sh"><div class="si ic-cy"><svg class="ic"><use href="#i-cloud"/></svg></div>
-<div><h2>Mise à jour millésimes 2024-2027</h2><div class="sb">Nouvelles marques, modèles commercialisés, motorisations, puissances et pannes corrélées</div></div>
-<span class="sp"></span><button class="bt pr" id="bPackApply"><svg class="ic"><use href="#i-plus"/></svg>Intégrer le pack 2024-2027</button>
+<div><h2>Mise à jour millésimes 2024-2027 + modèles manquants</h2><div class="sb">Nouvelles marques, modèles commercialisés, motorisations, puissances et pannes corrélées</div></div>
+<span class="sp"></span><button class="bt pr" id="bPackApply"><svg class="ic"><use href="#i-plus"/></svg>Intégrer / réintégrer les packs</button>
 <button class="bt vi" id="bPackOnline"><svg class="ic"><use href="#i-cloud"/></svg>Vérifier les nouveautés en ligne</button></div>
 <div class="g4" id="packStats" style="margin-bottom:14px"></div>
 <div id="packList" style="display:flex;flex-direction:column;gap:8px"></div>
-<div class="nt in" style="margin-top:13px">Le pack est <b>embarqué hors ligne</b> et appliqué automatiquement au démarrage. L'intégration est <b>idempotente</b> (aucun doublon), crée une sauvegarde locale, relance l'audit et reste annulable. La vérification en ligne fusionne en plus un pack distant éventuel (JSON : vehicles / faults / revisions).</div>`;
+<div class="nt in" style="margin-top:13px">Les packs sont <b>embarqués hors ligne</b> et appliqués automatiquement au démarrage (tous rôles). L'intégration est <b>idempotente</b> (aucun doublon), crée une sauvegarde locale, relance l'audit et reste annulable. La vérification en ligne fusionne en plus un pack distant éventuel (JSON : vehicles / faults / revisions / tiers).</div>`;
 host.insertBefore(p,last);
 $("bPackApply").onclick=()=>{if(!canW()){toast("Réservé à l'administrateur","ba");return}
 const pr=applyPack(false);if(!pr)return;
-toast(pr.added?`Pack 2024-2027 : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`:"Pack déjà intégré — aucun ajout",pr.added?"ok":"in",
+toast(pr.added?`Packs intégrés : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`:"Packs déjà intégrés — aucun ajout",pr.added?"ok":"in",
 pr.added?()=>{const d=JSON.parse(pr.snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();sync();renderDom();renderAll();renderPackPanel();toast("Intégration annulée","in")}:null)};
 $("bPackOnline").onclick=fetchPackOnline;}
-function renderPackPanel(){if(!canW()||!$("packPanel"))return;ensurePackPanel();
-const pk=PACKS.find(p=>p.id==="pack2024");
+function renderPackPanel(){if(!canW())return;ensurePackPanel();
+const pk=PACKS.find(p=>p.id==="pack2024"),pp=PACKS.find(p=>p.id==="packplus");
 const n24=CAT.reduce((a,b)=>a+b.models.filter(m=>m.y0>=2024).length,0);
-$("packStats").innerHTML=[["Statut",pk?"Intégré":"Non intégré",pk?"gr":"amH"],["Modèles 2024+",n24,"mg"],
-["Fiches pack",EXTF.length,"rd"],["Révisions pack",EXTR.length,"vi"]]
+$("packStats").innerHTML=[["Statut",pk&&pp?"Packs intégrés":"Non intégrés",pk&&pp?"gr":"amH"],["Modèles 2024+",n24,"mg"],
+["Modèles pack complément",pp?pp.added.m:0,"cy"],["Fiches / révisions pack",pk?pk.added.f+" / "+pk.added.r:0,"rd"]]
 .map(([l,v,c])=>`<div class="st"><div class="sv3" style="font-size:20px;color:var(--${c})">${esc(String(v))}</div><div class="sl">${l}</div></div>`).join("");
 $("packList").innerHTML=PACKS.length?PACKS.slice().sort((a,b)=>b.ts-a.ts).map(p=>
 `<div class="sv"><span class="gr2"><svg class="ic"><use href="#i-clock"/></svg></span>
 <div style="flex:1;min-width:0"><div style="font-weight:750;font-size:13px">${esc(p.id)}</div>
 <div class="mi">${dtT(p.ts)} · +${p.added.m} motorisations · +${p.added.f} fiches · +${p.added.r} révisions</div></div>
-<span class="pl si">appliqué</span></div>`).join(""):ey("i-clock","Aucun pack appliqué","Cliquez sur « Intégrer le pack 2024-2027 ».");}
+<span class="pl si">appliqué</span></div>`).join(""):ey("i-clock","Aucun pack appliqué","Cliquez sur « Intégrer / réintégrer les packs ».");}
+/* ═══ AUTO-VÉRIFICATION AU LANCEMENT ═══ */
+function selfCheck(){const L=[];const add=(ok,l,d,f)=>L.push({ok:!!ok,l,d:d==null?"":String(d),f:!!f});
+add(typeof RAW!=="undefined"&&Array.isArray(RAW),"data.js : catalogue RAW présent",typeof RAW,typeof RAW==="undefined");
+add(typeof FR!=="undefined"&&typeof DOM!=="undefined"&&typeof DTC!=="undefined"&&typeof ENG!=="undefined","data.js : FR / DOM / DTC / ENG présents","",!(typeof FR!=="undefined"&&typeof DOM!=="undefined"));
+add(CAT.length>0,"Catalogue construit",CAT.length+" marques",!CAT.length);
+add(engines().length>100,"Motorisations chargées",engines().length,engines().length===0);
+add(FAULTS.length>10,"Fiches pannes / rappels / TSB",FAULTS.length,!FAULTS.length);
+add(DRALL.length>20,"Protocoles par domaine",DRALL.length);
+add(allRevs().length>10,"Révisions d'intervalles",allRevs().length);
+add(PACKS.some(p=>p.id==="pack2024")&&PACKS.some(p=>p.id==="packplus"),"Packs modèles 2024+ appliqués",PACKS.map(p=>p.id).join(", "),!PACKS.length);
+add(!!CO.brand&&!!CO.hp,"Banc de commande initialisé","",!CO.brand);
+add(typeof unlockAdmin==="function"&&!!$("admForm"),"Authentification administrateur prête","");
+add((()=>{try{localStorage.setItem("kf.t","1");localStorage.removeItem("kf.t");return true}catch(e){return false}})(),"Stockage local accessible","",!(()=>{try{localStorage.setItem("kf.t","1");localStorage.removeItem("kf.t");return true}catch(e){return false}})());
+add(!!(window.crypto&&crypto.subtle),"Crypto Subtle (sinon repli intégré)",window.crypto&&crypto.subtle?"oui":"repli");
+add(!!AUDIT,"Audit d'intégrité calculé",AUDIT?AUDIT.score+"% · "+AUDIT.bad+" bloquante(s)":"");
+add(KFERR.length===0,"Aucune erreur JS capturée",KFERR.length?KFERR.slice(-3).join(" | "):"ok",KFERR.length>0);
+return L;}
+function renderSelf(L){const bad=L.filter(x=>!x.ok);
+let box=$("selfBox");
+if(!box){box=el("div","nt");box.id="selfBox";box.style.marginTop="14px";box.style.textAlign="left";
+const a=$("lStats");if(a&&a.parentNode)a.parentNode.insertBefore(box,a.nextSibling);}
+box.className="nt "+(bad.some(x=>x.f)?"ba":bad.length?"wa":"ok");
+box.innerHTML=`<b>Auto-vérification au lancement :</b> ${L.length-bad.length}/${L.length} contrôles OK`+
+(bad.some(x=>x.f)?` — <b>${bad.length} anomalie(s) BLOQUANTE(s)</b>`:bad.length?` — <b>${bad.length} avertissement(s)</b>`:" — installation saine")+
+` <button class="bt sm" id="selfRe" style="margin-left:8px"><svg class="ic"><use href="#i-refresh"/></svg>Relancer</button>`+
+`<details style="margin-top:8px"${bad.some(x=>x.f)?" open":""}><summary style="cursor:pointer;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:800">Détail des contrôles & erreurs</summary>
+<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;font-family:var(--mo);font-size:11px">`+
+L.map(x=>`<div style="color:${x.ok?"var(--gr)":x.f?"var(--rd)":"var(--amH)"}">${x.ok?"✓":"✗"} ${esc(x.l)}${x.d?" — "+esc(x.d):""}</div>`).join("")+
+(KFERR.length?`<div style="color:var(--rd);margin-top:6px">Erreurs JS capturées : ${esc(KFERR.slice(-5).join(" | "))}</div>`:"")+
+`</div></details>`;
+const rb=$("selfRe");if(rb)rb.onclick=()=>renderSelf(selfCheck());}
+function showFatal(list){try{document.body.classList.add("lk");const L=$("launch");if(L)L.classList.remove("off");
+let box=$("selfBox");if(!box){box=el("div","nt ba");box.id="selfBox";box.style.marginTop="14px";box.style.textAlign="left";
+const a=$("lStats");if(a&&a.parentNode)a.parentNode.insertBefore(box,a.nextSibling);}
+box.className="nt ba";
+box.innerHTML="<b>Auto-vérification : échec du démarrage.</b><div style='margin-top:8px;font-family:var(--mo);font-size:11px;display:flex;flex-direction:column;gap:4px'>"+
+list.concat(KFERR.slice(-6)).map(x=>"<div style='color:#fca5a5'>✗ "+esc(String(x))+"</div>").join("")+
+"</div><div class='mi' style='margin-top:8px'>Vérifiez que data.js et app.js sont présents, à jour et sans ligne &lt;/script&gt;, puis rechargez (ou videz le cache de l'APK).</div>";
+}catch(e){}}
 /* ═══ TIROIRS / NOTIFS / TIERS / SESSIONS ═══ */
 function openDw(){$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");$("dwX").focus()}
 function closeDw(){$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");
@@ -796,7 +989,7 @@ if(r.status==="pending"){const b=el("button","bt",'<svg class="ic"><use href="#i
 if(r.status==="denied"||r.status==="revoked"){const b=el("button","bt te",'<svg class="ic"><use href="#i-send"/></svg>Nouvelle demande');
 b.onclick=()=>{TIERS=TIERS.filter(t=>t.id!==r.id);saveAcc();waitMode=false;renderLaunch()};act.appendChild(b)}}
 function renderLaunch(){const eng=engines();
-$("lStats").innerHTML=[["Motorisations",nf(eng.length)],["Marques",CAT.length],["Fiches",nf(FAULTS.length+DRALL.length)],["Domaines",DOM.length],["Révisions",allRevs().length],["Modèles 2024+",CAT.reduce((a,b)=>a+b.models.filter(m=>m.y0>=2024).length,0)]]
+$("lStats").innerHTML=[["Motorisations",nf(eng.length)],["Marques",CAT.length],["Modèles",CAT.reduce((a,b)=>a+b.models.length,0)],["Fiches",nf(FAULTS.length+DRALL.length)],["Domaines",DOM.length],["Révisions",allRevs().length]]
 .map(([l,v])=>`<span class="ch in"><b>${v}</b> ${l}</span>`).join("");
 if(waitMode&&myReq()){$("lChoose").style.display="none";$("lWait").style.display="";renderWait()}
 else{$("lChoose").style.display="";$("lWait").style.display="none"}
@@ -1000,7 +1193,7 @@ $("ovX").style.display="block"}
 const SRC=[["faults2019.js","F2019"],["update2026.js","BATCH_2026_ISSUES"],["premium22.js","PREMIUM_EXPERT"],["app.js","BRAND_EXPERT"]];
 async function importOnline(){if(!canW()){toast("Import réservé au mode administrateur","ba");return}
 if(!navigator.onLine){toast("Connexion requise","ba");return}
-ovlOn(true);$("ovT").textContent="Import massif en ligne";$("ovS").textContent="Sources auto-diagnostic + pack 2024-2027";
+ovlOn(true);$("ovT").textContent="Import massif en ligne";$("ovS").textContent="Sources auto-diagnostic + packs 2024-2027";
 const before=engines().length,beforeF=FAULTS.length;
 $("ovB").textContent=before;$("ovA").textContent="+0";$("ovM").textContent="~0";$("ovAf").textContent=before;
 const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});let ok=0,found=0;
@@ -1031,15 +1224,15 @@ org:org||"",dtc:String(dtc||"").split(/[,\/\s]+/).map(s=>s.trim()).filter(s=>/^[
 src:src||"Source auto-diagnostic",dom:dom.length?dom:["moteur"]});found++})}
 catch(e){olog("Source indisponible : "+(e.name==="AbortError"?"délai dépassé":e.message),"w")}
 $("ovM").textContent="~"+found;await sleep(110)}
-ostep(78,"Application du pack local 2024-2027");await sleep(140);
+ostep(78,"Application des packs locaux 2024-2027");await sleep(140);
 const pr=applyPack(true);found+=pr.f;
-olog(`Pack local : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`,"s");
-ostep(88,"Sauvegarde locale");makeBk("import massif en ligne + pack 2024");olog("Sauvegarde automatique créée","s");
+olog(`Packs locaux : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`,"s");
+ostep(88,"Sauvegarde locale");makeBk("import massif en ligne + packs 2024");olog("Sauvegarde automatique créée","s");
 ostep(94,"Écriture");saveDB();ostep(100,"Vérification d'intégrité");await sleep(170);audit();
 $("ovAf").textContent=engines().length;olog("Intégrité : "+AUDIT.score+"%","s");
-if(!found){$("ovRes").innerHTML=`<div class="nt wa"><b>Aucune donnée rapatriée.</b> ${ok}/${SRC.length} source(s) joignable(s).<br>La base livrée + pack 2024 (<b>${nf(engines().length)}</b> motorisations, <b>${nf(FAULTS.length)}</b> fiches) reste <b>intégralement disponible hors ligne</b>.</div>`;
+if(!found){$("ovRes").innerHTML=`<div class="nt wa"><b>Aucune donnée rapatriée.</b> ${ok}/${SRC.length} source(s) joignable(s).<br>La base livrée + packs 2024 (<b>${nf(engines().length)}</b> motorisations, <b>${nf(FAULTS.length)}</b> fiches) reste <b>intégralement disponible hors ligne</b>.</div>`;
 toast("Sources sans donnée — base locale conservée","wa")}
-else{$("ovRes").innerHTML=`<div class="nt ok"><b>Import massif terminé sans blocage.</b><br>Sources : ${ok}/${SRC.length} · <b>+${found}</b> fiche(s) (distant + pack 2024)<br>Fiches : ${nf(beforeF)} → <b>${nf(FAULTS.length)}</b> · Intégrité : <b>${AUDIT.score}%</b></div>`;
+else{$("ovRes").innerHTML=`<div class="nt ok"><b>Import massif terminé sans blocage.</b><br>Sources : ${ok}/${SRC.length} · <b>+${found}</b> fiche(s) (distant + packs 2024)<br>Fiches : ${nf(beforeF)} → <b>${nf(FAULTS.length)}</b> · Intégrité : <b>${AUDIT.score}%</b></div>`;
 notify("import",`Import massif : +${found} fiches`,"");
 toast("+"+found+" fiches importées","ok",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();sync();audit();renderDom();renderAll();renderAdm();toast("Import annulé","in")})}
 sync();renderDom();renderAll();renderAudit();renderAdm();$("ovX").style.display="block"}
@@ -1187,9 +1380,9 @@ src:$("arS").value.trim(),note:$("arN").value.trim(),y0:2017,y1:2027});
 saveDB();audit();renderAll();renderAdm();e.target.reset();$("arOK").value=240000;$("arNK").value=160000;$("arOM").value=120;$("arNM").value=96;
 toast("Révision enregistrée","ok")};
 $("bWipe").onclick=()=>{if(!canW()){toast("Mode administrateur requis","ba");return}
-if(!confirm("Réinitialiser sur la base livrée + pack 2024 ? Les ajouts et imports seront perdus (annulable)."))return;
+if(!confirm("Réinitialiser sur la base livrée + packs 2024 ? Les ajouts et imports seront perdus (annulable)."))return;
 const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});resetSeed();applyPack(true);newSearch();audit();renderAudit();renderAdm();
-toast("Base réinitialisée + pack 2024 appliqué","wa",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();sync();audit();renderDom();renderAll();renderAdm()})};
+toast("Base réinitialisée + packs appliqués","wa",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();sync();audit();renderDom();renderAll();renderAdm()})};
 $("bClearN").onclick=()=>{if(!canW()){toast("Mode administrateur requis","ba");return}
 const snap=JSON.stringify(NOTES);NOTES={};saveAux();renderAll();
 toast("Notes et statuts effacés","wa",()=>{NOTES=JSON.parse(snap);saveAux();renderAll()})};
@@ -1201,24 +1394,37 @@ window.addEventListener("offline",()=>{net();toast("Mode hors ligne — base loc
 try{BC.onmessage=()=>{loadAcc();loadNf();live();if(canW())renderAll()}}catch(e){}
 window.addEventListener("storage",e=>{if([LS.acc,LS.nf,LS.db].includes(e.key)){loadAcc();loadNf();if(e.key===LS.db)loadDB();live();if(canW())renderAll()}});
 setInterval(live,1200);}
-function boot(){try{
-if(typeof RAW==="undefined"||typeof FR==="undefined"||typeof DOM==="undefined"){
-const f=document.querySelector(".lfo");if(f)f.innerHTML="<b style='color:#fca5a5'>data.js absent ou incomplet — recopiez data.js depuis le dépôt.</b>";return;}
+/* ═══ DÉMARRAGE SÉCURISÉ : auth branchée AVANT toute fusion ═══ */
+function boot(){
+try{
+const fatal=[];
+if(typeof RAW==="undefined"||!Array.isArray(RAW))fatal.push("data.js : tableau RAW manquant ou invalide");
+if(typeof FR==="undefined")fatal.push("data.js : tableau FR manquant");
+if(typeof DOM==="undefined")fatal.push("data.js : tableau DOM manquant");
+if(typeof ENG==="undefined"||typeof EVA==="undefined"||typeof DTC==="undefined")fatal.push("data.js : référentiels ENG/EVA/DTC manquants");
+if(fatal.length){try{bind()}catch(_){} showFatal(fatal);return;}
 initAdm();initDevice();loadAux();loadAcc();loadNf();
 if(!loadDB())resetSeed();
 if(!CAT.length||!engines().length)resetSeed();
 if(!FAULTS.length)FAULTS=FR.map(f=>Object.assign({},f));
+bind();
 const pr=applyPack(true);
-bind();sync();audit();renderDom();renderAll();renderBell();
+sync();audit();renderDom();renderAll();renderBell();
 $("nInt").textContent=AUDIT.score+"%";
-if(pr&&pr.added>0)toast(`Pack millésimes 2024-2027 intégré : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`,"ok");
+const sc=selfCheck();renderSelf(sc);
+const bloq=sc.filter(x=>!x.ok&&x.f);
+if(pr&&pr.added>0)toast(`Packs modèles intégrés : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`,"ok");
+if(bloq.length)toast("Auto-vérification : "+bloq.length+" anomalie(s) bloquante(s) — détail sur l'écran d'accueil","ba");
 let ses=null;try{ses=JSON.parse(localStorage.getItem(LS.ses)||"null")}catch(e){}
 const r=myReq();
 if(ses&&ses.role==="tiers"&&r&&r.status==="granted"){enter("tiers")}
-else{waitMode=!!r;$("launch").classList.remove("off");document.body.classList.add("lk");renderLaunch()}
+else{waitMode=!!r;$("launch").classList.remove("off");document.body.classList.add("lk");renderLaunch();renderSelf(selfCheck())}
 setTimeout(()=>{clearGate();const t=$("nNet");if(t&&t.textContent==="…"){$("chN").className="ch "+(navigator.onLine?"ok":"ba");t.textContent=navigator.onLine?"En ligne":"Hors ligne"}},900);
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
-}catch(err){console.error(err);
-try{resetSeed();applyPack(true);bind();sync();audit();renderDom();renderAll()}catch(e2){}
-toast("Récupération automatique effectuée","wa")}}
+}catch(err){
+KFERR.push("boot : "+((err&&err.message)||err));
+try{if(!CO.brand)bind()}catch(_){}
+try{resetSeed();applyPack(true);sync();audit();renderDom();renderAll();renderBell();renderSelf(selfCheck())}catch(_){}
+showFatal(["Exception au démarrage : "+((err&&err.message)||err)]);
+toast("Récupération automatique effectuée — voir auto-vérification","wa");}}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
