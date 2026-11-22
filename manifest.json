@@ -2,7 +2,7 @@
   "id": "/newprojet2026/",
   "name": "KEV FUSION 2026 — Banc de diagnostic expert",
   "short_name": "KEV FUSION",
-  "description": "Diagnostic expert, pannes connues, rappels, TSB et préconisations constructeur. Corrélation stricte marque → modèle → année → motorisation → puissance, base 2017-2027 utilisable hors ligne.",
+  "description": "Cylindrée, type moteur et puissances réelles, pannes connues, rappels, TSB et préconisations constructeur 2017-2027. Corrélation stricte marque → modèle → année → motorisation → puissance, utilisable hors ligne.",
   "start_url": "/newprojet2026/",
   "scope": "/newprojet2026/",
   "display": "standalone",
