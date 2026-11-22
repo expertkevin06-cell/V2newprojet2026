@@ -17,7 +17,6 @@ const DOM=[["moteur","Moteur / mécanique","i-piston","am"],["distribution","Dis
 ["eclairage","Éclairage","i-light","am"],["carrosserie","Carrosserie / étanchéité","i-body","te"]];
 const DM=Object.fromEntries(DOM.map(d=>[d[0],{n:d[1],i:d[2],c:d[3]}]));
 const CV={am:"amH",rd:"rd",gr:"gr",bl:"bl",vi:"vi",te:"te",mg:"mg",cy:"cy"};
-/* [regex, cm³, cyl, architecture, alimentation, distribution] */
 const ENG=[[/^(1KR|K12)/,998,3,"3 en ligne","Atmosphérique MPI","Chaîne"],[/^EB2LTEDH/,1199,3,"3 en ligne Miller","Turbo VGT + MHEV 48 V","Chaîne"],
 [/^EB2/,1199,3,"3 en ligne","Turbo injection directe","Courroie humide"],[/^EB0/,998,3,"3 en ligne","Atmosphérique MPI","Courroie humide"],
 [/^DV4/,1397,4,"4 en ligne","Diesel HDi common rail","Courroie"],[/^DV5/,1499,4,"4 en ligne","Diesel BlueHDi + SCR","Courroie + chaîne AAC"],
@@ -74,7 +73,6 @@ const ENG=[[/^(1KR|K12)/,998,3,"3 en ligne","Atmosphérique MPI","Chaîne"],[/^E
 [/^15E4E/,1490,4,"4 en ligne","Turbo T-GDi / PHEV","Chaîne"],[/^MG3-HEV/,1498,4,"4 en ligne Atkinson","Hybrid+ 3 rapports","Chaîne"],
 [/^BYD-DMI/,1498,4,"4 en ligne Xiaoyun","DM-i série/parallèle","Chaîne"],[/^RE-ROT/,830,1,"Rotatif Wankel","Générateur range extender","—"],
 [/^(LM-RE|JC-PHEV)/,1498,4,"4 en ligne","Turbo + électrique","Chaîne"]];
-/* [regex, architecture, volts, plateforme] */
 const EVA=[[/^(APP|MEB)/,"Synchrone aimants permanents",400,"MEB"],[/^PPE/,"Synchrone aimants permanents",800,"PPE"],
 [/^EM(17|21|23)/,"Synchrone aimants permanents",800,"E-GMP"],[/^EM16/,"Synchrone aimants permanents",400,"E-GMP / EV"],
 [/^(5AM|6AK|EV-R)/,"Synchrone rotor bobiné",400,"AmpR"],[/^GEN5/,"Synchrone rotor bobiné Gen5",400,"BMW Gen5"],
@@ -90,7 +88,6 @@ const TQ={"eb2|82":118,"eb2|110":205,"eb2|130":230,"eb2adts|100":205,"eb2dts|130
 "b47|190":400,"b57|286":650,"m282|136":200,"m282|163":250,"m254|204":320,"om654|150":320,"om654|190":400,"m15a-fxe|116":125,
 "2zr-fxe|122":142,"a25a-fxs|218":221,"g4ft|150":250,"g4fj|177":265,"d4fe|136":320,"b7ja|125":210,"ylcb|150":350,"leb|131":253,
 "pe-vps|165":213,"sh-vpts|150":380,"k14c|140":220,"pt204|250":365,"204dta|204":430,"aj200d|300":650,"gme|280":400,"bkfb|130":360};
-/* Catalogue compact : [id,nom,pays,[ [idModèle,nom,y0,y1,segment,"fam|ch[,ch:kWh]|code|énergie|yy-yy|tech;…"] ]] */
 const RAW=[
 ["peugeot","Peugeot","FR",[["208-2","208 II",2019,2027,"Citadine","1.2 PureTech|75,100,130|EB2|E|19-25|Courroie humide;1.2 Hybrid 48V|100,136|EB2LTEDH|H|23-27|Chaîne e-DCS6;1.5 BlueHDi|100|DV5|D|19-24|SCR AdBlue;Électrique|136:50,156:51|ZKX|EV|19-27|e-CMP"],
 ["308-3","308 III",2021,2027,"Compacte","1.2 PureTech|110,130|EB2|E|21-25|Courroie humide;1.2 Hybrid 48V|136|EB2LTEDH|H|24-27|Chaîne;1.5 BlueHDi|130|DV5|D|21-25|SCR AdBlue;1.6 PHEV|180,225|EP6|P|21-27|e-EAT8;Électrique|156:54|EM0|EV|23-27|e-CMP2"],
@@ -216,7 +213,6 @@ const RAW=[
 ["lexus","Lexus","JP",[["ux","UX",2018,2027,"SUV urbain premium","2.0 Hybrid|184,199|M20A-FXS|H|18-27|e-CVT;Électrique|204:54.3|EV-UX|EV|20-26|e-TNGA"],
 ["rz","RZ",2023,2027,"SUV électrique","Électrique|313:71.4|EV-RZ|EV|23-27|e-TNGA"]]]
 ];
-/* Fiches : [id,portée,marques,cible,nature,sév,y0,y1,titre,symptômes,protocole|…,organes,DTC,source,domaines] */
 const PSA="peugeot,citroen,ds,opel",VAG="volkswagen,audi,skoda,seat,cupra",HK="hyundai,kia",RN="renault,dacia",BM="bmw,mini",MB="mercedes,smart";
 const ALL="peugeot,renault,citroen,ds,dacia,volkswagen,audi,skoda,seat,cupra,bmw,mini,mercedes,smart,opel,toyota,lexus,nissan,honda,hyundai,kia,mazda,suzuki,ford,tesla,volvo,mg,byd,jeep,fiat,alfa,landrover,porsche,xpeng,nio,leapmotor,omoda,jaecoo,lynk,zeekr,smart,mitsubishi,subaru,lexus";
 const FR=[
@@ -267,7 +263,6 @@ const FR=[
 ["F-TPMS","brand",ALL,"","panne","info",2017,2027,"TPMS — capteurs de pression et apprentissage","Voyant pression pneus, valeur absente.","Lire identifiants et batterie des capteurs|Contrôler la pression à froid|Effectuer l'apprentissage|Remplacer le capteur défaillant","Capteurs TPMS, antenne, calculateur","C1365","Retour terrain multi-marques","train,geometrie,telematique"]
 ].map(x=>({id:x[0],scope:x[1],brands:String(x[2]).split(",").map(s=>s.trim()).filter(Boolean),target:x[3],kind:x[4],sev:x[5],y0:x[6],y1:x[7],titre:x[8],sym:x[9],
 pro:String(x[10]).split("|"),org:x[11],dtc:String(x[12]||"").split(",").map(s=>s.trim()).filter(Boolean),src:x[13],dom:String(x[14]||"").split(",").filter(Boolean)}));
-/* Protocoles transversaux conditionnels : [id,domaines,nature,sév,titre,symptômes,protocole|…,organes,DTC,condition(e,spec)] */
 const DR=[
 ["DR-MOT1",["moteur"],"panne","eleve","Consommation d'huile — segmentation / PCV","Baisse de niveau, fumée bleue, dépôt sur bougies.","Quantifier la consommation sur 1 000 km|Contrôler séparateur d'huile et dépressurisation carter|Endoscopie cylindres|Mesurer compressions et blow-by|Contrôler joints de queues et turbo","Segments, PCV, joints de queues, turbo","P0300,P0521,P0171",(e,s)=>!s.ev],
 ["DR-MOT2",["moteur","thermique"],"panne","critique","Joint de culasse / intrusion de LDR","Surchauffe, LDR qui disparaît, fumée blanche, mayonnaise.","Test de pression du circuit à froid|Recherche de CO₂ au vase d'expansion|Endoscopie cylindres|Contrôle plan de joint et serrage|Analyse d'huile (glycol)","Joint de culasse, chemises, échangeur","P0217,P0300,P0301",(e,s)=>!s.ev],
@@ -312,7 +307,6 @@ const DR=[
 ["DR-LIGHT",["eclairage","elec12"],"panne","info","Éclairage — LED, condensation, modules","Phare embué, LED partiellement éteinte.","Inspecter étanchéité et évents du projecteur|Contrôler connecteurs et module LED|Vérifier alimentation, masses, 12 V|Lire défauts calculateur d'éclairage|Remplacer et calibrer si matriciel","Projecteur, module LED, connectique","B1000,U0100",(e,s)=>true],
 ["DR-BODY",["carrosserie","portes","elec12"],"panne","info","Carrosserie / étanchéité — infiltrations, corrosion","Humidité habitacle, buée persistante, connecteurs oxydés.","Localiser l'infiltration (arrosage, joints, évents)|Contrôler évacuations bas de caisse et toit ouvrant|Inspecter corrosion et soudures|Vérifier connecteurs en zone humide|Traiter, remplacer joints, sécuriser masses","Joints, évents, passe-câbles, connecteurs","B1000,U0101",(e,s)=>true]
 ];
-/* Révisions d'intervalles : [id,marques,regex,organe,ancKm,nouvKm,ancMo,nouvMo,source,note] */
 const EVB="volkswagen,audi,skoda,seat,cupra,bmw,mini,mercedes,smart,tesla,volvo,mg,byd,xpeng,nio,zeekr,leapmotor,omoda,lynk,renault,dacia,peugeot,citroen,ds,opel,fiat,jeep,alfa,landrover,porsche,ford,subaru,mitsubishi,toyota,lexus,nissan,honda,hyundai,kia,mazda,suzuki";
 const RV=[
 ["RV-FORD-EB-CHAIN","ford","2\\.0 EcoBlue|YLCB|BKF","Chaîne de distribution",240000,160000,120,96,"TSB Ford EcoBlue · révision constructeur","Allongement de chaîne et usure du tendeur hydraulique : échéance ramenée à 160 000 km / 8 ans."],
@@ -423,4 +417,3 @@ C0035:["Capteur vitesse roue AV gauche","Capteur ABS, couronne, faisceau","Vites
 C0040:["Capteur vitesse roue AV droite","Capteur ABS, couronne, faisceau","Vitesses de roue, contrôle cible"],
 C1365:["Freinage — assistance / régénératif","Servofrein, capteur pédale, logiciel","Assistance, calibration régénératif"],
 C1A00:["ADAS / suspension — calibration requise","Caméra / radar non calibré, capteurs hauteur","Calibration constructeur"]};
-</script>
