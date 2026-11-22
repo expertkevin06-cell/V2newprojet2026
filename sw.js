@@ -1,5 +1,5 @@
-/* KEV FUSION 2026 — service worker : socle applicatif hors ligne, réseau pour les sources */
-const CACHE = "kevfusion26-bench-v1";
+/* KEV FUSION 2026 — service worker : socle hors ligne, réseau pour les sources */
+const CACHE = "kevfusion26-bench-v3";
 const SHELL = ["/newprojet2026/", "/newprojet2026/index.html", "/newprojet2026/manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
@@ -18,9 +18,7 @@ self.addEventListener("activate", (e) => {
   })());
 });
 
-self.addEventListener("message", (e) => {
-  if (e.data === "skipWaiting") self.skipWaiting();
-});
+self.addEventListener("message", (e) => { if (e.data === "skipWaiting") self.skipWaiting(); });
 
 self.addEventListener("fetch", (e) => {
   const req = e.request;
