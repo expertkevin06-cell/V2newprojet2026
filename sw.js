@@ -1,10 +1,5 @@
-/* KEV FUSION 2026 — SW v15
-   CORRECTIF DÉCISIF : l'ancien service worker servait app.js en "cache-first".
-   Le fichier corrigé sur GitHub n'était donc JAMAIS relu : l'APK rechargeait
-   indéfiniment l'ancien app.js cassé (SyntaxError ligne 548).
-   Cette version est NETWORK-FIRST pour tout, purge tous les anciens caches,
-   et les scripts sont appelés avec ?v=15 (clé de cache différente). */
-const CACHE = "kevfusion26-v15";
+/* KEV FUSION 2026 — SW v18 · network-first · purge des caches obsolètes */
+const CACHE = "kevfusion26-v18";
 const SHELL = ["./", "./index.html", "./data.js?v=15", "./app.js?v=15", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {
@@ -40,7 +35,6 @@ self.addEventListener("fetch", e => {
   if (r.method !== "GET") return;
   const u = new URL(r.url);
   if (u.origin !== self.location.origin) return;
-  /* NETWORK-FIRST : le réseau prime toujours, le cache ne sert que hors ligne */
   e.respondWith((async () => {
     const c = await caches.open(CACHE);
     try {
