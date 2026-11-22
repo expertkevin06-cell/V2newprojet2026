@@ -1,6 +1,12 @@
 /* KEV FUSION 2026 — service worker : socle hors ligne, réseau pour les sources */
-const CACHE = "kevfusion26-bench-v6";
-const SHELL = ["/newprojet2026/", "/newprojet2026/index.html", "/newprojet2026/manifest.webmanifest"];
+const CACHE = "kevfusion26-v9";
+const SHELL = [
+  "/newprojet2026/",
+  "/newprojet2026/index.html",
+  "/newprojet2026/data.js",
+  "/newprojet2026/app.js",
+  "/newprojet2026/manifest.webmanifest"
+];
 
 self.addEventListener("install", (e) => {
   e.waitUntil((async () => {
