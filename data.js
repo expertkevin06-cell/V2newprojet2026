@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   KEV FUSION 2026 — BASE TECHNIQUE v18 · window.KFD · auto-expansion + carry
-   2017 → 2027 · corrélation marque → modèle → motorisation → puissance
-   DSL : modèle = id~Nom~y0~y1~SEG~moteurs
-         moteur = Famille#ch[,ch:kWh]#CODE[#ÉNERGIE][#années][#techno]
-         @x = preset moteur partagé (voir P)
+   KEV FUSION 2026 — BASE TECHNIQUE v19 · window.KFD
+   Correctif v19 : presets chargés en table texte (aucune clé numérique littérale
+   → plus de "Decimals with leading zeros" en strict mode) + référence @c6 corrigée.
+   2017 → 2027 · marque → modèle → motorisation → puissance
+   DSL modèle : id~Nom~y0~y1~SEG~moteurs
+   DSL moteur : Famille#ch[,ch:kWh]#CODE[#ÉNERGIE][#années][#techno]   @clé = preset
    ═══════════════════════════════════════════════════════════════════════════ */
 window.KFD = (function () {
 "use strict";
@@ -27,236 +28,491 @@ var dom=[
 ["tablette","Écran / multimédia","i-screen","mg"],["eclairage","Éclairage","i-light","am"],
 ["carrosserie","Carrosserie / étanchéité","i-body","te"]];
 
-var P={
-a:"1.2 PureTech#75,82,100,110,130#EB2",b:"1.2 Hybrid 48V#100,136#EB2LTEDH#H",
-c:"1.5 BlueHDi#100,110,130#DV5#D",d:"1.6 PureTech#180,225#EP6",e:"1.6 PHEV#180,225#EP6#P",
-f:"2.0 BlueHDi#150,160,180#DW10#D",g:"2.2 BlueHDi#120,140,165#DW12#D",
-h:"Électrique#136:50,156:51#ZKX#EV",i:"Électrique#156:54#EM0#EV",
-j:"Électrique#210:73,230:97#STLA#EV",k:"1.0 TSI#95,110,115#DKL",l:"1.0 eTSI#110#DKL#H",
-m:"1.5 TSI#130,150#DPCA",n:"1.5 eTSI#130,150#DPCA#H",o:"2.0 TDI#115,150,200#DSU#D",
-p:"2.0 TSI#190,245,265,310#CZP",q:"1.4 eHybrid#204,245#DGEA#P",r:"1.5 eHybrid#204,272#DUV#P",
-s:"Électrique#204:77,286:77,340:79#APP310#EV",t:"1.0 TCe#90,100#H4D",
-u:"1.3 TCe#130,140,155#H5H",v:"1.5 Blue dCi#85,115#K9K#D",w:"1.6 E-Tech#140,145#H4M#H",
-x:"1.6 T-GDi#150,180#G4FT",y:"1.6 T-GDi Hybrid#215,230#G4FT#H",
-z:"1.6 T-GDi PHEV#253,265#G4FT#P",A:"1.6 CRDi#115,136#D4FE#D",
-B:"1.8 Hybrid#122,140#2ZR-FXE#H",C:"2.0 Hybrid#184,196#M20A-FXS#H",
-D:"2.5 Hybrid#218,222,244#A25A-FXS#H",E:"2.5 PHEV#306,309,320#A25A#P",
-F:"2.0 Turbo#184,245,258#B48",G:"2.0 Diesel#150,190#B47#D",H:"3.0 Turbo#340,374,387#B58",
-I:"1.3 Turbo#136,163#M282",J:"2.0 Turbo#204,258#M254#H",K:"2.0 Diesel#150,190,200#OM654#D",
-L:"1.0 EcoBoost MHEV#125,155#B7JA#H",M:"2.0 EcoBlue#105,130,150,170,185,190#BKF#D",
-N:"Électrique#229:77.4,325:77.4#EM17#EV",O:"1.5 Hybrid#130,160#GSE#H",
-Q:"1.6 MultiJet#120,130#552#D",R:"2.0 MultiJet#140,170#552#D",
-S:"2.0 Turbo#200,280#GME",T:"2.2 JTDm#150,180,210#552#D",
-U:"2.0 P#200,250,300#PT204",V:"2.0 D#163,180,204#204DT#D",W:"1.5 PHEV#309#PT15#P",
-X:"2.0 B4 MHEV#197#B4204#H",Y:"2.0 B5 MHEV#250#B4204#H",Z:"2.0 T8 PHEV#455#B4204#P",
-0:"1.5 e:HEV#109,131#LEB#H",1:"2.0 e:HEV#184#LFA#H",2:"2.0 Skyactiv-G#122,150,165#PE-VPS",
-3:"2.2 Skyactiv-D#150,184#SH-VPTS#D",4:"1.4 Boosterjet Hybrid#129#K14#H",
-5:"1.5 Dualjet Hybrid#115#K15#H",6:"1.5 DM-i#218,324#BYD-DMI#P",
-7:"1.6 T-GDi#147,185#SQR",8:"1.5 PHEV#347#SQR#P",9:"1.0 T-GDi#100,120#G3LC",
-a1:"1.2 MPi#84#G4LF",a2:"1.0 MPi#67#G3LD",a3:"1.5 T-GDi#160#G4LF",
-a4:"2.0 TSI RS#245,265,300#DNNA",a5:"2.5 TFSI#390,400#DNW",
-a6:"3.0 TDI#231,286,344#DDVE#D",a7:"3.0 TFSI#340,353,381#DKUA",
-a8:"Électrique#170:58,204:77,286:77#APP310#EV",a9:"1.6 Hybrid#141#G4LE#H",
-b1:"2.0 T-GDi#245,250,275,280,304#G4KH",b2:"1.5 Turbo#150,180#GSE",
-b3:"1.0 Turbo#100,115,120#B10X",b4:"1.4 Turbo#125,140,150#B14T",
-b5:"1.6 CDTI#110,136#B16D#D",b6:"2.0 CDTI#170,210#B20D#D",
-b7:"1.5 dCi#75,90,110#K9K#D",b8:"2.0 dCi#110,150,170#M9R#D",
-b9:"2.3 dCi#130,150,165,180#M9T#D",c1:"1.2 TCe#115,120#H5F",
-c2:"1.6 dCi#130,160#R9M#D",c3:"1.7 Blue dCi#120,150#R9M#D",
-c4:"1.2 E-Tech#200#HR12#H",c5:"1.2 TCe MHEV#130,140#HR12#H",
-c6:"Électrique#122:52,150:52#EV-R5#EV",c7:"Électrique#170:60,220:87#6AK#EV",
-c8:"1.0 SCe#65,75#H4D",c9:"1.0 ECO-G#100#H4D#G",
-d1:"2.0 TDI#120,150,190,240#DFG#D",d2:"1.4 TSI#125,150#CZC",
-d3:"2.0 TFSI#190,204,245,265#CVK",d4:"2.0 TDI#136,163,190,204#DEU#D",
-d5:"Électrique#292:94.9,388:94.9,517:94.9#PPE#EV",
-d6:"Électrique#476:93,598:93,646:93,925:105#J1#EV",
-d7:"1.5 TSI MHEV#150#DUV#H",d8:"2.0 TDI#150,193#DTU#D",d9:"2.0 TSI#204,265,272#DTU",
-e1:"1.6 THP#150,165,180,200,208#EP6",e2:"1.6 BlueHDi#75,100,120#DV6#D",
-e3:"1.2 VTi#68,72,82#1KR",e4:"1.0 VTi#68,72#1KR",
-e5:"Électrique#113:44#EV-C3#EV",e6:"1.2 Turbo#100,130#EB2",
-e7:"1.2 PureTech#100#EB2LTED",e8:"1.6 PHEV#195,225#EP6#P",
-e9:"Électrique#136:75#ZKX#EV",f1:"2.0 EcoBlue#150,190#YLCB#D",
-f2:"1.5 EcoBlue#95,120#B7DA#D",f3:"1.5 EcoBoost#150#B3CB",
-f4:"2.5 PHEV#225,243#BGCA#P",f5:"2.5 FHEV#190#BGCA#H",
-f6:"Électrique#286:77,340:79#APP310#EV",f7:"1.0 EcoBoost#100,125,140#B3CA",
-f8:"2.3 EcoBoost#280,347#YVC",f9:"Électrique#269:70,294:91,351:91,487:91#EV-MAC#EV",
-g1:"1.5 VTEC Turbo#173,182,193#L15C",g2:"1.0 VTEC Turbo#129#P10A",
-g3:"2.0 Type R#320,329#K20C",g4:"1.6 i-DTEC#120#N16#D",
-g5:"2.0 e:PHEV#184#LFA#P",g6:"Électrique#204:68.4#EV-ENY#EV",
-h1:"1.5 Skyactiv-G#75,90,115#P5-VPS",h2:"2.0 Skyactiv-X#180,186#SPCCI",
-h3:"2.5 Skyactiv-G#140,192,194#PY-VPS",h4:"3.3 e-Skyactiv D#200,254#T3-VPT#D",
-h5:"2.5 e-Skyactiv PHEV#327#PY-VPS#P",h6:"2.4 Boxer#234#FA",
-i1:"1.2 Dualjet#83,90#K12#H",i2:"1.0 Boosterjet#111#K10",i3:"1.4 Boosterjet#140#K14",
-i4:"1.5#102#K15",i5:"1.2 Mild Hybrid#82#Z12E#H",
-i6:"Électrique#144:49,174:61,184:61#EV-EVT#EV",
-j1:"2.4 PHEV#188,203,248,306#4B12#P",j2:"1.5 MIVEC Turbo#163#4B40",
-j3:"2.2 DI-D#150,180#4N14#D",j4:"1.6 MIVEC#117#4A9",j5:"2.0 MIVEC#150#4B11",
-k1:"2.0i e-Boxer#150#FB20#H",k2:"2.5i#169#FB25",k3:"1.6i#114#FB16",
-k4:"Électrique#218:71.4,343:71.4#1YM#EV",
-l1:"1.0 T-GDi#120#G3LC",l2:"1.4 T-GDi#140#G4LD",l3:"2.2 CRDi#202#D4HB#D",
-l4:"1.6 T-GDi MHEV#150#G4FT#H",l5:"1.6 CRDi MHEV#136#D4FE#H",
-l6:"Électrique#204:58.3,204:81.4#EM16#EV",l7:"Électrique#170:58,229:77.4,325:77.4,585:77.4#EM21#EV",
-l8:"Électrique#204:99.8,385:99.8,508:99.8#EM23#EV",
-l9:"Électrique#156:48.4,218:65.4#EM16#EV",m1:"1.6 PHEV#141,183#G4LE#P",
-m2:"Électrique#204:64.8#EM16#EV",m3:"2.5 T-GDi#304#G4KN",m4:"3.5 T-GDi#380,415#G6DP",
-m5:"2.2 CRDi#210#D4HC#D",m6:"1.5 T-GDi#163#G15T",m7:"1.6 e-XDi#115,136#D16DT#D",
-m8:"2.2 e-XDi#181,202#D20DT#D",n1:"1.3 DIG-T#140,158,160#HR13",
-n2:"1.3 DIG-T MHEV#140,158#HR13#H",n3:"1.5 e-POWER#190,204,213#KR15#H",
-n4:"1.0 DIG-T#114,117#HR10",n5:"1.6 Hybrid#143#HR16#H",
-n6:"Électrique#150:40,217:62#EM57#EV",n7:"Électrique#218:63,242:87,306:87,394:87#EV-ARI#EV",
-o1:"1.5 D-4D#100,120#DV5#D",o2:"2.0 D-4D#145,150,180#DW10#D",
-o3:"2.8 D-4D#177,204,205#1GD#D",o4:"2.4 D-4D#150#2GD#D",
-o5:"1.5 Hybrid#116,130#M15A-FXE#H",o6:"1.5 VVT-i#125#M15A",o7:"1.0 VVT-i#69,72#1KR",
-o8:"1.6 GR#261,280,300#G16E",o9:"1.2 Turbo#116#8NR",
-p1:"2.0 Hybrid#184,199#M20A-FXS#H",p2:"Électrique#313:71.4,381:71.4#EV-RZ#EV",
-p3:"Électrique#204:54.3,204:72.8#EV-UX#EV",
-q1:"2.0 PHEV#380#EC1#P",q2:"2.0 Turbo#272#EC1",q3:"1.3 PHEV 4xe#190,240#GSE#P",
-q4:"1.3 T4#130,150,180#GSE",q5:"1.0 T3#120#GSE",
-r1:"1.0 FireFly#100#GSE",r2:"1.0 FireFly Hybrid#70#GSE#H",r3:"1.2 Fire#69#169A4",
-r4:"0.9 TwinAir#85,105#312A2",r5:"1.3 MultiJet#80,95#552#D",
-r6:"2.2 MultiJet#120,140,180#F1AGL#D",r7:"Électrique#95:23.8,118:42#EV-500#EV",
-r8:"Électrique#122:70,270:110#EV-DUC#EV",r9:"1.4 T-Jet#120,145,165,180#312A1",
-s1:"2.9 V6 QV#510,520#690T",s2:"1.75 TBi#240#940B",s3:"1.3 PHEV Q4#280#GSE#P",
-s4:"Électrique#156:54,240:54,280:54#EM0#EV",s5:"1.2 Hybrid#136,156#EB2LTEDH#H",
-t1:"3.0 D#249,250,300,350#AJ200D#D",t2:"3.0 P#360,400#AJ300",
-t3:"2.0 P400e#404#PT204#P",t4:"5.0 V8#525,550,575#AJ133",t5:"4.4 V8#530,635#N63",
-u1:"3.0 V6#340,353,440,474#CWV",u2:"4.0 V8#550,640,659#EA825",
-u3:"3.0 E-Hybrid#462,470#CWV#P",u4:"2.9 V6#330,354,367,440#CSZ",
-u5:"3.6 T-Hybrid#541#9A2#H",u6:"3.0 Carrera#385,394,450,480#9A2",
-u7:"3.7 Turbo S#650,711#9A2",u8:"4.0 GT#400,420,500,520#9A1",
-v1:"2.0 T4#190#B4204",v2:"2.0 D3#150#D4204#D",v3:"2.0 D4#190#D4204#D",
-v4:"1.5 T3#163#B3154",v5:"1.5 T5 PHEV#262#B3154#P",v6:"2.0 T6 PHEV#350#B4204#P",
-v7:"2.0 B3 MHEV#163#B4204#H",v8:"2.0 B6 MHEV#300#B4204#H",
-v9:"Électrique#272:51,272:69,428:69#SEA#EV",
-w1:"Électrique#231:69,252:82,408:82#EV-EX4#EV",
-w2:"Électrique#313:111,408:111,517:111#EV-EX9#EV",
-w3:"Électrique#231:64,272:69,299:82,408:78,476:78#EV-PS2#EV",
-w4:"Électrique#272:100,544:100#SEA#EV",w5:"Électrique#489:111,517:111#EV-PS3#EV",
-x1:"1.5 Hybrid+#194#MG3-HEV#H",x2:"Électrique#170:51,204:64,245:77,435:64#EV-MG4#EV",
-x3:"1.5 T-GDi#162#15E4E",x4:"1.5 PHEV#258#15E4E#P",
-x5:"Électrique#143:44.5,156:51,156:72#EV-ZS#EV",
-x6:"Électrique#314:64,340:77,544:77#EV-CYB#EV",
-y1:"Électrique#204:60.5#BYD#EV",y2:"Électrique#95:44.9,176:60.4,204:60.4#BYD#EV",
-y3:"Électrique#313:82.5,530:82.5#BYD#EV",y4:"Électrique#177:51.1#BYD#EV",
-y5:"Électrique#88:30,115:43.2#BYD#EV",y6:"Électrique#517:108.8#BYD#EV",
-z1:"Électrique#258:66,286:87.5,487:87.5#EV-XG6#EV",
-z2:"Électrique#313:98,551:98#EV-XG9#EV",z3:"Électrique#276:86.2,473:86.2,505:86.2#EV-XP7#EV",
-z4:"Électrique#490:75,490:100#EV-NIO#EV",z5:"Électrique#653:100#EV-NIO#EV",
-z6:"Électrique#272:66,428:66#SEA#EV",z7:"Électrique#272:100,544:100,580:100#SEA#EV",
-z8:"Électrique#218:69.9#EV-LM#EV",z9:"Électrique#218:67.1#EV-LM#EV",
-A1:"Électrique#95:37.3,109:41.3#EV-LM#EV",A2:"1.5 EREV#218:28.4#RE-ROT#P",
-A3:"Électrique#204:61#EV-OM#EV",A4:"Électrique#171:48,171:63#EV-ORA#EV",
-A5:"1.5 PHEV#261,276#JLH#P",A6:"1.5 HEV#150#JLH#H",
-B1:"2.0 Turbo#184,208#B48",B2:"3.0 Diesel#265,286,298#B57#D",
-B3:"2.0 PHEV#292,299#B48#P",B4:"3.0 PHEV#489#B58#P",B5:"4.4 V8#530#N63",
-B6:"2.0 M#306,317#B48",B7:"Électrique#340:81.2,389:81.2,601:81.2#GEN5#EV",
-B8:"Électrique#455:101.7,544:101.7,660:101.7#GEN5#EV",
-B9:"Électrique#326:76.6,385:76.6,523:111.5,619:111.5#GEN5#EV",
-C1:"Électrique#204:64.7,272:64.7,313:64.7#GEN5#EV",C2:"1.5#136,140,156#B38",
-C3:"Électrique#286:70.2,340:83.9,544:83.9#GEN5#EV",C4:"Électrique#286:80#GEN5#EV",
-C5:"Électrique#313:108,469:108#NK#EV",C6:"3.0 M#360,374,387,398#B58",
-D1:"2.0 A#224#M260",D2:"2.0 AMG#306,310#M260",D3:"2.0 AMG S#421#M139",
-D4:"1.3 PHEV#218#M282#P",D5:"2.0 C220d#200#OM654#D",D6:"2.0 C300e#313#M254#P",
-D7:"2.0 E300e#312#M254#P",D8:"3.0 E400e#381#M256#P",D9:"2.0 GLC300e#313#M254#P",
-E1:"3.0 #381,435#M256#H",E2:"4.0 V8#503,510#M176#H",E3:"3.0 d#330,340#OM656#D",
-E4:"2.0 d#197,269#OM654#D",E5:"3.0 PHEV#510#M256#P",
-E6:"Électrique#190:66.5,228:66.5,292:66.5#EVA#EV",
-E7:"Électrique#245:89,292:96,408:90.6,544:90.6#EVA#EV",
-E8:"Électrique#333:107.8,360:107.8,453:107.8,523:107.8#EVA#EV",
-E9:"Électrique#272:85,354:85#MMA#EV",F1:"Électrique#360:94,490:94#MMA#EV",
-F2:"2.2 CDI#136,163#OM651#D",F3:"2.0 CDI#190,239#OM654#D",
-F4:"1.6 CDI#102#OM622#D",F5:"1.5 CDI#95,116#OM608#D",
-F6:"Électrique#116:55,116:113#EV-SPR#EV",F7:"Électrique#204:90#EV-VIT#EV",
-F8:"Électrique#122:45#EV-EQT#EV",F9:"4.0 AMG#585,612#M177#H",
-G1:"1.5 C#170#B38#H",G2:"2.0 S#178,192,218,245#B48",G3:"2.0 JCW#231,300,306,317#B48",
-G4:"1.5 Cooper#136#B38",G5:"1.5 D#116#B37#D",G6:"2.0 SD#170#B47#D",
-G7:"Électrique#184:32.6#EV-MIN#EV",G8:"1.5 PHEV#220#B38#P",
-G9:"Électrique#190:40.7,218:54.2,258:54.2#EV-CO#EV",
-H1:"Électrique#190:42.5,218:54.2,260:54.2#SEA#EV",
-H2:"Électrique#204:64.7,313:64.7#EV-CM#EV",
-H3:"Électrique#82:17.6#EV-FTW#EV",H4:"Électrique#272:49,272:66,428:66#SEA#EV",
-H5:"Électrique#360:76,360:100,646:100#SEA#EV",
-I1:"1.5#102#B38",I2:"2.0#178,192#B48",I3:"2.0#231#B48",
-J1:"Électrique#670:100,750:100,1020:100#TS#EV",
-J2:"Électrique#283:60,351:75,440:79,460:79,498:75,510:79#3D3#EV",
-J3:"Électrique#299:60,440:79,534:79,510:75#3D3#EV",
-J4:"Électrique#600:123,845:123#CT#EV",J5:"Électrique#1020:200#TR#EV",
-K1:"3.0 V6#350,430#F160",K2:"3.0 V6 D#275#VM#D",K3:"2.0 Hybrid#330#GME#H",
-K4:"3.0 Trofeo#530,550,630#M156",K5:"3.8 V8#580#F154",
-K6:"Électrique#410:105#EV-GRC#EV",K7:"Électrique#761:92.5#EV-GT#EV",
-L1:"6.0 W12#608,635,659#W12",L2:"3.0 V6 PHEV#462,544#CWV#P",
-L3:"4.0 V8 PHEV#680,782#EA825#P",L4:"6.75 V12#571,600#N74",
-L5:"Électrique#585:102#EV-RR#EV",
-M1:"3.9 V8#620,663,720#F154",M2:"3.0 V6 PHEV#830#F163#P",
-M3:"4.0 V8 PHEV#1000#F154#P",M4:"6.5 V12#725,800,830#F140",
-N1:"4.0 V8#650,666#CEH",N2:"4.0 V8 PHEV#800,920#CEH#P",N3:"5.2 V10#610,640#L520",
-N4:"6.5 V12 PHEV#1015#L539#P",O1:"4.0 V8#510,550,665,680,707#M177",
-O2:"5.2 V12#608,639#AE31",O3:"4.0 V8 PHEV#1079#M177#P",
-O4:"4.0 V8#620,720,750,765#M840",O5:"3.0 V6 PHEV#680,700#M630#P",
-Q1:"8.0 W16#1500,1600#W16",Q2:"8.3 V16 PHEV#1800#V16#P",
-R1:"1.9 Ddi#150,163#RZ4E#D",R2:"2.2 Ddi#163#RZ4E#D",
-R3:"3.0 F1C#140,160,180,210#F1C#D",R4:"Électrique#190:74,190:111#EV-DAY#EV",
-S1:"1.0#68#B10D",S2:"1.2#82#B12D",S3:"1.6 CDTI#136#B16D#D",
-T1:"0.5 DCI#8#DCI#D",T2:"Électrique#8:8,14:12,20:12#EV-AIX#EV",
-U1:"Électrique#282:113,564:113#EV-OCN#EV",
-U2:"Électrique#480:88,620:112,1234:118#EV-AIR#EV",
-U3:"Électrique#828:123#EV-GRV#EV",
-V1:"Électrique#177:59.6,204:59.6#EV-VF6#EV",V2:"Électrique#204:75.3,354:75.3#EV-VF7#EV",
-V3:"Électrique#354:87.7,408:87.7#EV-VF8#EV",V4:"Électrique#408:123#EV-VF9#EV",
-W1:"Électrique#435:99,551:120#EV-HQ9#EV",W2:"1.5 T-GDi#177#4A15T",
-W3:"Électrique#204:85.9#EV-FRT#EV",W4:"Électrique#313:103#BYD#EV",
-W5:"1.5 Turbo#143,150#GW4B15",W6:"2.0 Turbo#204#GW4C20",W7:"1.5 PHEV#326,347#GW4B15#P",
-W8:"1.5 HEV#190#GW4B15#H",W9:"2.0 PHEV#476#GW4C20#P",
-X1:"1.5 Turbo#145#SFG15",X2:"Électrique#163:52#EV-SER#EV",
-X3:"Électrique#299:80#EV-SER5#EV",X4:"1.5 EREV#456:40#RE-ROT#P",
-Y1:"Électrique#177:52.5,177:70#EV-MX5#EV",Y2:"Électrique#204:70#EV-MX6#EV",
-Y3:"Électrique#204:88.5#EV-MXT9#EV",Y4:"Électrique#163:50.2#EV-MXD3#EV",
-Z1:"Électrique#612:112,918:112#SEA#EV",Z2:"Électrique#612:102,918:102#SEA#EV",
-Z3:"2.0 Turbo#365#M139",Z4:"3.5 V6#405#2GR",
-01:"Électrique#156:51#EM0#EV",02:"Électrique#230:74,350:97#STLA#EV",
-03:"1.5 Turbo#147,186#SQR",04:"1.5 PHEV#347,530#SQR#P",
-05:"Électrique#170:52,204:77#APP310#EV",06:"Électrique#286:77,340:77#APP550#EV",
-07:"Électrique#218:52,226:52,226:79#MEB#EV",08:"Électrique#116:38,150:52,204:52#MEB#EV",
-09:"1.8 TCe#252,292,300,350#M5P",10:"Électrique#180:52,220:52#EV-R5#EV",
-11:"Électrique#400:89,470:89,540:89#EV-A39#EV",
-12:"1.6 Hybrid#140,155#H4M#H",13:"1.2 TCe MHEV#130,140#HR12#H",
-14:"Électrique#45:26.8,65:26.8,70:26.8#EV-SPR#EV",
-15:"Électrique#95:40,122:52,150:52#EV-R5#EV",
-16:"Électrique#82:27.5,95:27.5#EV-TWI2#EV",17:"Électrique#122:45#EV-KAN#EV",
-18:"Électrique#76:52,143:87#EV-MAS#EV",19:"Électrique#122:52#EV-TRA#EV",
-20:"Électrique#8:5.5#AMI#EV",21:"1.4 Fire#95#843A1",22:"1.5 Hybrid#130#GSE#H",
-23:"Électrique#155:42#EV-500A#EV",24:"Électrique#240:54#EM0#EV",
-25:"1.8 Hybrid#136#2ZR-FXE#H",26:"2.0 Turbo#258#B48",27:"3.0 Turbo#340,382#B58",
-28:"1.3 TCe#130#H5H",29:"1.6 dCi#130#R9M#D",30:"2.0 dCi#175#M9R#D",
-31:"1.8 TCe#225#M5P",32:"1.6 TCe#150,200#M5M",33:"1.5 Blue dCi#95,115#K9K#D",
-34:"1.0 TCe#110#H4D",35:"1.2 TCe#130#H5F",36:"1.3 TCe#115,140,160#H5H",
-37:"1.8 RS#280,300#M5P",38:"1.5 dCi#90,110#K9K#D",39:"0.9 TCe#90#H4B",
-40:"1.2 TCe#120#H5F",41:"1.7 Blue dCi#150#R9M#D",42:"2.0 dCi#150,175,200#M9R#D",
-43:"1.6 RS#200,220#M5M",44:"1.33#99#1NR",45:"1.5 Hybrid#100#1NZ#H",
-46:"1.5 GRMN#212#2ZR",47:"1.0 Hybrid#116#1KR#H",48:"2.0 PHEV#223#M20A#P",
-49:"1.8 Hybrid#122,220#2ZR-FXE#H",50:"2.5 Hybrid#230#A25A-FXS#H",
-51:"2.5 Hybrid#248#A25A-FXS#H",52:"2.8 D-4D MHEV#204,205#1GD#H",
-53:"Électrique#204:71.4,218:71.4,313:71.4#1YM#EV",54:"Électrique#144:49,174:61,184:61#1YM#EV",
-55:"Électrique#170:57,224:77,313:77#1YM#EV",56:"2.5 Hybrid#250#A25A-FXS#H",
-57:"2.5 Hybrid#223#2AR-FSE#H",58:"2.5 Hybrid#218#A25A-FXS#H",
-59:"2.4 Turbo Hybrid#371#T24A#H",60:"2.5 PHEV#309#A25A#P",
-61:"1.5 Hybrid#136#M15A-FXE#H",62:"0.9 IG-T#90#HR09",63:"1.0 IG-T#100,117#HR10",
-64:"1.2 e-POWER#109#HR12#H",65:"1.2 DIG-T#115#HR12",66:"1.6 dCi#130#R9M#D",
-67:"1.7 dCi#150#R9M#D",68:"Électrique#176:52,218:75#EV-LF3#EV",
-69:"2.3 dCi#163,190#YS23#D",70:"3.8 V6#570,600#VR38",
-71:"1.3 i-VTEC#102#L13Z",72:"1.5 Sport#130#L15B",73:"1.5 i-VTEC#130#L15B",
-74:"Électrique#176:17.7#EV-FCEV#EV",75:"1.5 Skyactiv-D#105#S5-DPTS#D",
-76:"1.5 Hybrid#116#M15A-FXE#H",77:"2.0 Skyactiv-G#145,165#PE-VPS",
-78:"1.8 Skyactiv-D#115#S8-DPTS#D",79:"2.0 Skyactiv-G#121,150#PE-VPS",
-80:"2.5 Skyactiv-G#140#PY-VPS",81:"1.5 Skyactiv-G#131#P5-VPS",
-82:"2.0 Skyactiv-G#160,184#PE-VPS",83:"Électrique#143:35.5#EV-MX#EV",
-84:"0.8 R-EV#170#RE-ROT#P",85:"Électrique#258:68.8,245:80#EV-MZ6#EV",
-86:"1.4 Sport#140#K14",87:"1.6 VVT#120#M16A",88:"1.5 5p#102#K15",
-89:"1.0 MIVEC#71#3A9",90:"1.2 MIVEC#80#3A9",91:"1.3 Turbo#140,158#HR13",
-92:"2.4 DI-D#154,181#4N15#D",93:"1.0#65#H4D",94:"1.0 Turbo#90#H4D",
-95:"2.0i#150#FB20",96:"2.4 Turbo#260#FA24",97:"2.5 Turbo#300#EJ25",
-98:"1.0 T-GDi N#204#G3LC",99:"1.0 T-GDi MHEV#100,120#G3LC#H"
-};
+/* ── PRESETS : table texte, clés toujours chaînes ── */
+var P={};
+(function(){
+var t=`
+a=1.2 PureTech#75,82,100,110,130#EB2
+b=1.2 Hybrid 48V#100,136#EB2LTEDH#H
+c=1.5 BlueHDi#100,110,130#DV5#D
+d=1.6 PureTech#180,225#EP6
+e=1.6 PHEV#180,225#EP6#P
+f=2.0 BlueHDi#150,160,180#DW10#D
+g=2.2 BlueHDi#120,140,165#DW12#D
+h=Électrique#136:50,156:51#ZKX#EV
+i=Électrique#156:54#EM0#EV
+j=Électrique#210:73,230:97#STLA#EV
+k=1.0 TSI#95,110,115#DKL
+l=1.0 eTSI#110#DKL#H
+m=1.5 TSI#130,150#DPCA
+n=1.5 eTSI#130,150#DPCA#H
+o=2.0 TDI#115,150,200#DSU#D
+p=2.0 TSI#190,245,265,310#CZP
+q=1.4 eHybrid#204,245#DGEA#P
+r=1.5 eHybrid#204,272#DUV#P
+s=Électrique#204:77,286:77,340:79#APP310#EV
+t=1.0 TCe#90,100#H4D
+u=1.3 TCe#130,140,155#H5H
+v=1.5 Blue dCi#85,115#K9K#D
+w=1.6 E-Tech#140,145#H4M#H
+x=1.6 T-GDi#150,180#G4FT
+y=1.6 T-GDi Hybrid#215,230#G4FT#H
+z=1.6 T-GDi PHEV#253,265#G4FT#P
+A=1.6 CRDi#115,136#D4FE#D
+B=1.8 Hybrid#122,140#2ZR-FXE#H
+C=2.0 Hybrid#184,196#M20A-FXS#H
+D=2.5 Hybrid#218,222,244#A25A-FXS#H
+E=2.5 PHEV#306,309,320#A25A#P
+F=2.0 Turbo#184,245,258#B48
+G=2.0 Diesel#150,190#B47#D
+H=3.0 Turbo#340,374,387#B58
+I=1.3 Turbo#136,163#M282
+J=2.0 Turbo#204,258#M254#H
+K=2.0 Diesel#150,190,200#OM654#D
+L=1.0 EcoBoost MHEV#125,155#B7JA#H
+M=2.0 EcoBlue#105,130,150,170,185,190#BKF#D
+N=Électrique#229:77.4,325:77.4#EM17#EV
+O=1.5 Hybrid#130,160#GSE#H
+Q=1.6 MultiJet#120,130#552#D
+R=2.0 MultiJet#140,170#552#D
+S=2.0 Turbo#200,280#GME
+T=2.2 JTDm#150,180,210#552#D
+U=2.0 P#200,250,300#PT204
+V=2.0 D#163,180,204#204DT#D
+W=1.5 PHEV#309#PT15#P
+X=2.0 B4 MHEV#197#B4204#H
+Y=2.0 B5 MHEV#250#B4204#H
+Z=2.0 T8 PHEV#455#B4204#P
+0=1.5 e:HEV#109,131#LEB#H
+1=2.0 e:HEV#184#LFA#H
+2=2.0 Skyactiv-G#122,150,165#PE-VPS
+3=2.2 Skyactiv-D#150,184#SH-VPTS#D
+4=1.4 Boosterjet Hybrid#129#K14#H
+5=1.5 Dualjet Hybrid#115#K15#H
+6=1.5 DM-i#218,324#BYD-DMI#P
+7=1.6 T-GDi#147,185#SQR
+8=1.5 PHEV#347#SQR#P
+9=1.0 T-GDi#100,120#G3LC
+a1=1.2 MPi#84#G4LF
+a2=1.0 MPi#67#G3LD
+a3=1.5 T-GDi#160#G4LF
+a4=2.0 TSI RS#245,265,300#DNNA
+a5=2.5 TFSI#390,400#DNW
+a6=3.0 TDI#231,286,344#DDVE#D
+a7=3.0 TFSI#340,353,381#DKUA
+a8=Électrique#170:58,204:77,286:77#APP310#EV
+a9=1.6 Hybrid#141#G4LE#H
+b1=2.0 T-GDi#245,250,275,280,304#G4KH
+b2=1.3 PHEV#240,280#GSE#P
+b3=1.0 Turbo#100,115,120#B10X
+b4=1.4 Turbo#125,140,150#B14T
+b5=1.6 CDTI#110,136#B16D#D
+b6=2.0 CDTI#170,210#B20D#D
+b7=1.5 dCi#75,90,110#K9K#D
+b8=2.0 dCi#110,150,170#M9R#D
+b9=2.3 dCi#130,150,165,180#M9T#D
+c1=1.2 TCe#115,120#H5F
+c2=1.6 dCi#130,160#R9M#D
+c3=1.7 Blue dCi#120,150#R9M#D
+c4=1.2 E-Tech#200#HR12#H
+c5=1.2 TCe MHEV#130,140#HR12#H
+c6=Électrique#122:52,150:52#EV-R5#EV
+c7=Électrique#170:60,220:87#6AK#EV
+c8=1.0 SCe#65,75#H4D
+c9=1.0 ECO-G#100#H4D#G
+d1=2.0 TDI#120,150,190,240#DFG#D
+d2=1.4 TSI#125,150#CZC
+d3=2.0 TFSI#190,204,245,265#CVK
+d4=2.0 TDI#136,163,190,204#DEU#D
+d5=Électrique#292:94.9,388:94.9,517:94.9#PPE#EV
+d6=Électrique#476:93,598:93,646:93,925:105#J1#EV
+d7=1.5 TSI MHEV#150#DUV#H
+d8=2.0 TDI#150,193#DTU#D
+d9=2.0 TSI#204,265,272#DTU
+e1=1.6 THP#150,165,180,200,208#EP6
+e2=1.6 BlueHDi#75,100,120#DV6#D
+e3=1.2 VTi#68,72,82#1KR
+e4=1.0 VTi#68,72#1KR
+e5=Électrique#113:44#EV-C3#EV
+e6=1.2 Turbo#100,130#EB2
+e7=1.2 PureTech#100#EB2LTED
+e8=1.6 PHEV#195,225#EP6#P
+e9=Électrique#136:75#ZKX#EV
+f1=2.0 EcoBlue#150,190#YLCB#D
+f2=1.5 EcoBlue#95,120#B7DA#D
+f3=1.5 EcoBoost#150#B3CB
+f4=2.5 PHEV#225,243#BGCA#P
+f5=2.5 FHEV#190#BGCA#H
+f6=Électrique#286:77,340:79#APP310#EV
+f7=1.0 EcoBoost#100,125,140#B3CA
+f8=2.3 EcoBoost#280,347#YVC
+f9=Électrique#269:70,294:91,351:91,487:91#EV-MAC#EV
+g1=1.5 VTEC Turbo#173,182,193#L15C
+g2=1.0 VTEC Turbo#129#P10A
+g3=2.0 Type R#320,329#K20C
+g4=1.6 i-DTEC#120#N16#D
+g5=2.0 e:PHEV#184#LFA#P
+g6=Électrique#204:68.4#EV-ENY#EV
+h1=1.5 Skyactiv-G#75,90,115#P5-VPS
+h2=2.0 Skyactiv-X#180,186#SPCCI
+h3=2.5 Skyactiv-G#140,192,194#PY-VPS
+h4=3.3 e-Skyactiv D#200,254#T3-VPT#D
+h5=2.5 e-Skyactiv PHEV#327#PY-VPS#P
+h6=2.4 Boxer#234#FA
+i1=1.2 Dualjet#83,90#K12#H
+i2=1.0 Boosterjet#111#K10
+i3=1.4 Boosterjet#140#K14
+i4=1.5#102#K15
+i5=1.2 Mild Hybrid#82#Z12E#H
+i6=Électrique#144:49,174:61,184:61#EV-EVT#EV
+j1=2.4 PHEV#188,203,248,306#4B12#P
+j2=1.5 MIVEC Turbo#163#4B40
+j3=2.2 DI-D#150,180#4N14#D
+j4=1.6 MIVEC#117#4A9
+j5=2.0 MIVEC#150#4B11
+k1=2.0i e-Boxer#150#FB20#H
+k2=2.5i#169#FB25
+k3=1.6i#114#FB16
+k4=Électrique#218:71.4,343:71.4#1YM#EV
+l1=1.0 T-GDi#120#G3LC
+l2=1.4 T-GDi#140#G4LD
+l3=2.2 CRDi#202#D4HB#D
+l4=1.6 T-GDi MHEV#150#G4FT#H
+l5=1.6 CRDi MHEV#136#D4FE#H
+l6=Électrique#204:58.3,204:81.4#EM16#EV
+l7=Électrique#170:58,229:77.4,325:77.4,585:77.4#EM21#EV
+l8=Électrique#204:99.8,385:99.8,508:99.8#EM23#EV
+l9=Électrique#156:48.4,218:65.4#EM16#EV
+m1=1.6 PHEV#141,183#G4LE#P
+m2=Électrique#204:64.8#EM16#EV
+m3=2.5 T-GDi#304#G4KN
+m4=3.5 T-GDi#380,415#G6DP
+m5=2.2 CRDi#210#D4HC#D
+m6=1.5 T-GDi#163#G15T
+m7=1.6 e-XDi#115,136#D16DT#D
+m8=2.2 e-XDi#181,202#D20DT#D
+n1=1.3 DIG-T#140,158,160#HR13
+n2=1.3 DIG-T MHEV#140,158#HR13#H
+n3=1.5 e-POWER#190,204,213#KR15#H
+n4=1.0 DIG-T#114,117#HR10
+n5=1.6 Hybrid#143#HR16#H
+n6=Électrique#150:40,217:62#EM57#EV
+n7=Électrique#218:63,242:87,306:87,394:87#EV-ARI#EV
+o1=1.5 D-4D#100,120#DV5#D
+o2=2.0 D-4D#145,150,180#DW10#D
+o3=2.8 D-4D#177,204,205#1GD#D
+o4=2.4 D-4D#150#2GD#D
+o5=1.5 Hybrid#116,130#M15A-FXE#H
+o6=1.5 VVT-i#125#M15A
+o7=1.0 VVT-i#69,72#1KR
+o8=1.6 GR#261,280,300#G16E
+o9=1.2 Turbo#116#8NR
+p1=2.0 Hybrid#184,199#M20A-FXS#H
+p2=Électrique#313:71.4,381:71.4#EV-RZ#EV
+p3=Électrique#204:54.3,204:72.8#EV-UX#EV
+q1=2.0 PHEV#380#EC1#P
+q2=2.0 Turbo#272#EC1
+q3=1.3 PHEV 4xe#190,240#GSE#P
+q4=1.3 T4#130,150,180#GSE
+q5=1.0 T3#120#GSE
+r1=1.0 FireFly#100#GSE
+r2=1.0 FireFly Hybrid#70#GSE#H
+r3=1.2 Fire#69#169A4
+r4=0.9 TwinAir#85,105#312A2
+r5=1.3 MultiJet#80,95#552#D
+r6=2.2 MultiJet#120,140,180#F1AGL#D
+r7=Électrique#95:23.8,118:42#EV-500#EV
+r8=Électrique#122:70,270:110#EV-DUC#EV
+r9=1.4 T-Jet#120,145,165,180#312A1
+s1=2.9 V6 QV#510,520#690T
+s2=1.75 TBi#240#940B
+s3=1.3 PHEV Q4#280#GSE#P
+s4=Électrique#156:54,240:54,280:54#EM0#EV
+s5=1.2 Hybrid#136,156#EB2LTEDH#H
+t1=3.0 D#249,250,300,350#AJ200D#D
+t2=3.0 P#360,400#AJ300
+t3=2.0 P400e#404#PT204#P
+t4=5.0 V8#525,550,575#AJ133
+t5=4.4 V8#530,635#N63
+u1=3.0 V6#340,353,440,474#CWV
+u2=4.0 V8#550,640,659#EA825
+u3=3.0 E-Hybrid#462,470#CWV#P
+u4=2.9 V6#330,354,367,440#CSZ
+u5=3.6 T-Hybrid#541#9A2#H
+u6=3.0 Carrera#385,394,450,480#9A2
+u7=3.7 Turbo S#650,711#9A2
+u8=4.0 GT#400,420,500,520#9A1
+v1=2.0 T4#190#B4204
+v2=2.0 D3#150#D4204#D
+v3=2.0 D4#190#D4204#D
+v4=1.5 T3#163#B3154
+v5=1.5 T5 PHEV#262#B3154#P
+v6=2.0 T6 PHEV#350#B4204#P
+v7=2.0 B3 MHEV#163#B4204#H
+v8=2.0 B6 MHEV#300#B4204#H
+v9=Électrique#272:51,272:69,428:69#SEA#EV
+w1=Électrique#231:69,252:82,408:82#EV-EX4#EV
+w2=Électrique#313:111,408:111,517:111#EV-EX9#EV
+w3=Électrique#231:64,272:69,299:82,408:78,476:78#EV-PS2#EV
+w4=Électrique#272:100,544:100#SEA#EV
+w5=Électrique#489:111,517:111#EV-PS3#EV
+x1=1.5 Hybrid+#194#MG3-HEV#H
+x2=Électrique#170:51,204:64,245:77,435:64#EV-MG4#EV
+x3=1.5 T-GDi#162#15E4E
+x4=1.5 PHEV#258#15E4E#P
+x5=Électrique#143:44.5,156:51,156:72#EV-ZS#EV
+x6=Électrique#314:64,340:77,544:77#EV-CYB#EV
+y1=Électrique#204:60.5#BYD#EV
+y2=Électrique#95:44.9,176:60.4,204:60.4#BYD#EV
+y3=Électrique#313:82.5,530:82.5#BYD#EV
+y4=Électrique#177:51.1#BYD#EV
+y5=Électrique#88:30,115:43.2#BYD#EV
+y6=Électrique#517:108.8#BYD#EV
+z1=Électrique#258:66,286:87.5,487:87.5#EV-XG6#EV
+z2=Électrique#313:98,551:98#EV-XG9#EV
+z3=Électrique#276:86.2,473:86.2,505:86.2#EV-XP7#EV
+z4=Électrique#490:75,490:100#EV-NIO#EV
+z5=Électrique#653:100#EV-NIO#EV
+z6=Électrique#272:66,428:66#SEA#EV
+z7=Électrique#272:100,544:100,580:100#SEA#EV
+z8=Électrique#218:69.9#EV-LM#EV
+z9=Électrique#218:67.1#EV-LM#EV
+A1=Électrique#95:37.3,109:41.3#EV-LM#EV
+A2=1.5 EREV#218:28.4#RE-ROT#P
+A3=Électrique#204:61#EV-OM#EV
+A4=Électrique#171:48,171:63#EV-ORA#EV
+A5=1.5 PHEV#261,276#JLH#P
+A6=1.5 HEV#150#JLH#H
+B1=2.0 Turbo#184,208#B48
+B2=3.0 Diesel#265,286,298#B57#D
+B3=2.0 PHEV#292,299#B48#P
+B4=3.0 PHEV#489#B58#P
+B5=4.4 V8#530#N63
+B6=2.0 M#306,317#B48
+B7=Électrique#340:81.2,389:81.2,601:81.2#GEN5#EV
+B8=Électrique#455:101.7,544:101.7,660:101.7#GEN5#EV
+B9=Électrique#326:76.6,385:76.6,523:111.5,619:111.5#GEN5#EV
+C1=Électrique#204:64.7,272:64.7,313:64.7#GEN5#EV
+C2=1.5#136,140,156#B38
+C3=Électrique#286:70.2,340:83.9,544:83.9#GEN5#EV
+C4=Électrique#286:80#GEN5#EV
+C5=Électrique#313:108,469:108#NK#EV
+C6=3.0 M#360,374,387,398#B58
+D1=2.0 A#224#M260
+D2=2.0 AMG#306,310#M260
+D3=2.0 AMG S#421#M139
+D4=1.3 PHEV#218#M282#P
+D5=2.0 C220d#200#OM654#D
+D6=2.0 C300e#313#M254#P
+D7=2.0 E300e#312#M254#P
+D8=3.0 E400e#381#M256#P
+D9=2.0 GLC300e#313#M254#P
+E1=3.0 #381,435#M256#H
+E2=4.0 V8#503,510#M176#H
+E3=3.0 d#330,340#OM656#D
+E4=2.0 d#197,269#OM654#D
+E5=3.0 PHEV#510#M256#P
+E6=Électrique#190:66.5,228:66.5,292:66.5#EVA#EV
+E7=Électrique#245:89,292:96,408:90.6,544:90.6#EVA#EV
+E8=Électrique#333:107.8,360:107.8,453:107.8,523:107.8#EVA#EV
+E9=Électrique#272:85,354:85#MMA#EV
+F1=Électrique#360:94,490:94#MMA#EV
+F2=2.2 CDI#136,163#OM651#D
+F3=2.0 CDI#190,239#OM654#D
+F4=1.6 CDI#102#OM622#D
+F5=1.5 CDI#95,116#OM608#D
+F6=Électrique#116:55,116:113#EV-SPR#EV
+F7=Électrique#204:90#EV-VIT#EV
+F8=Électrique#122:45#EV-EQT#EV
+F9=4.0 AMG#585,612#M177#H
+G1=1.5 C#170#B38#H
+G2=2.0 S#178,192,218,245#B48
+G3=2.0 JCW#231,300,306,317#B48
+G4=1.5 Cooper#136#B38
+G5=1.5 D#116#B37#D
+G6=2.0 SD#170#B47#D
+G7=Électrique#184:32.6#EV-MIN#EV
+G8=1.5 PHEV#220#B38#P
+G9=Électrique#190:40.7,218:54.2,258:54.2#EV-CO#EV
+H1=Électrique#190:42.5,218:54.2,260:54.2#SEA#EV
+H2=Électrique#204:64.7,313:64.7#EV-CM#EV
+H3=Électrique#82:17.6#EV-FTW#EV
+H4=Électrique#272:49,272:66,428:66#SEA#EV
+H5=Électrique#360:76,360:100,646:100#SEA#EV
+I1=1.5#102#B38
+I2=2.0#178,192#B48
+I3=2.0#231#B48
+J1=Électrique#670:100,750:100,1020:100#TS#EV
+J2=Électrique#283:60,351:75,440:79,460:79,498:75,510:79#3D3#EV
+J3=Électrique#299:60,440:79,534:79,510:75#3D3#EV
+J4=Électrique#600:123,845:123#CT#EV
+J5=Électrique#1020:200#TR#EV
+K1=3.0 V6#350,430#F160
+K2=3.0 V6 D#275#VM#D
+K3=2.0 Hybrid#330#GME#H
+K4=3.0 Trofeo#530,550,630#M156
+K5=3.8 V8#580#F154
+K6=Électrique#410:105#EV-GRC#EV
+K7=Électrique#761:92.5#EV-GT#EV
+L1=6.0 W12#608,635,659#W12
+L2=3.0 V6 PHEV#462,544#CWV#P
+L3=4.0 V8 PHEV#680,782#EA825#P
+L4=6.75 V12#571,600#N74
+L5=Électrique#585:102#EV-RR#EV
+M1=3.9 V8#620,663,720#F154
+M2=3.0 V6 PHEV#830#F163#P
+M3=4.0 V8 PHEV#1000#F154#P
+M4=6.5 V12#725,800,830#F140
+N1=4.0 V8#650,666#CEH
+N2=4.0 V8 PHEV#800,920#CEH#P
+N3=5.2 V10#610,640#L520
+N4=6.5 V12 PHEV#1015#L539#P
+O1=4.0 V8#510,550,665,680,707#M177
+O2=5.2 V12#608,639#AE31
+O3=4.0 V8 PHEV#1079#M177#P
+O4=4.0 V8#620,720,750,765#M840
+O5=3.0 V6 PHEV#680,700#M630#P
+Q1=8.0 W16#1500,1600#W16
+Q2=8.3 V16 PHEV#1800#V16#P
+R1=1.9 Ddi#150,163#RZ4E#D
+R2=2.2 Ddi#163#RZ4E#D
+R3=3.0 F1C#140,160,180,210#F1C#D
+R4=Électrique#190:74,190:111#EV-DAY#EV
+S1=1.0#68#B10D
+S2=1.2#82#B12D
+S3=1.6 CDTI#136#B16D#D
+T1=0.5 DCI#8#DCI#D
+T2=Électrique#8:8,14:12,20:12#EV-AIX#EV
+U1=Électrique#282:113,564:113#EV-OCN#EV
+U2=Électrique#480:88,620:112,1234:118#EV-AIR#EV
+U3=Électrique#828:123#EV-GRV#EV
+V1=Électrique#177:59.6,204:59.6#EV-VF6#EV
+V2=Électrique#204:75.3,354:75.3#EV-VF7#EV
+V3=Électrique#354:87.7,408:87.7#EV-VF8#EV
+V4=Électrique#408:123#EV-VF9#EV
+W1=Électrique#435:99,551:120#EV-HQ9#EV
+W2=1.5 T-GDi#177#4A15T
+W3=Électrique#204:85.9#EV-FRT#EV
+W4=Électrique#313:103#BYD#EV
+W5=1.5 Turbo#143,150#GW4B15
+W6=2.0 Turbo#204#GW4C20
+W7=1.5 PHEV#326,347#GW4B15#P
+W8=1.5 HEV#190#GW4B15#H
+W9=2.0 PHEV#476#GW4C20#P
+X1=1.5 Turbo#145#SFG15
+X2=Électrique#163:52#EV-SER#EV
+X3=Électrique#299:80#EV-SER5#EV
+X4=1.5 EREV#456:40#RE-ROT#P
+Y1=Électrique#177:52.5,177:70#EV-MX5#EV
+Y2=Électrique#204:70#EV-MX6#EV
+Y3=Électrique#204:88.5#EV-MXT9#EV
+Y4=Électrique#163:50.2#EV-MXD3#EV
+Z1=Électrique#612:112,918:112#SEA#EV
+Z2=Électrique#612:102,918:102#SEA#EV
+Z3=2.0 Turbo#365#M139
+Z4=3.5 V6#405#2GR
+01=Électrique#156:51#EM0#EV
+02=Électrique#230:74,350:97#STLA#EV
+03=1.5 Turbo#147,186#SQR
+04=1.5 PHEV#347,530#SQR#P
+05=Électrique#170:52,204:77#APP310#EV
+06=Électrique#286:77,340:77#APP550#EV
+07=Électrique#218:52,226:52,226:79#MEB#EV
+08=Électrique#116:38,150:52,204:52#MEB#EV
+09=1.8 TCe#252,292,300,350#M5P
+10=Électrique#180:52,220:52#EV-R5#EV
+11=Électrique#400:89,470:89,540:89#EV-A39#EV
+12=1.6 Hybrid#140,155#H4M#H
+13=1.2 TCe MHEV#130,140#HR12#H
+14=Électrique#45:26.8,65:26.8,70:26.8#EV-SPR#EV
+15=Électrique#95:40,122:52,150:52#EV-R5#EV
+16=Électrique#82:27.5,95:27.5#EV-TWI2#EV
+17=Électrique#122:45#EV-KAN#EV
+18=Électrique#76:52,143:87#EV-MAS#EV
+19=Électrique#122:52#EV-TRA#EV
+20=Électrique#8:5.5#AMI#EV
+21=1.4 Fire#95#843A1
+22=1.5 Hybrid#130#GSE#H
+23=Électrique#155:42#EV-500A#EV
+24=Électrique#240:54#EM0#EV
+25=1.8 Hybrid#136#2ZR-FXE#H
+26=2.0 Turbo#258#B48
+27=3.0 Turbo#340,382#B58
+28=1.3 TCe#130#H5H
+29=1.6 dCi#130#R9M#D
+30=2.0 dCi#175#M9R#D
+31=1.8 TCe#225#M5P
+32=1.6 TCe#150,200#M5M
+33=1.5 Blue dCi#95,115#K9K#D
+34=1.0 TCe#110#H4D
+35=1.2 TCe#130#H5F
+36=1.3 TCe#115,140,160#H5H
+37=1.8 RS#280,300#M5P
+38=1.5 dCi#90,110#K9K#D
+39=0.9 TCe#90#H4B
+40=1.2 TCe#120#H5F
+41=1.7 Blue dCi#150#R9M#D
+42=2.0 dCi#150,175,200#M9R#D
+43=1.6 RS#200,220#M5M
+44=1.33#99#1NR
+45=1.5 Hybrid#100#1NZ#H
+46=1.5 GRMN#212#2ZR
+47=1.0 Hybrid#116#1KR#H
+48=2.0 PHEV#223#M20A#P
+49=1.8 Hybrid#122,220#2ZR-FXE#H
+50=2.5 Hybrid#230#A25A-FXS#H
+51=2.5 Hybrid#248#A25A-FXS#H
+52=2.8 D-4D MHEV#204,205#1GD#H
+53=Électrique#204:71.4,218:71.4,313:71.4#1YM#EV
+54=Électrique#144:49,174:61,184:61#1YM#EV
+55=Électrique#170:57,224:77,313:77#1YM#EV
+56=2.5 Hybrid#250#A25A-FXS#H
+57=2.5 Hybrid#223#2AR-FSE#H
+58=2.5 Hybrid#218#A25A-FXS#H
+59=2.4 Turbo Hybrid#371#T24A#H
+60=2.5 PHEV#309#A25A#P
+61=1.5 Hybrid#136#M15A-FXE#H
+62=0.9 IG-T#90#HR09
+63=1.0 IG-T#100,117#HR10
+64=1.2 e-POWER#109#HR12#H
+65=1.2 DIG-T#115#HR12
+66=1.6 dCi#130#R9M#D
+67=1.7 dCi#150#R9M#D
+68=Électrique#176:52,218:75#EV-LF3#EV
+69=2.3 dCi#163,190#YS23#D
+70=3.8 V6#570,600#VR38
+71=1.3 i-VTEC#102#L13Z
+72=1.5 Sport#130#L15B
+73=1.5 i-VTEC#130#L15B
+74=Électrique#176:17.7#EV-FCEV#EV
+75=1.5 Skyactiv-D#105#S5-DPTS#D
+76=1.5 Hybrid#116#M15A-FXE#H
+77=2.0 Skyactiv-G#145,165#PE-VPS
+78=1.8 Skyactiv-D#115#S8-DPTS#D
+79=2.0 Skyactiv-G#121,150#PE-VPS
+80=2.5 Skyactiv-G#140#PY-VPS
+81=1.5 Skyactiv-G#131#P5-VPS
+82=2.0 Skyactiv-G#160,184#PE-VPS
+83=Électrique#143:35.5#EV-MX#EV
+84=0.8 R-EV#170#RE-ROT#P
+85=Électrique#258:68.8,245:80#EV-MZ6#EV
+86=1.4 Sport#140#K14
+87=1.6 VVT#120#M16A
+88=1.5 5p#102#K15
+89=1.0 MIVEC#71#3A9
+90=1.2 MIVEC#80#3A9
+91=1.3 Turbo#140,158#HR13
+92=2.4 DI-D#154,181#4N15#D
+93=1.0#65#H4D
+94=1.0 Turbo#90#H4D
+95=2.0i#150#FB20
+96=2.4 Turbo#260#FA24
+97=2.5 Turbo#300#EJ25
+98=1.0 T-GDi N#204#G3LC
+99=1.0 T-GDi MHEV#100,120#G3LC#H
+`;
+t.split("\n").forEach(function(l){l=l.trim();if(!l)return;var i=l.indexOf("=");if(i<1)return;P[l.slice(0,i)]=l.slice(i+1)});
+})();
 
 var SEG={C:"Citadine",Y:"Micro-citadine",K:"Compacte",B:"Berline",T:"Break",S:"SUV",
 U:"SUV urbain",E:"SUV compact",W:"SUV premium",M:"Monospace",L:"Ludospace",F:"Utilitaire",
@@ -311,7 +567,7 @@ rafale~Rafale~24~27~N~@c4;1.2 E-Tech 4Control#300#HR12#P
 espace-5~Espace V~17~23~M~@31;@42
 espace-6~Espace VI~23~27~S~@c4
 talisman~Talisman~17~22~B~@32;@29;@30
-r4~Renault 4 E-Tech~25~27~J~c6
+r4~Renault 4 E-Tech~25~27~J~@c6
 r5~Renault 5 E-Tech~24~27~J~@15
 r5gtl~5 Turbo 3E~26~27~X~Électrique#544:70#EV-R5T#EV
 zoe~Zoe~17~24~C~Électrique#92:41,108:41,135:52#5AM#EV
@@ -364,7 +620,7 @@ bigster~Bigster~25~27~S~@c9;1.2 TCe MHEV#140#HR12#H;1.6 Hybrid#155#H4M#H;1.2 TCe
 `],
 alpine:["Alpine","FR",`
 a110~A110~17~27~X~@09
-a110r~A110 R / GT~22~27~X~1.8 TCe#300,350#M5P
+a110r~A110 R GT~22~27~X~1.8 TCe#300,350#M5P
 a290~A290~24~27~C~@10
 a390~A390~25~27~N~@11
 `],
@@ -1192,7 +1448,6 @@ r2~R2~26~27~J~Électrique#450:100#EV-RIV2#EV
 `]
 };
 
-/* ═══ RÉFÉRENTIEL MOTEUR ═══ */
 var eng=[
 ["^(1KR|K10|K12|K6A)",998,3,"3 en ligne","Atmosphérique MPI","Chaîne"],
 ["^EB0",999,3,"3 en ligne","Atmosphérique MPI","Courroie humide"],
@@ -1459,7 +1714,6 @@ var tq={"eb2|82":118,"eb2|110":205,"eb2|130":230,"eb2ltedh|100":205,"eb2ltedh|13
 "aj200d|300":650,"gme|280":400,"690t|510":600,"552|130":350,"gse|130":230,"m156|630":730,
 "f154|720":770,"ceh|666":850,"n74|571":900,"sqr|185":310,"jlh|276":425,"mg3-hev|194":250};
 
-/* ═══ PANNES · CAMPAGNES · RAPPELS · TSB ═══ */
 var faults=[
 ["F-EB2-BELT","engine","peugeot,citroen,ds,opel,fiat,alfa,jeep,lancia","1.2 PureTech","rappel","critique",2017,2024,"Courroie humide — dégradation et colmatage crépine","Bruit courroie à froid, voyant pression huile, débris, perte puissance, wet belt, calage.","VIN campagne Stellantis|Largeur courroie au gabarit|Carter + crépine|Pression huile à chaud|Kit courroie+pompe+crépine, vidange rinçage","Courroie humide, pompe huile, crépine, tendeur","P0016,P0011,P0521,P0341,P0087","Rappel Conso Stellantis","distribution,moteur"],
 ["F-EB2-PUMP","engine","peugeot,citroen,ds,opel","1.2 PureTech","campagne","critique",2017,2024,"Pompe à huile — crépine colmatée par débris","Voyant huile, mode dégradé, casse turbo, limailles, pression basse.","Pression huile manométrique à chaud|Carter + crépine|Turbo et coussinets|Pompe+crépine+kit courroie|Rinçage vidange","Pompe huile, crépine, turbo, coussinets","P0521,P0087,P0299","Campagne Stellantis EB2","moteur,distribution,suralim"],
@@ -1547,7 +1801,7 @@ var faults=[
 ["F-CN-OTA","brand","xpeng,nio,zeekr,leapmotor,omoda,jaecoo,ora,lynk,chery,gwm,dongfeng,maxus,byd,mg,smart,forthing,hongqi,vinfast,denza,aion,geely,changan,deepal,exeed,jetour,tank,baic,jac,neta,liauto,voyah,avatr,aito,yangwang,onvo,firefly,galaxy,skyworth,fengon,bestune,farizon","","tsb","moyen",2022,2027,"OTA — mise à jour incomplète, ADAS et écran","Perte ADAS après OTA, écran figé, calibration caméra perdue, 12 V faible.","Version journaux OTA|Reflash calculateur|Recalibration caméras radar|12 V sensibilité coupures|Connexion télématique","Calculateur ADAS, 12 V, caméras, TCU","U0121,U0101,P0562,C1A00","TSB constructeurs CN","telematique,adas,camera,tablette,elec12"],
 ["F-CN-EREV","brand","liauto,aito,voyah,deepal,leapmotor,changan,ram,dongfeng","","tsb","moyen",2023,2027,"EREV prolongateur — démarrage, huile et refroidissement","Prolongateur ne démarre pas, voyant moteur, consommation élevée, range extender.","Codes prolongateur et génératrice|Huile niveau qualité malgré faible usage|Circuit refroidissement dédié|Cycle de maintenance forcé|Mise à jour gestion énergie","Prolongateur, génératrice, huile, LDR","P0087,P0521,P0A93","TSB EREV multi-constructeurs","moteur,thermique,hv,injection"],
 ["F-JEEP-WGS","model","jeep","wagoneer","panne","eleve",2024,2027,"Wagoneer S — décharge 12 V et OTA en échec","12 V faible, OTA interrompu, non démarrable, STLA Large.","Courant de repos|SOH 12 V DC-DC|Reflash OTA|Module télématique|Remplacement 12 V","12 V, DC-DC, TCU","P0562,U0101,U0111","Retour terrain Jeep","elec12,telematique"],
-["F-ULTIUM","model","cadillac,gmc,acura,chevrolet","lyriq,zdx,escalade,hummer","tsb","moyen",2023,2027,"Ultium — module batterie et gestion thermique","Charge bridée, limitation puissance, alerte batterie, Ultium modules.","Codes modules et BMS|Delta cellules températures|Boucle LDR échangeur|Mise à jour logicielle|Remplacement module si écart","Modules Ultium, BMS, pompe LDR","P0AA6,P0AFA,P0C00","TSB GM Ultium","hv,charge,thermique"],
+["F-ULTIUM","model","cadillac,gmc,acura","lyriq,zdx,hummer","tsb","moyen",2023,2027,"Ultium — module batterie et gestion thermique","Charge bridée, limitation puissance, alerte batterie, Ultium modules.","Codes modules et BMS|Delta cellules températures|Boucle LDR échangeur|Mise à jour logicielle|Remplacement module si écart","Modules Ultium, BMS, pompe LDR","P0AA6,P0AFA,P0C00","TSB GM Ultium","hv,charge,thermique"],
 ["F-EXOTIC-12V","brand","ferrari,lamborghini,mclaren,aston,bentley,rolls,maserati,bugatti,lotus,morgan,caterham","","panne","moyen",2017,2027,"Super-sportives — décharge 12 V et mainteneur","Batterie à plat après immobilisation, défauts multiples, mainteneur lithium.","Courant de repos télématique alarme|Mainteneur et batterie 12 V|Masses relais coupure|Recharge mainteneur constructeur|Effacement défauts","Batterie 12 V, mainteneur, télématique","P0562,U0101,B1000","Protocole atelier premium","elec12,telematique,cle"],
 ["F-EXOTIC-DCT","brand","ferrari,lamborghini,mclaren,aston,maserati,bugatti","","tsb","moyen",2017,2027,"DCT haute performance — usure et apprentissage","À-coups à froid, patinage usage sportif, compteurs usure, F1 LDF PDK.","Compteurs usure température|Huile échangeur|Apprentissage constructeur|Actionneurs accumulateur|Essai progressif","Embrayages, mécatronique, huile","P0700,P1750,P0218","Protocole atelier premium","transmission,acoups,thermique"],
 ["F-QUAD-CTRL","brand","aixam,ligier,fiat,citroen,micro","","panne","moyen",2017,2027,"Quadricycles — variateur, contrôleur et pack","Perte puissance, à-coups, refus de charge, variateur contrôleur L6e L7e.","Codes contrôleur|Variateur courroie thermique|Tension SOH pack|Contacteurs chargeur|Essai en charge","Contrôleur, variateur, pack, chargeur","P0AA6,P0C00,U0111","Protocole atelier quadricycle","hv,charge,transmission,elec12"],
@@ -1607,7 +1861,6 @@ var faults=[
 ["F-BODY-LEAK","brand","ALL","","panne","info",2017,2027,"Carrosserie étanchéité — infiltrations et corrosion","Humidité habitacle, buée persistante, corrosion hayon, connecteurs oxydés.","Localisation infiltration arrosage joints évents|Évacuations bas caisse toit ouvrant|Corrosion soudures|Connecteurs zone humide|Joints masses","Joints, évents, passe-câbles, connecteurs","B1000,U0101","Protocole atelier carrosserie","carrosserie,portes,elec12"]
 ];
 
-/* ═══ PROTOCOLES CONDITIONNELS ═══ */
 var rules=[
 ["DR-MOT1","moteur","panne","eleve","Consommation huile — segmentation PCV","Baisse niveau, fumée bleue, blow-by.","Consommation 1000 km|Séparateur huile carter|Endoscopie cylindres|Compressions blow-by","Segments, PCV, turbo","P0300,P0521,P0171","ice"],
 ["DR-MOT2","moteur,thermique","panne","critique","Joint de culasse — intrusion LDR","Surchauffe, LDR disparaît, fumée blanche.","Pression circuit à froid|CO2 vase expansion|Endoscopie|Plan joint serrage","Joint culasse, chemises","P0217,P0300,P0301","ice"],
@@ -1661,7 +1914,6 @@ var rules=[
 ["DR-HYBRID","hv,thermique,moteur","tsb","eleve","Système hybride — onduleur LDR 12 V","Voyant hybride, surchauffe onduleur.","Codes onduleur températures|Débit pompe LDR niveau|Isolement HV connecteurs|DC-DC 12 V READY|Filtre HV","Onduleur, pompe LDR, DC-DC","P0A93,P0A7A,P0AA6","hv"]
 ];
 
-/* ═══ INTERVALLES RÉVISÉS ═══ */
 var revs=[
 ["RV-FORD-EB-CHAIN","ford","2\\.0 EcoBlue|YLCB|BKF","Chaîne de distribution",240000,160000,120,96,"TSB Ford EcoBlue","Allongement chaîne et tendeur hydraulique : 160 000 km / 8 ans."],
 ["RV-FORD-EB-PUMP","ford","2\\.0 EcoBlue|YLCB|BKF","Courroie pompe à huile",240000,150000,120,96,"TSB Ford EcoBlue","Débris colmatant crépine : remplacement avec la chaîne."],
@@ -1724,7 +1976,6 @@ var revs=[
 ["RV-EREV","liauto,aito,voyah,deepal,leapmotor,changan,ram,dongfeng","EREV|RE-ROT|Range extender","Vidange prolongateur malgré faible usage",0,15000,0,12,"Protocole atelier EREV","Prolongateur peu sollicité : vidange annuelle obligatoire."]
 ];
 
-/* ═══ DTC ═══ */
 var dtc={
 P0011:["AAC A calage trop avancé","Chaîne allongée, déphaseur, pression huile","Calage, tendeur, VVT, pression"],
 P0012:["AAC A calage trop retardé","Tendeur, déphaseur, pression basse","Calage et alimentation huile"],
@@ -1848,8 +2099,8 @@ C1B00:["Capteur angle volant calibration","Capteur, colonne, alimentation","Cali
 C2200:["Suspension pneumatique pression","Compresseur, coussins, fuites","Fuite et temps de montée"]
 };
 
-/* ═══ EXPANSION + FUSION + PRÉSERVATION DES AJOUTS UTILISATEUR ═══ */
-var DBK="kf.db.v16", SIGK="kf.base.sig";
+/* ═══ EXPANSION + PRÉSERVATION DES AJOUTS UTILISATEUR ═══ */
+var DBK="kf.db.v16",SIGK="kf.base.sig";
 function ex(t){return String(t).replace(/@([a-zA-Z0-9]+)/g,function(m,k){return P[k]||m})}
 function estr(m){return (m.engines||[]).map(function(e){
 return e.fam+"|"+e.hp+(e.fuel==="EV"&&e.disp?":"+e.disp:"")+"|"+e.code+"|"+e.fuel+"|"+String(e.y0).slice(2)+"-"+String(e.y1).slice(2)+"|"+(e.tech||"")}).join(";")}
@@ -1871,7 +2122,7 @@ var lines=String(tb[2]).split("\n").filter(function(l){return l.trim()});
 var idx={};lines.forEach(function(l,i){idx[l.split("~")[0]]=i});
 (b.models||[]).forEach(function(m){
 if(idx[m.id]==null){lines.push(m.id+"~"+m.name+"~"+String(m.y0).slice(2)+"~"+String(m.y1).slice(2)+"~S~"+estr(m));return}
-var have={};lines[idx[m.id]].split("~")[5].split(";").forEach(function(t){var p=t.split("|");have[p[0]+"|"+p[1]+"|"+p[2]]=1});
+var have={};String(lines[idx[m.id]].split("~")[5]||"").split(";").forEach(function(t){var p=t.split("|");have[p[0]+"|"+p[1]+"|"+p[2]]=1});
 var add=[];(m.engines||[]).forEach(function(e){
 var k=e.fam+"|"+e.hp+"|"+e.code;
 if(!have[k])add.push(e.fam+"#"+e.hp+(e.fuel==="EV"&&e.disp?":"+e.disp:"")+"#"+e.code+"#"+e.fuel+"#"+String(e.y0).slice(2)+"-"+String(e.y1).slice(2)+"#"+(e.tech||""))});
@@ -1883,13 +2134,16 @@ carry();
 
 var cat=Object.keys(RAW).map(function(bid){
 var b=RAW[bid];
-var models=String(b[2]).split("\n").map(function(l){return l.trim()}).filter(Boolean).map(function(line){
+var models=String(b[2]).split("\n").map(function(l){return l.trim()})
+.filter(function(l){return l&&l.indexOf("~")>0}).map(function(line){
 var p=line.split("~");
+if(p.length<6)return null;
 var y0=2000+parseInt(p[2],10),y1=2000+parseInt(p[3],10);
-var engs=ex(p[5]||"").split(";").filter(Boolean).map(function(t){
+if(!(y0>1990&&y1>=y0))return null;
+var engs=ex(p[5]).split(";").filter(Boolean).map(function(t){
 var e=t.split("#");
 return e[0]+"|"+(e[1]||"0")+"|"+(e[2]||"—")+"|"+(e[3]||"E")+"|"+(e[4]||(p[2]+"-"+p[3]))+"|"+(e[5]||"")}).join(";");
-return [p[0],p[1],y0,y1,SEG[p[4]]||"Véhicule",engs]});
+return [p[0],p[1],y0,y1,SEG[p[4]]||"Véhicule",engs]}).filter(Boolean);
 return [bid,b[0],b[1],models]});
 
 return {fuel:fuel,sev:sev,kind:kind,dom:dom,eng:eng,eva:eva,tq:tq,
