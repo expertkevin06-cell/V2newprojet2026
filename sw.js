@@ -1,43 +1,58 @@
-const CACHE_NAME = 'kev-fusion-v2026-integrity';
-const ASSETS = [
-    '/newprojet2026/',
-    '/newprojet2026/index.html',
-    '/newprojet2026/script.js',
-    '/newprojet2026/manifest.json'
-];
+/* KEV FUSION 2026 — service worker : socle applicatif hors ligne, réseau pour les sources */
+const CACHE = "kevfusion26-bench-v1";
+const SHELL = ["/newprojet2026/", "/newprojet2026/index.html", "/newprojet2026/manifest.webmanifest"];
 
-self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(ASSETS).catch(e => console.warn('Cache error:', e)))
-            .then(() => self.skipWaiting())
-    );
+self.addEventListener("install", (e) => {
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    await Promise.all(SHELL.map((u) => c.add(new Request(u, { cache: "reload" })).catch(() => {})));
+    self.skipWaiting();
+  })());
 });
 
-self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then(names => Promise.all(
-            names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))
-        )).then(() => self.clients.claim())
-    );
+self.addEventListener("activate", (e) => {
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
-self.addEventListener('fetch', (event) => {
-    if (event.request.method !== 'GET') return;
-    if (event.request.url.includes('api.nhtsa.gov')) {
-        event.respondWith(
-            fetch(event.request)
-                .then(r => {
-                    const clone = r.clone();
-                    caches.open(CACHE_NAME).then(c => c.put(event.request, clone).catch(() => {}));
-                    return r;
-                })
-                .catch(() => caches.match(event.request))
-        );
-        return;
+self.addEventListener("message", (e) => {
+  if (e.data === "skipWaiting") self.skipWaiting();
+});
+
+self.addEventListener("fetch", (e) => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  if (req.mode === "navigate") {
+    e.respondWith((async () => {
+      try {
+        const fresh = await fetch(req);
+        const c = await caches.open(CACHE);
+        c.put("/newprojet2026/index.html", fresh.clone()).catch(() => {});
+        return fresh;
+      } catch (_) {
+        const c = await caches.open(CACHE);
+        return (await c.match("/newprojet2026/index.html")) || (await c.match("/newprojet2026/")) || Response.error();
+      }
+    })());
+    return;
+  }
+
+  e.respondWith((async () => {
+    const c = await caches.open(CACHE);
+    const hit = await c.match(req);
+    if (hit) return hit;
+    try {
+      const fresh = await fetch(req);
+      if (fresh && fresh.status === 200 && fresh.type === "basic") c.put(req, fresh.clone()).catch(() => {});
+      return fresh;
+    } catch (_) {
+      return hit || Response.error();
     }
-    event.respondWith(
-        caches.match(event.request)
-            .then(r => r || fetch(event.request).catch(() => new Response('Offline', {status: 503})))
-    );
+  })());
 });
