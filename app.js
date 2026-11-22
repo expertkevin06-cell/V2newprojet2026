@@ -1,5 +1,7 @@
 "use strict";
-/* ═══ KEV FUSION 2026 — NOYAU APPLICATIF ═══ */
+window.addEventListener("error",e=>{try{const d=document.createElement("div");
+d.style.cssText="position:fixed;left:8px;bottom:8px;z-index:400;max-width:90vw;background:#450a0a;color:#fecaca;border:1px solid #ef4444;border-radius:10px;padding:8px 10px;font:12px monospace";
+d.textContent="ERREUR JS: "+(e.message||"inconnue");document.body.appendChild(d);setTimeout(()=>d.remove(),9000);}catch(_){}});
 const NFD=s=>String(s==null?"":s).normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const norm=s=>NFD(s).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const slug=s=>NFD(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -43,10 +45,9 @@ String(p[1]||"").split(",").filter(Boolean).forEach((h,i)=>{const q=h.split(":")
 const t=tech+(kwh?(tech?" · ":"")+kwh+" kWh":"");
 const o={key:b[0]+"/"+m[0]+"/"+slug(fam)+"/"+hp+"/"+i,fam,famKey:slug(fam),hp,code,fuel,
 y0:Math.max(y0,m[2]),y1:Math.min(y1,m[3]),tech:t,brand:b[0],brandName:b[1],model:m[0],modelName:m[1],seg:m[4],my0:m[2],my1:m[3]};
-const s=spec(o);o.gk=o.famKey+(s.ev?"|"+(s.kwh||""):"");o.disp=s.ev?s.kwh:s.disp;engs.push(o);});});
+const sp=spec(o);o.gk=o.famKey+(sp.ev?"|"+(sp.kwh||""):"");o.disp=sp.ev?sp.kwh:sp.disp;engs.push(o);});});
 return{id:m[0],name:m[1],y0:m[2],y1:m[3],seg:m[4],brand:b[0],brandName:b[1],engines:engs};})}));}
-/* ── ÉTAT ── */
-const LS={db:"kf.db.v9",aux:"kf.aux.v9",acc:"kf.acc.v9",nf:"kf.nf.v9",dev:"kf.dev.v9",ses:"kf.ses.v9"};
+const LS={db:"kf.db.v11",aux:"kf.aux.v11",acc:"kf.acc.v11",nf:"kf.nf.v11",dev:"kf.dev.v11",ses:"kf.ses.v11"};
 let CAT=[],FAULTS=[],REVC=[],NOTES={},VIEWS=[],BK=[],TIERS=[],NOTIF=[],AUDIT=null;
 let ROLE=null,DEVICE="",admTimer=null,admHash=null,CO={},openC=null,seenPend=new Set(),lastTierSig="",waitMode=false;
 let SEL={brand:"",model:"",year:"",fam:"",hp:""};
@@ -60,8 +61,8 @@ const B=id=>CAT.find(b=>b.id===id);
 const M=(b,m)=>{const x=B(b);return x?x.models.find(y=>y.id===m):null;};
 const ov=(a,b,c,d)=>a<=d&&c<=b;
 const allRevs=()=>RV.concat(REVC);
-function saveDB(){try{localStorage.setItem(LS.db,JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,v:9}));return 1}catch(e){return 0}}
-function loadDB(){try{const d=JSON.parse(localStorage.getItem(LS.db)||"null");if(d&&d.v===9&&Array.isArray(d.cat)&&d.cat.length){CAT=d.cat;FAULTS=d.faults||[];REVC=d.revs||[];return 1}}catch(e){}return 0}
+function saveDB(){try{localStorage.setItem(LS.db,JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,v:11}));return 1}catch(e){return 0}}
+function loadDB(){try{const d=JSON.parse(localStorage.getItem(LS.db)||"null");if(d&&d.v===11&&Array.isArray(d.cat)&&d.cat.length){CAT=d.cat;FAULTS=d.faults||[];REVC=d.revs||[];return 1}}catch(e){}return 0}
 function saveAux(){try{localStorage.setItem(LS.aux,JSON.stringify({notes:NOTES,views:VIEWS,bk:BK}))}catch(e){}}
 function loadAux(){try{const d=JSON.parse(localStorage.getItem(LS.aux)||"{}");NOTES=d.notes||{};VIEWS=d.views||[];BK=d.bk||[]}catch(e){NOTES={};VIEWS=[];BK=[]}}
 function saveAcc(){try{localStorage.setItem(LS.acc,JSON.stringify(TIERS));ping()}catch(e){}}
@@ -77,7 +78,6 @@ const n=el("div","to "+t,`<svg class="ic"><use href="#${ic}"/></svg><div style="
 if(undo){const b=el("button","ud","Annuler");b.onclick=()=>{undo();n.remove()};n.appendChild(b)}
 box.appendChild(n);setTimeout(()=>{n.classList.add("ou");setTimeout(()=>n.remove(),260)},undo?7000:4200);}
 function notify(type,txt,meta){NOTIF.unshift({id:"N"+Date.now()+Math.random().toString(36).slice(2,5),type,txt,meta:meta||"",ts:Date.now(),read:false});saveNf();renderBell()}
-/* ── COMBOBOX ── */
 class Combo{
 constructor(host,ph,cb){this.h=host;this.ph=ph;this.cb=cb;this.items=[];this.value="";this.dis=true;this.sig="";
 host.innerHTML="";this.btn=el("button","cb");this.btn.type="button";this.btn.setAttribute("role","combobox");this.btn.setAttribute("aria-haspopup","listbox");this.btn.setAttribute("aria-expanded","false");
@@ -126,7 +126,6 @@ pick(v){this.close();this.cb(String(v))}
 close(){if(openC!==this)return;openC=null;this.h.dataset.open="0";this.btn.setAttribute("aria-expanded","false");
 document.removeEventListener("pointerdown",this._o);window.removeEventListener("scroll",this._r,true);window.removeEventListener("resize",this._r);
 $("cL").innerHTML="";this.pop=null}}
-/* ── CASCADE ── */
 const modelsOf=(b,y)=>{const x=B(b);return x?x.models.filter(m=>!y||m.engines.some(e=>e.y0<=+y&&e.y1>=+y)).sort((a,c)=>norm(a.name).localeCompare(norm(c.name))):[]};
 function yearsOf(b,m){const x=M(b,m);if(!x)return[];const s=new Set();x.engines.forEach(e=>{for(let y=Math.max(e.y0,YMIN);y<=Math.min(e.y1,YMAX);y++)s.add(y)});return[...s].sort((a,c)=>c-a)}
 function famsOf(b,m,y){const x=M(b,m);if(!x)return[];const map=new Map();
@@ -169,12 +168,13 @@ function newSearch(){Object.values(CO).forEach(c=>c.close());SEL={brand:"",model
 FIL.q="";$("q").value="";FIL.sev.clear();FIL.kind="";FIL.sort="sev";FIL.dom.clear();
 $("selKind").value="";$("selSort").value="sev";$("sevSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed","false"));
 sync();renderDom();renderAll();toast("Champs vidés — nouvelle recherche","ok");window.scrollTo({top:0,behavior:"smooth"})}
-/* ── POOLS ── */
 function hits(f,e){if(f.y1<e.y0||f.y0>e.y1)return false;if(f.scope==="rule")return true;
 if(!f.brands.includes(e.brand))return false;
 if(f.scope==="brand")return FIL.bs;
 if(f.scope==="model")return csv(f.target).includes(e.model);
 if(f.scope==="engine")return slug(f.target)===e.famKey;return false}
+function rules(e){return DR.filter(r=>!e||!r[9]||r[9](e,spec(e))).map(r=>({id:r[0],scope:"rule",brands:[],target:"",kind:r[2],sev:r[3],
+y0:YMIN,y1:YMAX,titre:r[4],sym:r[5],pro:String(r[6]).split("|"),org:r[7],dtc:csv(r[8]),src:"Protocole atelier transversal",dom:r[1],rule:1}))}
 function pool(strict){const eng=resolved();
 if(strict&&!ready())return[];
 let out=[];
@@ -183,8 +183,6 @@ if(FIL.rules){const r=new Set();eng.forEach(e=>rules(e).forEach(x=>{if(!r.has(x.
 else if(SEL.brand){out=FAULTS.filter(f=>f.brands.includes(SEL.brand)&&(f.scope!=="brand"||FIL.bs));if(FIL.rules)out=out.concat(rules(null))}
 else{out=FAULTS.slice();if(FIL.rules)out=out.concat(rules(null))}
 return out}
-function rules(e){return DR.filter(r=>!e||!r[9]||r[9](e,spec(e))).map(r=>({id:r[0],scope:"rule",brands:[],target:"",kind:r[2],sev:r[3],
-y0:YMIN,y1:YMAX,titre:r[4],sym:r[5],pro:String(r[6]).split("|"),org:r[7],dtc:csv(r[8]),src:"Protocole atelier transversal",dom:r[1],rule:1}))}
 function apply(list){let o=list.slice();const q=norm(FIL.q);
 if(q.length>=2){const t=q.split(/\s+/);o=o.filter(f=>{const h=norm([f.titre,f.sym,f.org,f.src,KIND[f.kind],(f.dtc||[]).join(" "),f.pro.join(" "),(f.dom||[]).map(d=>DM[d]?DM[d].n+" "+d:"").join(" ")].join(" "));return t.every(x=>h.includes(x))})}
 if(FIL.sev.size)o=o.filter(f=>FIL.sev.has(f.sev));
@@ -251,7 +249,6 @@ return `<div class="pn pd rv" style="margin-bottom:16px"><div class="sh"><div cl
 ${!s.ev&&/humide/i.test(s.dist)?'<div class="nt wa" style="margin-top:12px"><b>Distribution en bain d\'huile.</b> Contrôle de la largeur au gabarit et inspection de la crépine à chaque entretien.</div>':""}
 ${s.ev?'<div class="nt in" style="margin-top:12px"><b>Véhicule électrique.</b> Aucun entretien moteur thermique : batterie HV, liquide pack, réducteur et freinage.</div>':""}</div>`}
 function bindEng(r){if(!r)return;r.querySelectorAll("[data-eng]").forEach(b=>b.onclick=()=>{const e=engines().find(x=>x.key===b.dataset.eng);if(e)loadEng(e)})}
-/* ── RÉVISIONS + PLAN ── */
 function revsFor(e){const s=spec(e),hay=norm(e.fam+" "+e.code+" "+(e.tech||"")+" "+s.feed);
 return allRevs().filter(r=>{if(!r.brands.includes(e.brand))return false;if(!ov(r.y0,r.y1,e.y0,e.y1))return false;if(!r.match)return true;
 let re;try{re=new RegExp(r.match,"i")}catch(_){return norm(r.match).split(/\s+/).every(t=>hay.includes(t))}
@@ -267,25 +264,25 @@ ${dk!==null?`<span class="dl ${dk>0?"up":""}">${dk>0?"+":""}${dk} % km</span>`:"
 <span class="arw">→</span><div class="rn nw"><div class="rl">Révisé</div><div class="rv2">${nf(r.newKm)} km</div><div class="mi">${r.newMo?moT(r.newMo):"—"}</div></div>
 ${yrs?`<div class="rn"><div class="rl">À ${nf(USE.km)} km/an</div><div class="rv2" style="color:var(--cy)">${String(yrs).replace(".",",")} ans</div><div class="mi">échéance km</div></div>`:""}</div>
 <div class="nt mg" style="margin-top:11px;font-size:12px"><b>${esc(r.src)}.</b> ${esc(r.note)} <b>Confirmer au VIN.</b></div></div>`}
-function planFor(e){const s=spec(e),rv=revsFor(e),f=USE.sev==="severe"?.6:USE.sev==="mixte"?.8:1;
+function planFor(e){const s=spec(e),rv=revsFor(e),f=USE.sev==="severe"?0.6:USE.sev==="mixte"?0.8:1;
 let base=s.ev?[30000,60000,90000,120000,160000]:[15000,30000,60000,90000,120000,160000];
 base=base.map(k=>Math.max(5000,Math.round(k*f/5000)*5000));
 const rk=rv.map(r=>r.newKm).filter(k=>k>0&&k<=200000);
 const steps=[...new Set([...base,...rk])].sort((a,b)=>a-b).filter(k=>k<=200000);
 const wet=/humide/i.test(s.dist),chain=/chaîne|chaine/i.test(s.dist),ev=s.ev,hy=e.fuel==="H"||e.fuel==="P";
 const scr=/scr|adblue/i.test((e.tech||"")+" "+s.feed),gpf=/gpf/i.test(e.tech||""),die=e.fuel==="D";
-return steps.map((km,i)=>{const ops=[],add=(t,c,r)=>ops.push({t,c:!!c,r:!!r});
-rv.filter(r=>r.newKm===km).forEach(r=>add(`${r.organ} — intervalle révisé : ${nf(r.newKm)} km${r.newMo?" / "+moT(r.newMo):""}${r.oldKm?` (au lieu de ${nf(r.oldKm)} km)`:""}`,1,1));
+return steps.map((km,i)=>{const ops=[];const add=(t,c,r)=>ops.push({t:t,c:!!c,r:!!r});
+rv.filter(r=>r.newKm===km).forEach(r=>add(r.organ+" — intervalle révisé : "+nf(r.newKm)+" km"+(r.newMo?" / "+moT(r.newMo):"")+(r.oldKm?" (au lieu de "+nf(r.oldKm)+" km)":""),1,1));
 if(ev){if(i===0)add("Contrôle visuel batterie HV, câblage orange et connecteurs");
 add("Filtre d'habitacle (charbon actif)");add("Contrôle SOH batterie et delta de cellules");
 if(km>=60000)add("Liquide de frein DOT 4 (tous les 2 ans)");
 if(km>=90000)add("Contrôle circuit de refroidissement batterie (pompe LDR, échangeur)");
-if(km>=120000){add("Liquide de refroidissement pack HV",1);add("Contrôle isolement HV au mégohmmètre",1)}
+if(km>=120000){add("Liquide de refroidissement pack HV",1);add("Contrôle isolement HV au mégohmmètre",1);}
 if(km>=160000)add("Contrôle complet pack HV, contacteurs et chargeur embarqué",1);
 add("Contrôle disques / plaquettes (corrosion par faible sollicitation)");
 if(USE.clim==="froid")add("Préconditionnement pack avant charge DC · pompe à chaleur");
-if(USE.clim==="chaud")add("Contrôle température pack et débit de refroidissement en charge rapide")}
-else{if(hy){if(i===0||km%30000===0)add("Vidange huile 0W16/0W20 normée + filtre à huile")}
+if(USE.clim==="chaud")add("Contrôle température pack et débit de refroidissement en charge rapide");}
+else{if(hy){if(i===0||km%30000===0)add("Vidange huile 0W16/0W20 normée + filtre à huile");}
 else if(i===0||km%30000===0)add("Vidange huile normée constructeur + filtre à huile");
 if(km%30000===0||km<=15000)add("Filtre d'habitacle");
 if(km>=60000&&km%60000===0)add("Filtre à air");
@@ -295,8 +292,8 @@ if(km>=60000&&km%60000===0)add("Liquide de frein DOT 4 (tous les 2 ans)");
 if(scr&&km%30000===0)add("Contrôle SCR : injecteur AdBlue, pompe, cristallisation",1);
 if(die&&km%30000===0)add("Contrôle FAP : charge de suie, ΔP, régénérations");
 if(gpf&&km>=60000)add("Contrôle GPF / catalyseur (contre-pression)");
-if(wet){if(km%30000===0)add("Contrôle largeur courroie humide au gabarit + débris carter",1)}
-else if(chain){if(km>=120000)add("Contrôle tension / allongement chaîne, écoute à froid",1)}
+if(wet){if(km%30000===0)add("Contrôle largeur courroie humide au gabarit + débris carter",1);}
+else if(chain){if(km>=120000)add("Contrôle tension / allongement chaîne, écoute à froid",1);}
 else if(km>=120000)add("Kit distribution + galets + pompe à eau",1);
 if(hy&&km%30000===0)add("Contrôle système hybride : onduleur, LDR, isolement HV");
 if(km>=120000)add("Liquide de refroidissement moteur / onduleur");
@@ -304,9 +301,8 @@ if(km>=120000)add("Contrôle trains roulants, rotules et géométrie");
 if(km>=160000)add("Contrôle turbo, injecteurs (débits retour) et compressions",1);
 if(USE.sev==="severe"&&km%20000===0)add("Usage sévère : analyse d'huile, nettoyage EGR, contrôle turbo",1);
 if(USE.clim==="froid"&&km%30000===0)add("Climat froid : 12 V, préchauffage, thermostat");
-if(USE.clim==="chaud"&&km%30000===0)add("Climat chaud : clim, condenseur, circuit LDR")}
-return{km,mo:Math.round(km/USE.km*12),ops,first:i<4,rev:rv.some:rv.some(r=>r.newKm===km),rev:rv.some(r=>r.newKm===km)})}
-/* ── RENDUS ── */
+if(USE.clim==="chaud"&&km%30000===0)add("Climat chaud : clim, condenseur, circuit LDR");}
+return{km:km,mo:Math.round(km/USE.km*12),ops:ops,first:i<4,rev:rv.some(x=>x.newKm===km)};});}
 function renderGate(){const g=$("dGate");
 if(ready()){g.innerHTML="";return}
 const b=B(SEL.brand),m=SEL.brand&&SEL.model?M(SEL.brand,SEL.model):null;
@@ -437,7 +433,6 @@ d.addEventListener("dragleave",()=>d.classList.remove("o2"));
 d.addEventListener("drop",ev=>{ev.preventDefault();d.classList.remove("o2");if(!canW())return;
 const f=+ev.dataTransfer.getData("text/plain");if(f===i)return;const it=VIEWS.splice(f,1)[0];VIEWS.splice(i,0,it);saveAux();renderViews();toast("Vues réordonnées","ok")});
 box.appendChild(d)})}
-/* ── AUDIT ── */
 function audit(){const iss=[],add=(s,c,m)=>iss.push({sev:s,code:c,msg:m});
 const eng=engines(),keys=new Set();let dup=0,orph=0,yf=0,hf=0;
 CAT.forEach(b=>{if(!b.models.length)add("ba","BRAND",`Marque « ${b.name} » sans modèle`);
@@ -513,7 +508,6 @@ FAULTS.forEach(f=>{if(!(f.dom||[]).length){f.dom=["moteur"];n++}});
 saveDB();audit();renderAudit();sync();renderDom();renderAll();
 toast(n?`${n} correction(s) appliquée(s)`:"Aucune correction nécessaire",n?"ok":"in",
 n?()=>{const d=JSON.parse(before);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;saveDB();audit();renderAudit();sync();renderDom();renderAll()}:null)}
-/* ── TIROIRS ── */
 function openDw(){$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");$("dwX").focus()}
 function closeDw(){$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");
 if(!$("notifDw").classList.contains("on"))$("scrim").classList.remove("on")}
@@ -549,7 +543,6 @@ if(canW()&&f.scope!=="rule")mk("rd","i-trash","Supprimer",()=>{const i=FAULTS.fi
 const rm=FAULTS.splice(i,1)[0];saveDB();closeDw();audit();renderDom();renderAll();
 toast("Fiche supprimée","wa",()=>{FAULTS.splice(i,0,rm);saveDB();audit();renderDom();renderAll()})});
 openDw()}
-/* ── NOTIFICATIONS ── */
 function pending(){return TIERS.filter(t=>t.status==="pending")}
 function renderBell(){const n=pending().length,un=NOTIF.filter(x=>!x.read).length,tot=n+un;
 const b=$("bellN");if(tot>0){b.style.display="grid";b.textContent=tot>99?"99+":tot;$("bellB").classList.add("rg")}
@@ -572,7 +565,6 @@ box.appendChild(d)})}
 function openNf(){renderNf();$("scrim").classList.add("on");$("notifDw").classList.add("on");$("notifDw").setAttribute("aria-hidden","false");$("nfX").focus()}
 function closeNf(){$("notifDw").classList.remove("on");$("notifDw").setAttribute("aria-hidden","true");
 if(!$("drawer").classList.contains("on"))$("scrim").classList.remove("on")}
-/* ── TIERS / TEMPS RÉEL ── */
 function initDevice(){let d=null;try{d=localStorage.getItem(LS.dev)}catch(e){}
 if(!d){d="D-"+Math.random().toString(36).slice(2,7).toUpperCase();try{localStorage.setItem(LS.dev,d)}catch(e){}}DEVICE=d}
 const myReq=()=>TIERS.find(t=>t.device===DEVICE);
@@ -622,7 +614,7 @@ d.innerHTML=`<div class="th"><span class="av">${esc((t.name||"?").slice(0,2).toU
 <button class="bt sm gr" data-a="granted" ${t.status==="granted"?"disabled":""}><svg class="ic"><use href="#i-check"/></svg>Accès</button>
 <button class="bt sm rd" data-a="denied" ${t.status==="denied"?"disabled":""}><svg class="ic"><use href="#i-ban"/></svg>Refus</button>
 <button class="bt sm am" data-a="revoked" ${t.status==="revoked"?"disabled":""}><svg class="ic"><use href="#i-lock"/></svg>Révocation</button>
-<button class="bt sm" data-a="pending" ${t.status==="pending"?"disabled":""}><svg class="ic"><use href="#i-hour"/></svg>Remettre en attente</button>
+<button class="bt sm" data-a="pending" ${t.status==="pending"?"disabled":""}><svg class="ic"><use href="#i-hour"/></svg>En attente</button>
 <span class="sp"></span><button class="bt sm rd" data-a="del"><svg class="ic"><use href="#i-trash"/></svg></button></div>
 ${t.history.length?`<div class="thi">${t.history.slice(-4).map(h=>`<div>${dtT(h.ts)} — ${esc(h.a)}${h.by?" par "+esc(h.by):""}</div>`).join("")}</div>`:""}`;
 d.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;a==="del"?removeTier(t.id):setTier(t.id,a)});
@@ -630,7 +622,7 @@ box.appendChild(d)})}
 function renderWait(){const r=myReq();const W=$("lWait"),C=$("lChoose");
 if(!waitMode||!r){W.style.display="none";C.style.display="";return}
 W.style.display="";C.style.display="none";
-const ring=$("wRing");ring.className="wrg s-"+r.status;
+$("wRing").className="wrg s-"+r.status;
 $("wIcon").innerHTML=`<use href="#${r.status==="granted"?"i-unlock":r.status==="pending"?"i-hour":r.status==="denied"?"i-ban":"i-lock"}"/>`;
 $("wTitle").textContent={pending:"Demande en attente de validation",granted:"Accès autorisé",denied:"Demande refusée",revoked:"Accès révoqué"}[r.status];
 $("wMsg").textContent={pending:"L'administrateur a reçu votre demande. La réponse arrive en temps réel sur cet appareil.",
@@ -644,14 +636,13 @@ const act=$("wAct");act.innerHTML="";
 if(r.status==="granted"){const b=el("button","bt te",'<svg class="ic"><use href="#i-unlock"/></svg>Entrer en mode tiers');b.onclick=enterTiers;act.appendChild(b)}
 if(r.status==="pending"){const b=el("button","bt",'<svg class="ic"><use href="#i-x"/></svg>Annuler ma demande');b.onclick=cancelRequest;act.appendChild(b)}
 if(r.status==="denied"||r.status==="revoked"){const b=el("button","bt te",'<svg class="ic"><use href="#i-send"/></svg>Nouvelle demande');
-b.onclick=()=>{TIERS=TIERS.filter(t=>t.id!==r.id);saveAcc();waitMode=false;renderLaunch();};act.appendChild(b)}}
+b.onclick=()=>{TIERS=TIERS.filter(t=>t.id!==r.id);saveAcc();waitMode=false;renderLaunch()};act.appendChild(b)}}
 function renderLaunch(){const eng=engines();
 $("lStats").innerHTML=[["Motorisations",nf(eng.length)],["Marques",CAT.length],["Fiches",nf(FAULTS.length+DR.length)],["Domaines",DOM.length],["Révisions",allRevs().length]]
 .map(([l,v])=>`<span class="ch in"><b>${v}</b> ${l}</span>`).join("");
 if(waitMode&&myReq()){$("lChoose").style.display="none";$("lWait").style.display="";renderWait()}
 else{$("lChoose").style.display="";$("lWait").style.display="none"}
 clearGate()}
-/* ── SESSIONS ── */
 const KCd=[75,101,118,105,110,56,51,54,48,48],SALT="kf26.bench";
 async function hash(s){try{if(crypto&&crypto.subtle){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s+SALT));
 return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}}catch(e){}
@@ -662,9 +653,11 @@ function clearGate(){const i=$("admPwd");if(i){i.value="";i.setAttribute("value"
 const e=$("admEye");if(e)e.innerHTML='<svg class="ic"><use href="#i-eye"/></svg>';}
 async function unlockAdmin(ev){if(ev)ev.preventDefault();
 const i=$("admPwd"),v=(i.value||"").trim();
-if(!v||v.toLowerCase().includes("admin")||v.length<4){$("admErr").style.display="block";clearGate();return}
+const plain=String.fromCharCode.apply(null,KCd);
+if(!v||v.length<4||v.toLowerCase()==="admin"){$("admErr").style.display="block";clearGate();return}
 if(!admHash)await initAdm();
-if(await hash(v)===admHash){clearGate();$("admErr").style.display="none";enter("admin")}
+let ok=false;try{ok=(v===plain)||((admHash&&await hash(v))===admHash)}catch(e){ok=(v===plain)}
+if(ok){clearGate();$("admErr").style.display="none";enter("admin")}
 else{$("admErr").style.display="block";clearGate();toast("Code administrateur incorrect","ba")}}
 function enter(role){ROLE=role;waitMode=false;
 $("launch").classList.add("off");document.body.classList.remove("lk");
@@ -680,7 +673,7 @@ toast("Session administrateur verrouillée","in")}
 function exitApp(){if(ROLE==="admin"){lockAdmin();return}
 ROLE=null;try{localStorage.removeItem(LS.ses)}catch(e){}
 const r=myReq();waitMode=!!r;
-$("launch").classList.remove("off");document.body.classList.add("lk");renderLaunch();applyRole();}
+$("launch").classList.remove("off");document.body.classList.add("lk");renderLaunch();applyRole()}
 function enterTiers(){enter("tiers")}
 function applyRole(){
 const chip=$("chR");
@@ -690,11 +683,10 @@ else{chip.className="ch";$("nRole").textContent="—";$("exitB").querySelector("
 $("tbAdm").classList.toggle("hd2",ROLE!=="admin");
 $("roB").style.display=ROLE==="tiers"?"flex":"none";
 const w=!canW();
-["bSave","bBulkDone","bBulkCopy","bImpOn","bExp","bBk","bWipe","bClearN","bRepair","bRevAllT"].forEach(id=>{const b=$(id);if(b)b.disabled=w||(id==="bBulkDone"||id==="bBulkCopy")?(w||FSEL.size===0):w});
+["bSave","bImpOn","bExp","bBk","bWipe","bClearN","bRepair","bRevAllT"].forEach(id=>{const b=$(id);if(b)b.disabled=w});
 document.querySelectorAll("#addEng button[type=submit],#addF button[type=submit],#addRev button[type=submit]").forEach(b=>b.disabled=w);
 if(ROLE==="tiers"&&$("v-adm").classList.contains("on"))showView("diag");
-if(ROLE==="admin")renderTiers();}
-/* ── TEMPS RÉEL ── */
+if(ROLE==="admin")renderTiers()}
 function live(){loadAcc();loadNf();renderBell();
 if(ROLE==="tiers"){const r=myReq();
 if(!r||r.status!=="granted"){ROLE=null;try{localStorage.removeItem(LS.ses)}catch(e){}
@@ -705,7 +697,6 @@ if(ROLE==="admin"){const sig=TIERS.map(t=>t.id+t.status).join(",");
 if(sig!==lastTierSig){const fresh=TIERS.filter(t=>t.status==="pending"&&!seenPend.has(t.id));
 fresh.forEach(t=>{seenPend.add(t.id);toast(`Nouvelle demande d'accès : ${t.name}`,"wa")});
 lastTierSig=sig;renderTiers();renderBell();}}}
-/* ── ADMIN RENDUS ── */
 function renderAdm(){if(!canW())return;
 $("admStats").innerHTML=[["Motorisations",nf(engines().length),"cy"],["Fiches",nf(FAULTS.length),"amH"],
 ["Protocoles",DR.length,"vi"],["Révisions",allRevs().length,"mg"]]
@@ -718,8 +709,7 @@ else box.innerHTML=BK.map((b,i)=>`<div class="sv"><span class="gr2"><svg class="
 <div class="mi">${esc(b.src)} · ${b.veh} motorisations · ${b.f} fiches · ${Math.round((b.size||0)/1024)} Ko</div></div>
 <button class="bt sm gr" data-r="${i}">Restaurer</button><button class="bt sm rd" data-d="${i}"><svg class="ic"><use href="#i-trash"/></svg></button></div>`).join("");
 box.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>restoreBk(+b.dataset.r));
-box.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{const i=+b.dataset.d,rm=BK.splice(i,1)[0];
-try{localStorage.setItem(LS.bk,JSON.stringify(BK))}catch(e){}saveAux();renderAdm();
+box.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{const i=+b.dataset.d;const rm=BK.splice(i,1)[0];saveAux();renderAdm();
 toast("Sauvegarde supprimée","wa",()=>{BK.splice(i,0,rm);saveAux();renderAdm()})})}
 function makeBk(src){const p=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
 BK.unshift({t:Date.now(),src,veh:engines().length,f:FAULTS.length,size:p.length,data:p});
@@ -730,7 +720,6 @@ const before=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
 try{const d=JSON.parse(b.data);CAT=d.cat;FAULTS=d.faults;REVC=d.revs||[];saveDB();newSearch();audit();renderAudit();renderAdm();
 toast("Sauvegarde restaurée","ok",()=>{const p=JSON.parse(before);CAT=p.cat;FAULTS=p.faults;REVC=p.revs;saveDB();sync();audit();renderDom();renderAll();renderAdm()})}
 catch(e){toast("Sauvegarde illisible","ba")}}
-/* ── IMPORT / EXPORT ── */
 function ovlOn(on){$("ovl").classList.toggle("on",on);if(on){$("ovLog").innerHTML="";$("ovRes").innerHTML="";$("ovX").style.display="none";$("ovBar").style.width="0%";$("ovPct").textContent="0 %"}}
 function olog(m,c="i"){const l=$("ovLog"),d=el("div","l"+c,`[${new Date().toLocaleTimeString("fr-FR")}] ${esc(m)}`);l.appendChild(d);l.scrollTop=l.scrollHeight}
 function ostep(p,d){$("ovBar").style.width=clamp(p,0,100)+"%";$("ovPct").textContent=Math.round(clamp(p,0,100))+" %";$("ovDet").textContent=d;$("ovStep").textContent="Étape "+clamp(Math.ceil(p/17),1,6)+"/6"}
@@ -808,7 +797,7 @@ if(Array.isArray(data.experts))data.experts.forEach(pf);
 if(Array.isArray(data.faults))data.faults.forEach(pf);
 if(Array.isArray(data.revisions))data.revisions.forEach(pr);
 if(Array.isArray(data.revsCustom))data.revsCustom.forEach(pr);
-if(Array.isArray(data.tiers)&&canW())data.tiers.forEach(t=>{if(t&&t.name&&!TIERS.some(x=>x.device===t.device)){TIERS.push(t)}});
+if(Array.isArray(data.tiers)&&canW())data.tiers.forEach(t=>{if(t&&t.name&&!TIERS.some(x=>x.device===t.device))TIERS.push(t)});
 if(Array.isArray(data.cat)&&data.cat.length&&data.cat[0].models)data.cat.forEach(b=>b.models.forEach(m=>m.engines.forEach(e=>{
 const{b:bb,m:mm}=fom(b.name,m.name,m.y0,m.y1);
 const r=addEngTo(mm,bb,e.fam,e.hp,e.code,e.fuel,e.y0,e.y1,e.tech);if(r==="add")add++;else if(r==="merge")merge++})));
@@ -895,14 +884,13 @@ notify("import",`Import massif : +${found} fiches`,"");
 toast("+"+found+" fiches importées","ok",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;saveDB();sync();audit();renderDom();renderAll();renderAdm();toast("Import annulé","in")})}
 sync();renderDom();renderAll();renderAudit();renderAdm();$("ovX").style.display="block"}
 function exportDB(){if(!canW()){toast("Export réservé au mode administrateur","ba");return}
-const p={app:"KEV FUSION 2026",version:9,exported:new Date().toISOString(),
+const p={app:"KEV FUSION 2026",version:11,exported:new Date().toISOString(),
 integrity:AUDIT?{score:AUDIT.score,bad:AUDIT.bad,warn:AUDIT.warn}:null,
 domains:DOM.map(d=>({id:d[0],name:d[1]})),cat:CAT,faults:FAULTS,protocols:rules(null),
 revisions:RV,revisionsCustom:REVC,tiers:TIERS,notes:NOTES,views:VIEWS,dtc:DTC};
 const b=new Blob([JSON.stringify(p,null,1)],{type:"application/json"}),a=el("a");
 a.href=URL.createObjectURL(b);a.download="kev-fusion-2026-"+new Date().toISOString().slice(0,10)+".json";
 document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},400);toast("Export complet téléchargé","ok")}
-/* ── GLOBAL ── */
 function renderAll(){$("nBase").textContent=nf(engines().length);
 $("nFault").textContent=nf(FAULTS.length+(FIL.rules?DR.length:0));
 renderDiag();renderFaults();renderServ();renderCov();renderCat();if(canW())renderAdm();reveal()}
@@ -915,7 +903,6 @@ function reveal(){const els=document.querySelectorAll(".vw.on .rv:not(.in)");
 if(!("IntersectionObserver"in window)){els.forEach(e=>e.classList.add("in"));return}
 if(!io)io=new IntersectionObserver(en=>en.forEach(x=>{if(x.isIntersecting){x.target.classList.add("in");io.unobserve(x.target)}}),{threshold:.05});
 els.forEach(e=>io.observe(e))}
-/* ── LIAISON ── */
 function bind(){
 CO.brand=new Combo($("cBrand"),"Toutes les marques",v=>{SEL={brand:v,model:"",year:"",fam:"",hp:""};FSEL.clear();sync();renderDom();renderAll()});
 CO.model=new Combo($("cModel"),"Choisir d'abord une marque",v=>{SEL.model=v;SEL.year="";SEL.fam="";SEL.hp="";FSEL.clear();sync();renderDom();renderAll()});
@@ -1054,15 +1041,15 @@ window.addEventListener("offline",()=>{net();toast("Mode hors ligne — base loc
 try{BC.onmessage=()=>{loadAcc();loadNf();live();if(canW())renderAll()}}catch(e){}
 window.addEventListener("storage",e=>{if([LS.acc,LS.nf,LS.db].includes(e.key)){loadAcc();loadNf();if(e.key===LS.db)loadDB();live();if(canW())renderAll()}});
 setInterval(live,1200);}
-/* ── DÉMARRAGE ── */
 function boot(){try{
-initDevice();loadAux();loadAcc();loadNf();
+if(typeof RAW==="undefined"||typeof FR==="undefined"||typeof DOM==="undefined"){
+const f=document.querySelector(".lfo");if(f)f.innerHTML="<b style='color:#fca5a5'>data.js absent ou incomplet — recopiez data.js depuis le dépôt.</b>";return;}
+initAdm();initDevice();loadAux();loadAcc();loadNf();
 if(!loadDB())resetSeed();
 if(!CAT.length||!engines().length)resetSeed();
 if(!FAULTS.length)FAULTS=FR.map(f=>Object.assign({},f));
 bind();sync();audit();renderDom();renderAll();renderBell();
 $("nInt").textContent=AUDIT.score+"%";
-/* session tiers persistée ; admin jamais persisté */
 let ses=null;try{ses=JSON.parse(localStorage.getItem(LS.ses)||"null")}catch(e){}
 const r=myReq();
 if(ses&&ses.role==="tiers"&&r&&r.status==="granted"){enter("tiers")}
@@ -1070,14 +1057,6 @@ else{waitMode=!!r;$("launch").classList.remove("off");document.body.classList.ad
 setTimeout(()=>{clearGate();const t=$("nNet");if(t&&t.textContent==="…"){$("chN").className="ch "+(navigator.onLine?"ok":"ba");t.textContent=navigator.onLine?"En ligne":"Hors ligne"}},900);
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 }catch(err){console.error(err);
-try{resetSeed();bind();sync();audit();renderDom();renderAll();}catch(e2){}
+try{resetSeed();bind();sync();audit();renderDom();renderAll()}catch(e2){}
 toast("Récupération automatique effectuée","wa")}}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
-async function unlockAdmin(ev){if(ev)ev.preventDefault();
-const i=$("admPwd"),v=(i.value||"").trim();
-const plain=String.fromCharCode.apply(null,KCd);
-if(!v||v.length<4){$("admErr").style.display="block";clearGate();return}
-if(!admHash)await initAdm();
-let ok=false;try{ok=(v===plain)||((admHash&&await hash(v))===admHash)}catch(e){ok=(v===plain)}
-if(ok){clearGate();$("admErr").style.display="none";enter("admin")}
-else{$("admErr").style.display="block";clearGate();toast("Code administrateur incorrect","ba")}}
