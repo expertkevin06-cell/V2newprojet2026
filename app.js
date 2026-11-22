@@ -37,18 +37,100 @@ function famL(e){const s=spec(e);if(s.ev)return s.kwh?`Électrique ${String(s.kw
 const L=s.disp?(s.disp/1000).toFixed(1).replace(".",",")+" ":"";
 return (L+String(e.fam||"").replace(/^\d[.,]\d\s*/,"").replace(/\s*\d{2,4}\s*ch/i,"").trim()).trim()||e.fam;}
 function famM(e){const s=spec(e);return s.ev?`${s.kwh?s.kwh+" kWh · ":""}${s.volt} V · ${s.plat}`:`${s.disp?s.disp+" cm³":"cyl. n.c."}${s.cyl?" · "+s.cyl+" cyl.":""} · ${FUEL[e.fuel]}`;}
-function build(raw){return raw.map(b=>({id:b[0],name:b[1],country:b[2],models:b[3].map(m=>{
-const engs=[];String(m[5]).split(";").filter(Boolean).forEach(f=>{const p=f.split("|");
+function parseModel(b,m){const engs=[];String(m[5]).split(";").filter(Boolean).forEach(f=>{const p=f.split("|");
 const fam=p[0],code=p[2]||"—",fuel=p[3]||"E",yr=(p[4]||"17-27").split("-"),tech=p[5]||"";
 const y0=yy(yr[0]),y1=yy(yr[1]||yr[0]);
 String(p[1]||"").split(",").filter(Boolean).forEach((h,i)=>{const q=h.split(":");const hp=+q[0]||0;const kwh=q[1];
 const t=tech+(kwh?(tech?" · ":"")+kwh+" kWh":"");
-const o={key:b[0]+"/"+m[0]+"/"+slug(fam)+"/"+hp+"/"+i,fam,famKey:slug(fam),hp,code,fuel,
-y0:Math.max(y0,m[2]),y1:Math.min(y1,m[3]),tech:t,brand:b[0],brandName:b[1],model:m[0],modelName:m[1],seg:m[4],my0:m[2],my1:m[3]};
+const o={key:b.id+"/"+m[0]+"/"+slug(fam)+"/"+hp+"/"+i,fam,famKey:slug(fam),hp,code,fuel,
+y0:Math.max(y0,m[2]),y1:Math.min(y1,m[3]),tech:t,brand:b.id,brandName:b.name,model:m[0],modelName:m[1],seg:m[4],my0:m[2],my1:m[3]};
 const sp=spec(o);o.gk=o.famKey+(sp.ev?"|"+(sp.kwh||""):"");o.disp=sp.ev?sp.kwh:sp.disp;engs.push(o);});});
-return{id:m[0],name:m[1],y0:m[2],y1:m[3],seg:m[4],brand:b[0],brandName:b[1],engines:engs};})}));}
-const LS={db:"kf.db.v11",aux:"kf.aux.v11",acc:"kf.acc.v11",nf:"kf.nf.v11",dev:"kf.dev.v11",ses:"kf.ses.v11"};
-let CAT=[],FAULTS=[],REVC=[],NOTES={},VIEWS=[],BK=[],TIERS=[],NOTIF=[],AUDIT=null;
+return{id:m[0],name:m[1],y0:m[2],y1:m[3],seg:m[4],brand:b.id,brandName:b.name,engines:engs};}
+function build(raw){return raw.map(b=>({id:b[0],name:b[1],country:b[2],models:b[3].map(m=>parseModel({id:b[0],name:b[1]},m))}));}
+/* ═══ PACK MILLÉSIMES 2024-2027 (modèles commercialisés manquants) ═══ */
+const EXT2024=[
+["renault",[["twingo-e","Twingo E-Tech",2026,2027,"Micro-citadine électrique","Électrique|82:27.5,95:27.5|EV-TWI2|EV|26-27|AmpR City"],
+["estafette","Estafette",2026,2027,"Fourgon électrique","Électrique|122:45,143:60|EV-EST|EV|26-27|Urbain LFP"]]],
+["peugeot",[["e408","E-408",2025,2027,"Fastback électrique","Électrique|210:73,230:97|STLA|EV|25-27|STLA Medium"],
+["208-3","208 III",2026,2027,"Citadine","1.2 Hybrid 48V|100,136|EB2LTEDH|H|26-27|Chaîne e-DCS6;Électrique|156:51,210:73|ZKX|EV|26-27|e-CMP2"]]],
+["citroen",[["c5air-2","C5 Aircross II",2025,2027,"SUV compact","1.2 Hybrid 48V|136|EB2LTEDH|H|25-27|Chaîne e-DCS6;1.5 BlueHDi|130|DV5|D|25-27|SCR AdBlue;1.6 PHEV|195|EP6|P|25-27|e-EAT8;Électrique|210:73,230:97|STLA|EV|25-27|STLA Medium"]]],
+["ds",[["dsn4","DS N°4",2026,2027,"SUV compact premium","1.2 Hybrid 48V|136|EB2LTEDH|H|26-27|Chaîne e-DCS6;Électrique|210:73,230:97|STLA|EV|26-27|STLA Medium"]]],
+["alpine",[["a390","A390",2025,2027,"SUV coupé sport électrique","Électrique|400:89,470:89,540:89|EV-A39|EV|25-27|AmpR Sport AWD"]]],
+["volkswagen",[["tayron","Tayron",2025,2027,"SUV 7 places","1.5 eTSI|150|DUV|H|25-27|MHEV 48V;2.0 TDI|150,193|DTU|D|25-27|EA288 evo;1.5 eHybrid|204,272|DUV|P|25-27|PHEV"],
+["id2","ID. EVERY1",2027,2027,"Citadine électrique","Électrique|95:38,116:45|MEB|EV|27-27|MEB Entry LFP"]]],
+["audi",[["a6e","A6 e-tron",2024,2027,"Berline électrique PPE","Électrique|245:83,300:83,380:83,503:83|PPE|EV|24-27|PPE 800V"],
+["a5b10","A5 B10",2024,2027,"Berline / Avant","2.0 TFSI|150,204,272|DKNC|E|24-27|EA888 evo4 MHEV;2.0 TDI|204|DETA|D|24-27|EA288 evo;2.0 TFSI e|299,367|CYR|P|24-27|PHEV"]]],
+["bmw",[["ix3na","iX3 NA0",2026,2027,"SUV électrique Neue Klasse","Électrique|313:108,469:108|NK|EV|26-27|Neue Klasse 800V"]]],
+["mercedes",[["claev","CLA électrique",2025,2027,"Berline compacte MMA","Électrique|272:85,354:85|MMA|EV|25-27|MMA 800V"],
+["glcev","GLC électrique",2026,2027,"SUV premium MMA","Électrique|360:94,490:94|MMA|EV|26-27|MMA 800V AWD"]]],
+["opel",[["frontera","Frontera",2024,2027,"SUV familial","1.2 Hybrid 48V|100,136|EB2LTEDH|H|24-27|Chaîne e-DCS6;Électrique|156:51|EM0|EV|25-27|e-CMP2"]]],
+["fiat",[["panda2","Grande Panda",2024,2027,"Citadine","1.2 Hybrid 48V|100,136|EB2LTEDH|H|24-27|Chaîne e-DCS6;Électrique|113:44|EV-C3|EV|24-27|LFP"],
+["fiat600","600",2023,2027,"SUV urbain","1.2 Hybrid 48V|100,136|EB2LTEDH|H|23-27|Chaîne e-DCS6;Électrique|156:54|EM0|EV|23-27|e-CMP2"]]],
+["alfa",[["junior","Alfa Junior",2024,2027,"SUV urbain","1.2 Hybrid 48V|136|EB2LTEDH|H|24-27|Chaîne e-DCS6;Électrique|156:54,240:54|EM0|EV|24-27|e-CMP2 Veloce"]]],
+["toyota",[["rav6","RAV4 VI",2025,2027,"SUV compact","2.5 Hybrid|236,240|A25A-FXS|H|25-27|e-CVT AWD-i;2.5 PHEV|320,342|A25A|P|25-27|PHEV AWD"],
+["urbcr","Urban Cruiser",2025,2027,"SUV urbain électrique","Électrique|144:49,184:61|1YM|EV|25-27|e-TNGA"]]],
+["nissan",[["micra6","Micra VI",2025,2027,"Citadine électrique","Électrique|95:40,122:52|EV-R5|EV|25-27|AmpR City"],
+["leaf3","Leaf III",2025,2027,"Compacte électrique","Électrique|176:52,218:75|EV-LF3|EV|25-27|AmpR"]]],
+["honda",[["eny1","e:Ny1",2024,2027,"SUV urbain électrique","Électrique|204:68.4|EV-ENY|EV|24-27|e:N"]]],
+["hyundai",[["ioniq9","Ioniq 9",2025,2027,"Grand SUV E-GMP","Électrique|218:110.3,315:110.3,435:110.3|EM23|EV|25-27|E-GMP 800V"]]],
+["kia",[["ev4","EV4",2025,2027,"Berline compacte électrique","Électrique|170:58.3,204:81.4|EM16|EV|25-27|E-GMP 400V"]]],
+["ford",[["capri","Capri EV",2024,2027,"SUV coupé électrique","Électrique|170:52,286:77,340:79|APP310|EV|24-27|MEB"]]],
+["tesla",[["cyber","Cybertruck",2023,2027,"Pickup électrique","Électrique|600:123,845:123|CT|EV|23-27|Tesla 48V"]]],
+["volvo",[["es90","ES90",2025,2027,"Berline électrique SPA2","Électrique|333:111,453:111,680:111|EV-EX9|EV|25-27|SPA2"]]],
+["polestar",[["ps5","Polestar 5",2025,2027,"GT électrique PPE","Électrique|450:100,650:100|PPE|EV|25-27|PPE 800V"]]],
+["mg",[["cyberster","Cyberster",2024,2027,"Roadster électrique","Électrique|314:64,544:77|EV-CYB|EV|24-27|Nebula AWD"]]],
+["byd",[["sealion","Sealion 7",2025,2027,"SUV électrique Blade","Électrique|313:82.5,530:82.5|BYD|EV|25-27|Blade CTB AWD"]]],
+["suzuki",[["evitara","e Vitara",2025,2027,"SUV électrique","Électrique|144:49,174:61|EV-EVT|EV|25-27|HEARTect-e AWD"]]],
+["mazda",[["mz6","Mazda 6e",2025,2027,"Berline électrique","Électrique|258:68.8,245:80|EV-MZ6|EV|25-27|EPA"]]],
+["cupra",[["raval","Cupra Raval",2026,2027,"Citadine sport électrique","Électrique|218:52,226:79|APP310|EV|26-27|MEB"]]],
+["smart",[["smart5","#5",2025,2027,"SUV électrique","Électrique|360:80,646:80|EV-SM5|EV|25-27|PMA 800V"]]],
+["jeep",[["wagoneer","Wagoneer S",2024,2027,"SUV premium électrique","Électrique|600:100|EV-WGS|EV|24-27|STLA Large AWD"]]]
+];
+const EXTF=[
+["F-AMP-CITY","model","renault,nissan,dacia","r5,r4,twingo-e,micra6,leaf3","tsb","moyen",2024,2027,"AmpR / AmpR City — BMS SOC et préconditionnement","Jauge imprécise, charge lente à froid, delta cellules.","Lire delta cellules et SOH|Cycle de charge lente complet à 100 %|Appliquer la mise à jour BMS|Réapprendre l'estimation SOC|Contrôler le préconditionnement","BMS, modules, sondes température","P0AA6,P0C00,U0111","TSB AmpR","hv,autonomie,charge,thermique"],
+["F-STLA-OBC","model","peugeot,citroen,ds,opel,fiat,alfa","c5air-2,e408,208-3,dsn4,frontera,panda2,fiat600,junior","campagne","eleve",2024,2027,"STLA Medium / e-CMP2 — OBC 11 kW et verrou de trappe","Charge AC interrompue, trappe qui ne verrouille pas.","Lire les codes OBC et actuateur de trappe|Tester sur plusieurs bornes AC|Contrôler le verrou et son faisceau|Appliquer la campagne OBC / trappe|Revalider charge AC et verrouillage","OBC, actuateur trappe, faisceau HV","P0D11,B1000,P0C00","Campagne Stellantis STLA","charge,hv,portes"],
+["F-MEB-ICU2","model","volkswagen,audi,skoda,seat,cupra,ford","tayron,id2,capri,raval","tsb","moyen",2024,2027,"MEB refresh — ICU/ICAS et batterie 12 V lithium","Veille anormale, 12 V lithium déchargée, écrans qui redémarrent.","Mesurer le courant de repos après veille|Contrôler le SOH de la 12 V Li-ion|Appliquer la campagne logicielle ICU/ICAS|Contrôler le DC-DC|Remplacer la 12 V si dégradée","ICAS, 12 V Li-ion, DC-DC","U0111,P0562,P0AA6","TSB VAG MEB+","elec12,telematique,tablette"],
+["F-PPE-800","model","audi,porsche,volkswagen","a6e,q6,etrongt,ps5,macane","tsb","eleve",2024,2027,"PPE / J1 800 V — contacteurs DC et précharge","Claquement à la connexion, charge DC refusée, alerte HV.","Lire les codes contacteurs et précharge|Contrôler la tension de précharge|Inspecter les contacteurs DC|Appliquer la mise à jour gestion de charge|Revalider sur borne 800 V","Contacteurs DC, résistance de précharge, BMS","P0AA6,P0D11,P0C00","TSB PPE / J1","charge,hv"],
+["F-MMA-800","model","mercedes","claev,glcev","campagne","moyen",2025,2027,"MMA 800 V — pompe à chaleur CO₂ et gestion thermique","Autonomie hivernale réduite, alerte thermique pack.","Lire les codes du circuit thermique|Contrôler la charge de CO₂ et le compresseur|Tester les vannes de boucle|Appliquer la mise à jour thermique|Revalider autonomie et charge DC","Pompe à chaleur CO₂, vannes, compresseur","P0C00,P0AA6","Campagne Mercedes MMA","thermique,hv,autonomie"],
+["F-NK-BMW","model","bmw","ix3na","tsb","moyen",2026,2027,"Neue Klasse — logiciel BMS et OTA","OTA interrompu, SOC figé, fonctions perdues après mise à jour.","Relever version et journaux OTA|Contrôler la 12 V pendant l'OTA|Re-flasher le BMS selon procédure|Réapprendre le SOC|Contrôler le module télématique","BMS, TCU, 12 V","U0101,P0AA6,P0562","TSB BMW Neue Klasse","telematique,hv,tablette"],
+["F-EGMP9","model","hyundai,kia","ioniq9,ev4","tsb","moyen",2025,2027,"E-GMP gen2 — ICCU et prise V2L","V2L inopérant, ICCU en défaut, 12 V faible.","Lire les codes ICCU et V2L|Contrôler la prise V2L et son câblage|Tester le DC-DC et la 12 V|Appliquer la campagne ICCU gen2|Revalider V2L et charge AC","ICCU, prise V2L, DC-DC","P1B77,P0D11,P0562","TSB Hyundai/Kia E-GMP","charge,elec12,hv"],
+["F-BYD-CTB","model","byd","sealion,atto3","tsb","moyen",2025,2027,"Blade CTB — capteurs de cellule et équilibrage","Delta cellules après charge rapide, charge plafonnée.","Lire delta cellules et températures|Cycle lent complet d'équilibrage|Contrôler les capteurs de cellule|Appliquer la mise à jour BMS|Revalider charge DC","BMS, capteurs de cellule","P0AA6,P0AFA","TSB BYD Blade","hv,charge"],
+["F-TOY-RAV6","model","toyota","rav6,urbcr","panne","moyen",2025,2027,"RAV4 VI / Urban Cruiser — pompe à eau hybride et relais 12 V","Voyant hybride, non-démarrage intermittent.","Lire les codes onduleur et relais 12 V|Contrôler le débit de pompe à eau|Tester le relais 12 V et son alimentation|Remplacer pompe / relais selon diagnostic|Réinitialiser et essai","Pompe à eau onduleur, relais 12 V","P0A93,P0562,P0A7A","Retour terrain Toyota","thermique,hv,elec12"],
+["F-HON-ENY","model","honda","eny1","tsb","moyen",2024,2027,"e:N — charge DC bridée et logiciel BMS","Charge rapide plafonnée bien sous le maximum.","Lire l'historique thermique de charge|Contrôler la boucle LDR batterie|Appliquer la mise à jour BMS|Tester sur borne 150 kW|Revalider la courbe de charge","BMS, boucle LDR, logiciel","P0C00,P0AA6","TSB Honda e:N","charge,hv,thermique"],
+["F-SUZ-EVT","model","suzuki","evitara","panne","eleve",2025,2027,"e Vitara — infiltration connecteur HV arrière","Alerte isolement après pluie ou lavage haute pression.","Lire la valeur d'isolement par branche|Inspecter le connecteur HV arrière (humidité)|Sécher, contrôler joints et passe-câble|Remplacer joints / connecteur si oxydation|Revalider l'isolement","Connecteur HV, joints, faisceau","P0AA6","Retour terrain Suzuki","hv,carrosserie"],
+["F-MAZ-6E","model","mazda","mz6","tsb","moyen",2025,2027,"Mazda 6e — tablette et OTA","Écran noir après OTA, reboots, perte CarPlay.","Relever version et journaux head unit|Contrôler alimentation et nappe|Re-flasher la mise à jour|Contrôler la 12 V|Remplacer le head unit si persistant","Head unit, TCU, 12 V","U0101,P0562","TSB Mazda","tablette,telematique,elec12"],
+["F-FORD-CAPRI","model","ford","capri,explorer","tsb","moyen",2024,2027,"Capri / Explorer EV (MEB) — module de porte conducteur","Porte non détectée, ouverture intempestive, défauts multiples.","Lire les défauts du module de porte|Contrôler micro-contacts et actionneur|Vérifier alimentation et masses|Appliquer la mise à jour logicielle|Revalider ouverture et verrouillage","Module porte, micro-contacts, faisceau","B1000,U0100","TSB Ford MEB","portes,cle,elec12"],
+["F-VOLVO-ES90","model","volvo","es90,ex90","campagne","moyen",2025,2027,"SPA2 — suspension pneumatique et compresseur","Hauteur non maintenue après stationnement, message suspension.","Test de fuite coussins et raccords|Contrôler le temps de montée du compresseur|Lire les capteurs de hauteur|Remplacer compresseur / coussin selon campagne|Calibrer les hauteurs","Compresseur, coussins, capteurs hauteur","C1A00,U0121","Campagne Volvo SPA2","train,geometrie"],
+["F-MG-CYB","model","mg","cyberster","panne","moyen",2024,2027,"Cyberster — capteurs de toit souple","Warning toit, capteur en défaut, fermeture incomplète.","Lire les défauts capteurs de toit|Contrôler le faisceau et les connecteurs|Tester la séquence de fermeture|Remplacer capteur / faisceau|Réinitialiser l'apprentissage","Capteurs toit, faisceau, vérins","B1000","Retour terrain MG","carrosserie,telematique"],
+["F-SMART5","model","smart","smart5","tsb","moyen",2025,2027,"#5 PMA 800 V — préconditionnement hivernal","Préconditionnement absent, charge DC lente à froid.","Lire les codes du circuit thermique|Contrôler pompe à chaleur et vannes|Vérifier la commande de préconditionnement|Appliquer la mise à jour|Revalider en hiver","Pompe à chaleur, vannes, BMS","P0C00,P0AA6","TSB smart PMA","thermique,charge"],
+["F-JEEP-WGS","model","jeep","wagoneer","panne","eleve",2024,2027,"Wagoneer S — décharge 12 V et OTA en échec","12 V faible, OTA interrompu, véhicule non démarrable.","Mesurer le courant de repos|Contrôler SOH 12 V et DC-DC|Re-flasher l'OTA échoué|Contrôler le module télématique|Remplacer la 12 V si dégradée","12 V, DC-DC, TCU","P0562,U0101,U0111","Retour terrain Jeep","elec12,telematique"],
+["F-ALP-A390","model","alpine","a390","tsb","moyen",2025,2027,"A390 — couple vectoriel et logiciel châssis","Alerte châssis en conduite sportive, corrections intempestives.","Lire les défauts du calculateur châssis|Contrôler l'IMU et sa fixation|Vérifier géométrie et pressions|Appliquer la mise à jour logiciel châssis|Essai dynamique de validation","Calculateur châssis, IMU, ADAS","C1A00,U0121","TSB Alpine AmpR","geometrie,adas,telematique"],
+["F-UNIV-EV-TRAP","brand","volkswagen,audi,skoda,seat,cupra,bmw,mini,mercedes,smart,opel,tesla,volvo,polestar,mg,byd,peugeot,citroen,ds,renault,dacia,alpine,fiat,alfa,landrover,porsche,ford,toyota,lexus,nissan,honda,hyundai,kia,mazda,suzuki,mitsubishi,subaru","","campagne","eleve",2024,2027,"Trappe de charge — verrou et infiltration d'eau","Verrou bloqué, eau dans la trappe, charge refusée par sécurité.","Inspecter verrou, joints et évacuations|Contrôler l'actuateur et son faisceau|Sécher et tester l'isolement|Appliquer la campagne verrou / joints|Revalider charge AC et DC","Actuateur verrou, joints, connecteur","B1000,P0D11,P0AA6","Campagnes multi-constructeurs EV","charge,portes,carrosserie"],
+["F-UNIV-OTA","brand","peugeot,renault,citroen,ds,dacia,alpine,volkswagen,audi,skoda,seat,cupra,bmw,mini,mercedes,smart,opel,toyota,lexus,nissan,honda,hyundai,kia,mazda,suzuki,ford,tesla,volvo,polestar,mg,byd,jeep,fiat,alfa,lancia,landrover,porsche,mitsubishi,subaru","","tsb","moyen",2024,2027,"OTA — échec de mise à jour et retour atelier","Véhicule bloqué après OTA, fonctions perdues, écran figé.","Relever version et journaux OTA|Contrôler la 12 V pendant la mise à jour|Re-flasher selon procédure constructeur|Réinitialiser les calculateurs concernés|Valider par essai complet","TCU, head unit, calculateurs, 12 V","U0101,U0121,P0562","TSB multi-constructeurs OTA","telematique,tablette,elec12"]
+].map(x=>({id:x[0],scope:x[1],brands:csv(x[2]),target:x[3],kind:x[4],sev:x[5],y0:x[6],y1:x[7],titre:x[8],sym:x[9],
+pro:String(x[10]).split("|"),org:x[11],dtc:csv(x[12]),src:x[13],dom:csv(x[14])}));
+const EXTR=[
+["RV-STA-48","peugeot,citroen,ds,opel,fiat,alfa","1.2 Hybrid 48V|EB2LTEDH","Courroie d'accessoires + galets",0,90000,0,72,"TSB Stellantis 48V / e-DCS6","Contrôle ajouté à 90 000 km / 6 ans sur les 48 V e-DCS6."],
+["RV-MEB-12LI","volkswagen,audi,skoda,seat,cupra,ford","APP310|APP550|MEB","Contrôle batterie 12 V lithium",0,60000,0,48,"TSB VAG MEB+","12 V Li-ion : contrôle SOH et connexions à 60 000 km / 4 ans."],
+["RV-EGMP2","hyundai,kia","EM17|EM21|EM23|EM16","Contrôle ICCU gen2 + V2L",0,60000,0,48,"Campagne E-GMP","Contrôle ICCU et prise V2L ajouté à 60 000 km / 4 ans."],
+["RV-PPE-COOL","audi,porsche","PPE|J1","Liquide boucle 800 V",0,120000,0,96,"TSB PPE / J1","Remplacement du liquide de la boucle 800 V à 120 000 km / 8 ans."],
+["RV-AMPR-BMS","renault,nissan,dacia","EV-R5|6AK|5AM|EV-TWI|EV-R4","Mise à jour BMS + contrôle SOH",0,30000,0,24,"TSB AmpR","Mise à jour BMS et contrôle SOH tous les 30 000 km / 2 ans."]
+].map(r=>({id:r[0],brands:csv(r[1]),match:r[2],organ:r[3],oldKm:r[4],newKm:r[5],oldMo:r[6],newMo:r[7],src:r[8],note:r[9],y0:2017,y1:2027}));
+/* Protocoles de domaines supplémentaires */
+const DR2=[
+["DR2-EPS",["geometrie","adas"],"panne","eleve","Direction assistée électrique — capteur de couple et calibration","Direction dure, assistance intermittente, volant qui tire.","Lire défauts EPS et capteur de couple|Contrôler alimentation et masses EPS|Vérifier l'absence de campagne de recalibration|Recalibrer le capteur après intervention|Essai routier","EPS, capteur de couple, faisceau","C1A00,U0121",()=>true],
+["DR2-EPB",["freinage","elec12"],"panne","eleve","Frein de parking électrique — actuateurs et câbles","EPB ne serre / ne libère pas, voyant rouge.","Lire défauts EPB et courant des actuateurs|Contrôler câbles et étriers arrière|Tester commande et alimentation|Remplacer l'actuateur puis réinitialiser","Actuateurs EPB, câbles, étriers","C1365,P0562",()=>true],
+["DR2-DPFS",["depol"],"panne","moyen","Capteur de pression différentielle FAP — dérive","Régénérations anormales, P2463 sans colmatage réel.","Comparer ΔP mesuré et valeur capteur|Contrôler les tuyaux de prise (fissure, bouchon)|Tester le capteur sous pression connue|Remplacer capteur et réinitialiser","Capteur ΔP, tuyaux, FAP","P2463,P2002",(e,s)=>e.fuel==="D"],
+["DR2-TACT",["suralim","elec12"],"panne","eleve","Actuateur de turbo / wastegate pilotée — défaut","P00AF, puissance limitée, sifflement anormal.","Lire position consigne / réel de l'actuateur|Tester alimentation et masse de l'actuateur|Contrôler la course mécanique|Remplacer l'actuateur et réapprendre","Actuateur turbo, faisceau, turbo","P00AF,P0299",(e,s)=>!s.ev&&/turbo/i.test(s.feed)],
+["DR2-DCTW",["transmission","acoups"],"tsb","moyen","Embrayages DCT / e-DCS6 — usure et apprentissage","Compteurs d'usure élevés, à-coups à chaud, patinage.","Lire les compteurs d'usure d'embrayage|Contrôler température et adaptations|Appliquer l'apprentissage constructeur|Planifier le remplacement si seuil atteint","Embrayages DCT, mécatronique","P0700,P1750",(e,s)=>!s.ev&&/DCT|DSG|e-DCS6|EDC|TCT|DCT6/i.test((e.tech||"")+" "+famL(e))],
+["DR2-HP EV",["thermique","hv","autonomie"],"panne","moyen","Pompe à chaleur EV — perte d'efficacité","Consommation hivernale élevée, chauffage habitacle faible.","Lire les codes du circuit thermique|Contrôler la charge de fluide (CO₂ / R1234yf)|Tester compresseur et vannes|Appliquer la mise à jour gestion thermique","Pompe à chaleur, compresseur, vannes","P0C00,P0AA6",(e,s)=>s.ev||e.fuel==="P"],
+["DR2-V2L",["charge","elec12"],"tsb","info","V2L / prise externe — protection et disponibilité","V2L indisponible, alerte surcharge, coupure en usage.","Lire l'état V2L et les protections|Contrôler la prise et le câblage|Vérifier le SOC minimum autorisé|Appliquer la mise à jour logicielle","Prise V2L, ICCU, protections","P1B77",(e,s)=>s.ev],
+["DR2-WIRE",["tablette","elec12"],"panne","info","Chargeur sans fil / ports USB — surchauffe et coupures","Charge interrompue, téléphone chaud, port inopérant.","Contrôler le module de charge et sa ventilation|Tester les ports USB et leur alimentation|Vérifier l'absence d'objet métallique|Remplacer le module Qi","Module Qi, ports USB, alimentation","U0101",()=>true]
+];
+const DRALL=(typeof DR!=="undefined"?DR:[]).concat(DR2);
+const LS={db:"kf.db.v12",aux:"kf.aux.v12",acc:"kf.acc.v12",nf:"kf.nf.v12",dev:"kf.dev.v12",ses:"kf.ses.v12"};
+const PACK_URL="https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/pack2024.json";
+let CAT=[],FAULTS=[],REVC=[],NOTES={},VIEWS=[],BK=[],TIERS=[],NOTIF=[],AUDIT=null,PACKS=[];
 let ROLE=null,DEVICE="",admTimer=null,admHash=null,CO={},openC=null,seenPend=new Set(),lastTierSig="",waitMode=false;
 let SEL={brand:"",model:"",year:"",fam:"",hp:""};
 let FIL={q:"",sev:new Set(),kind:"",sort:"sev",bs:true,rules:true,done:false,dom:new Set()};
@@ -61,15 +143,16 @@ const B=id=>CAT.find(b=>b.id===id);
 const M=(b,m)=>{const x=B(b);return x?x.models.find(y=>y.id===m):null;};
 const ov=(a,b,c,d)=>a<=d&&c<=b;
 const allRevs=()=>RV.concat(REVC);
-function saveDB(){try{localStorage.setItem(LS.db,JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,v:11}));return 1}catch(e){return 0}}
-function loadDB(){try{const d=JSON.parse(localStorage.getItem(LS.db)||"null");if(d&&d.v===11&&Array.isArray(d.cat)&&d.cat.length){CAT=d.cat;FAULTS=d.faults||[];REVC=d.revs||[];return 1}}catch(e){}return 0}
+function saveDB(){try{localStorage.setItem(LS.db,JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS,v:12}));return 1}catch(e){return 0}}
+function loadDB(){try{const d=JSON.parse(localStorage.getItem(LS.db)||"null");
+if(d&&(d.v===11||d.v===12)&&Array.isArray(d.cat)&&d.cat.length){CAT=d.cat;FAULTS=d.faults||[];REVC=d.revs||[];PACKS=d.packs||[];return 1}}catch(e){}return 0}
 function saveAux(){try{localStorage.setItem(LS.aux,JSON.stringify({notes:NOTES,views:VIEWS,bk:BK}))}catch(e){}}
 function loadAux(){try{const d=JSON.parse(localStorage.getItem(LS.aux)||"{}");NOTES=d.notes||{};VIEWS=d.views||[];BK=d.bk||[]}catch(e){NOTES={};VIEWS=[];BK=[]}}
 function saveAcc(){try{localStorage.setItem(LS.acc,JSON.stringify(TIERS));ping()}catch(e){}}
 function loadAcc(){try{TIERS=JSON.parse(localStorage.getItem(LS.acc)||"[]")||[]}catch(e){TIERS=[]}}
 function saveNf(){try{localStorage.setItem(LS.nf,JSON.stringify(NOTIF.slice(0,60)));ping()}catch(e){}}
 function loadNf(){try{NOTIF=JSON.parse(localStorage.getItem(LS.nf)||"[]")||[]}catch(e){NOTIF=[]}}
-function resetSeed(){CAT=build(RAW);FAULTS=FR.map(f=>Object.assign({},f));REVC=[];saveDB()}
+function resetSeed(){CAT=build(RAW);FAULTS=FR.map(f=>Object.assign({},f));REVC=[];PACKS=[];saveDB()}
 let BC=null;try{BC=new BroadcastChannel("kf26")}catch(e){}
 function ping(){try{BC&&BC.postMessage({t:"s"})}catch(e){}}
 function toast(m,t="in",undo){const box=$("toasts");if(!box)return;
@@ -139,7 +222,7 @@ const ready=()=>!!(SEL.brand&&SEL.model&&SEL.fam&&SEL.hp);
 function sync(){
 const bs=CAT.slice().sort((a,b)=>norm(a.name).localeCompare(norm(b.name))).map(b=>({v:b.id,t:b.name,m:`${b.models.length} modèles · ${b.models.reduce((a,m)=>a+m.engines.length,0)} motorisations`,b:b.country,a:alias(b.name)}));
 CO.brand.set(bs,SEL.brand,false);
-const ms=SEL.brand?modelsOf(SEL.brand,SEL.year).map(m=>({v:m.id,t:m.name,m:`${m.y0}–${m.y1} · ${m.seg} · ${m.engines.length} motorisations`})):[];
+const ms=SEL.brand?modelsOf(SEL.brand,SEL.year).map(m=>({v:m.id,t:m.name,m:`${m.y0}–${m.y1} · ${m.seg}${m.y0>=2024?" · nouveau":""} · ${m.engines.length} mot.`})):[];
 if(SEL.model&&!ms.some(m=>m.v===SEL.model))SEL.model="";
 CO.model.set(ms,SEL.model,!SEL.brand);
 const ys=SEL.model?yearsOf(SEL.brand,SEL.model).map(y=>({v:String(y),t:String(y),m:M(SEL.brand,SEL.model).engines.filter(e=>e.y0<=y&&e.y1>=y).length+" motorisation(s)"})):[];
@@ -173,7 +256,7 @@ if(!f.brands.includes(e.brand))return false;
 if(f.scope==="brand")return FIL.bs;
 if(f.scope==="model")return csv(f.target).includes(e.model);
 if(f.scope==="engine")return slug(f.target)===e.famKey;return false}
-function rules(e){return DR.filter(r=>!e||!r[9]||r[9](e,spec(e))).map(r=>({id:r[0],scope:"rule",brands:[],target:"",kind:r[2],sev:r[3],
+function rules(e){return DRALL.filter(r=>!e||!r[9]||r[9](e,spec(e))).map(r=>({id:r[0],scope:"rule",brands:[],target:"",kind:r[2],sev:r[3],
 y0:YMIN,y1:YMAX,titre:r[4],sym:r[5],pro:String(r[6]).split("|"),org:r[7],dtc:csv(r[8]),src:"Protocole atelier transversal",dom:r[1],rule:1}))}
 function pool(strict){const eng=resolved();
 if(strict&&!ready())return[];
@@ -222,6 +305,7 @@ return `<div class="vc"><div class="vb">${esc((b?b.name:"?").slice(0,3).toUpperC
 ${s&&!s.ev&&s.disp?`<span class="tg mo">${s.disp} cm³</span>`:""}${s&&!s.ev&&s.cyl?`<span class="tg">${s.cyl} cyl.</span>`:""}
 ${s&&s.ev&&s.kwh?`<span class="tg mo">${s.kwh} kWh</span>`:""}${s&&s.ev?`<span class="tg mo">${s.volt} V</span>`:""}
 ${m?`<span class="tg">${esc(m.seg)}</span>`:""}${m?`<span class="tg mo">${m.y0}–${m.y1}</span>`:""}
+${m&&m.y0>=2024?`<span class="tg" style="color:var(--mg);border-color:rgba(244,114,182,.4)">millésime 2024+</span>`:""}
 ${e?`<span class="tg mo">moteur ${e.y0}–${e.y1}</span>`:""}${eng.length>1?`<span class="tg" style="color:var(--amH);border-color:rgba(245,158,11,.4)">${eng.length} variantes</span>`:""}</div></div>
 <div class="vs"><div class="vst"><b style="color:${crit?"var(--rd)":"var(--gr)"}">${crit}</b><span>Critiques</span></div>
 <div class="vst"><b style="color:var(--amH)">${all.length}</b><span>Fiches</span></div>
@@ -328,9 +412,9 @@ const all=strictCur(),p=all.filter(f=>f.kind!=="tsb"),t=all.filter(f=>f.kind==="
 $("dFSub").textContent=`${p.length} fiche(s) · ${SEL.brand} → ${SEL.model} → ${SEL.fam} → ${SEL.hp} ch`;
 $("dTSub").textContent=`${t.length} bulletin(s) pour cette motorisation`;
 box.innerHTML="";if(!p.length)box.innerHTML=ey("i-shieldok","Aucune fiche critique","Aucune panne, campagne ou rappel ne correspond à cette combinaison exacte et aux filtres actifs.");
-else p.slice(0,50).forEach(f=>box.appendChild(fCard(f,false)));
+else p.slice(0,60).forEach(f=>box.appendChild(fCard(f,false)));
 tb.innerHTML="";if(!t.length)tb.innerHTML=ey("i-book","Aucun bulletin","Aucun TSB ne correspond à la corrélation et aux filtres actifs.");
-else t.slice(0,25).forEach(f=>tb.appendChild(fCard(f,false)));
+else t.slice(0,30).forEach(f=>tb.appendChild(fCard(f,false)));
 const codes=uniq(all.flatMap(f=>f.dtc)).sort();
 dd.innerHTML=codes.length?codes.slice(0,40).map(c=>{const d=DTC[c];
 return `<div class="dsc" style="margin-bottom:8px"><div class="dsc-h"><span class="dtc">${esc(c)}</span>${d?esc(d[0]):"Code corrélé"}</div>
@@ -378,10 +462,10 @@ const list=apply(p),box=$("domList");box.innerHTML="";
 $("domTitle").textContent=FIL.dom.size?"Fiches des domaines sélectionnés":"Fiches du référentiel";
 $("domSub").textContent=`${list.length} fiche(s) · ${uniq(list.flatMap(f=>f.dom||[])).length} domaine(s)`;
 if(!list.length)box.innerHTML=ey("i-search","Aucune fiche","Aucune fiche pour ces filtres.");
-else list.slice(0,80).forEach(f=>box.appendChild(fCard(f,false)))}
+else list.slice(0,100).forEach(f=>box.appendChild(fCard(f,false)))}
 function renderCat(){const eng=engines();
 $("catStats").innerHTML=[["Marques",CAT.length,"i-db","cy"],["Modèles",CAT.reduce((a,b)=>a+b.models.length,0),"i-car","vi"],
-["Motorisations",eng.length,"i-piston","amH"],["Fiches + protocoles",FAULTS.length+DR.length,"i-warn","rd"]]
+["Motorisations",eng.length,"i-piston","amH"],["Fiches + protocoles",FAULTS.length+DRALL.length,"i-warn","rd"]]
 .map(([l,v,i,c])=>`<div class="st"><svg class="ic si2" style="color:var(--${c})"><use href="#${i}"/></svg><div class="sv3" style="color:var(--${c})">${nf(v)}</div><div class="sl">${l}</div></div>`).join("");
 $("bC").textContent=nf(eng.length);
 let rows=eng.slice();const q=norm(CUI.q);
@@ -398,7 +482,7 @@ const pages=Math.max(1,Math.ceil(rows.length/CUI.size));CUI.page=clamp(CUI.page,
 const sl=rows.slice(CUI.page*CUI.size,(CUI.page+1)*CUI.size),tb=$("catB");tb.innerHTML="";
 sl.forEach(e=>{const s=spec(e),tr=el("tr",CUI.sel.has(e.key)?"sl":"");
 tr.innerHTML=`<td><span class="ck" role="checkbox" aria-checked="${CUI.sel.has(e.key)}" tabindex="0"><svg class="ic"><use href="#i-check"/></svg></span></td>
-<td class="tn">${esc(e.brandName)}</td><td class="tn">${esc(e.modelName)}<div class="mi">${esc(e.seg)}</div></td>
+<td class="tn">${esc(e.brandName)}</td><td class="tn">${esc(e.modelName)}${e.my0>=2024?' <span class="tg" style="color:var(--mg);border-color:rgba(244,114,182,.4)">2024+</span>':""}<div class="mi">${esc(e.seg)}</div></td>
 <td class="mo">${e.y0}–${e.y1}</td><td class="tn">${esc(famL(e))}<div class="mi">${esc(s.ev?s.plat:s.lay)}</div></td>
 <td class="mo" style="color:var(--amH)">${s.ev?(s.kwh?s.kwh+" kWh":"—"):(s.disp||"—")}</td>
 <td class="mo" style="color:var(--rd);font-weight:800">${e.hp}</td><td class="mo">${kw(e.hp)}</td><td class="mo">${esc(e.code)}</td>
@@ -465,8 +549,11 @@ DOM.forEach(([id,n])=>{if(!cov.has(id))add("wa","DG",`Domaine « ${n} » non cou
 const rv=allRevs();rv.forEach(r=>{if(!r.brands.some(b=>bids.has(b)))add("wa","RB",`Révision ${r.id} : marque inconnue`);
 if(r.newKm<=0)add("ba","RK",`Révision ${r.id} : km invalide`);
 if(!r.src)add("wa","RS",`Révision ${r.id} sans source`)});
+const n24=CAT.reduce((a,b)=>a+b.models.filter(m=>m.y0>=2024).length,0);
 const checks=[["Marques → modèles",CAT.every(b=>b.models.length>0),`${CAT.length} marques, ${CAT.reduce((a,b)=>a+b.models.length,0)} modèles`],
 ["Modèles → motorisations",CAT.every(b=>b.models.every(m=>m.engines.length>0)),`${eng.length} motorisations`],
+["Millésimes 2024+ intégrés",n24>=40,`${n24} modèles commercialisés dès 2024`],
+["Pack 2024-2027 appliqué",PACKS.some(x=>x.id==="pack2024"),PACKS.some(x=>x.id==="pack2024")?"Pack intégré":"Pack non intégré"],
 ["Cylindrée / batterie renseignée",iss.filter(i=>i.code==="DISP"||i.code==="KWH").length===0,`${eng.filter(e=>{const s=spec(e);return s.ev?s.kwh:s.disp}).length}/${eng.length} documentées`],
 ["Années moteur ⊂ production",yf===0,yf?`${yf} dépassement(s)`:"Plages incluses"],
 ["Puissance ↔ libellé",hf===0,hf?`${hf} écart(s)`:"Cohérent"],
@@ -495,7 +582,7 @@ $("aIssues").innerHTML=!a.issues.length?`<div class="nt ok"><b>Base intègre.</b
 `<div style="padding:8px 13px;border-bottom:1px solid var(--ln2);font-size:12.3px;display:flex;gap:9px">
 <span class="pl ${i.sev==="ba"?"sc":i.sev==="wa"?"se":"si"}" style="flex:none">${i.code}</span><span style="color:var(--m1)">${esc(i.msg)}</span></div>`).join("")}</div></div>`}
 function autoRepair(){if(!canW()){toast("Mode administrateur requis","ba");return}
-const before=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});let n=0;
+const before=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});let n=0;
 CAT.forEach(b=>b.models.forEach(m=>m.engines.forEach(e=>{
 if(e.y0<m.y0||e.y1>m.y1){e.y0=Math.max(e.y0,m.y0);e.y1=Math.min(e.y1,m.y1);n++}
 const d=parseInt(String(e.fam).match(/(\d{2,4})\s*ch/i)?.[1]||"0",10);
@@ -507,7 +594,78 @@ const k=e.brand+"|"+e.model+"|"+e.gk+"|"+e.hp+"|"+e.code;if(seen.has(k)){n++;ret
 FAULTS.forEach(f=>{if(!(f.dom||[]).length){f.dom=["moteur"];n++}});
 saveDB();audit();renderAudit();sync();renderDom();renderAll();
 toast(n?`${n} correction(s) appliquée(s)`:"Aucune correction nécessaire",n?"ok":"in",
-n?()=>{const d=JSON.parse(before);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;saveDB();audit();renderAudit();sync();renderDom();renderAll()}:null)}
+n?()=>{const d=JSON.parse(before);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();audit();renderAudit();sync();renderDom();renderAll()}:null)}
+/* ═══ PACK 2024-2027 : intégration idempotente ═══ */
+function applyPack(auto){
+const already=PACKS.some(p=>p.id==="pack2024");
+if(!auto&&!canW()){toast("Réservé à l'administrateur","ba");return null}
+const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});
+let ma=0,me=0,fa=0,ra=0;
+EXT2024.forEach(([bid,arr])=>{const b=B(bid);if(!b)return;
+arr.forEach(mt=>{const ex=b.models.find(x=>x.id===mt[0]);const pm=parseModel(b,mt);
+if(ex){pm.engines.forEach(en=>{const r=addEngTo(ex,b,en.fam,en.hp,en.code,en.fuel,en.y0,en.y1,en.tech);
+if(r==="add")ma++;else if(r==="merge")me++;});
+ex.y0=Math.min(ex.y0,pm.y0);ex.y1=Math.max(ex.y1,pm.y1);}
+else{b.models.push(pm);ma+=pm.engines.length;}});});
+EXTF.forEach(f=>{if(!FAULTS.some(x=>x.id===f.id)){FAULTS.push(Object.assign({},f));fa++;}});
+EXTR.forEach(r=>{if(!allRevs().some(x=>x.id===r.id)){REVC.push(Object.assign({},r));ra++;}});
+PACKS=PACKS.filter(p=>p.id!=="pack2024");
+PACKS.push({id:"pack2024",ts:Date.now(),added:{m:ma,f:fa,r:ra}});
+saveDB();
+if(!auto){makeBk("pack millésimes 2024-2027");audit();renderAudit();}
+sync();renderDom();renderAll();if(canW())renderPackPanel();
+return{added:ma+fa+ra,m:ma,f:fa,r:ra,snap,already};}
+function fetchPackOnline(){if(!canW()){toast("Réservé à l'administrateur","ba");return}
+if(!navigator.onLine){toast("Connexion requise","ba");return}
+ovlOn(true);$("ovT").textContent="Vérification des nouveautés en ligne";$("ovS").textContent="Pack distant + pack local 2024-2027";
+const before=engines().length;$("ovB").textContent=before;$("ovA").textContent="+0";$("ovM").textContent="~0";$("ovAf").textContent=before;
+ostep(15,"Interrogation du dépôt");olog("GET "+PACK_URL,"t");
+fetch(PACK_URL,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(data=>{
+olog("Pack distant trouvé","s");ostep(45,"Fusion du pack distant");
+const res=ingest(data);$("ovA").textContent="+"+res.add;$("ovM").textContent="~"+res.merge;
+olog(`${res.add} motorisation(s), ${res.fadd} fiche(s), ${res.radd} révision(s) depuis le distant`,"s");
+ostep(70,"Application du pack local 2024-2027");
+const pr=applyPack(true);$("ovA").textContent="+"+(res.add+pr.m);
+olog(`Pack local : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`,"s");
+ostep(90,"Sauvegarde + audit");makeBk("mise à jour en ligne 2024+");saveDB();audit();
+$("ovAf").textContent=engines().length;
+$("ovRes").innerHTML=`<div class="nt ok"><b>Mise à jour terminée.</b> Motorisations : ${nf(before)} → <b>${nf(engines().length)}</b> · Intégrité <b>${AUDIT.score}%</b></div>`;
+renderAudit();renderPackPanel();}).catch(e=>{
+olog("Pack distant indisponible : "+e.message+" — application du pack local embarqué","w");
+ostep(60,"Application du pack local 2024-2027");
+const pr=applyPack(true);$("ovA").textContent="+"+pr.m;
+ostep(90,"Sauvegarde + audit");makeBk("pack local 2024-2027");saveDB();audit();
+$("ovAf").textContent=engines().length;
+$("ovRes").innerHTML=`<div class="nt wa"><b>Pack distant injoignable.</b> Le pack local embarqué (modèles 2024-2027, fiches, révisions) a été appliqué : <b>+${pr.m}</b> motorisations, <b>+${pr.f}</b> fiches, <b>+${pr.r}</b> révisions. Intégrité <b>${AUDIT.score}%</b>.</div>`;
+renderAudit();renderPackPanel();}).finally(()=>{ostep(100,"Terminé");$("ovX").style.display="block"});}
+function ensurePackPanel(){if($("packPanel"))return;
+const host=$("v-adm");const last=host.querySelector(".pn:last-of-type");
+const p=el("div","pn pd");p.id="packPanel";p.style.marginBottom="16px";p.style.borderColor="rgba(34,211,238,.32)";
+p.innerHTML=`<div class="sh"><div class="si ic-cy"><svg class="ic"><use href="#i-cloud"/></svg></div>
+<div><h2>Mise à jour millésimes 2024-2027</h2><div class="sb">Nouvelles marques, modèles commercialisés, motorisations, puissances et pannes corrélées</div></div>
+<span class="sp"></span><button class="bt pr" id="bPackApply"><svg class="ic"><use href="#i-plus"/></svg>Intégrer le pack 2024-2027</button>
+<button class="bt vi" id="bPackOnline"><svg class="ic"><use href="#i-cloud"/></svg>Vérifier les nouveautés en ligne</button></div>
+<div class="g4" id="packStats" style="margin-bottom:14px"></div>
+<div id="packList" style="display:flex;flex-direction:column;gap:8px"></div>
+<div class="nt in" style="margin-top:13px">Le pack est <b>embarqué hors ligne</b> et appliqué automatiquement au démarrage. L'intégration est <b>idempotente</b> (aucun doublon), crée une sauvegarde locale, relance l'audit et reste annulable. La vérification en ligne fusionne en plus un pack distant éventuel (JSON : vehicles / faults / revisions).</div>`;
+host.insertBefore(p,last);
+$("bPackApply").onclick=()=>{if(!canW()){toast("Réservé à l'administrateur","ba");return}
+const pr=applyPack(false);if(!pr)return;
+toast(pr.added?`Pack 2024-2027 : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`:"Pack déjà intégré — aucun ajout",pr.added?"ok":"in",
+pr.added?()=>{const d=JSON.parse(pr.snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();sync();renderDom();renderAll();renderPackPanel();toast("Intégration annulée","in")}:null)};
+$("bPackOnline").onclick=fetchPackOnline;}
+function renderPackPanel(){if(!canW()||!$("packPanel"))return;ensurePackPanel();
+const pk=PACKS.find(p=>p.id==="pack2024");
+const n24=CAT.reduce((a,b)=>a+b.models.filter(m=>m.y0>=2024).length,0);
+$("packStats").innerHTML=[["Statut",pk?"Intégré":"Non intégré",pk?"gr":"amH"],["Modèles 2024+",n24,"mg"],
+["Fiches pack",EXTF.length,"rd"],["Révisions pack",EXTR.length,"vi"]]
+.map(([l,v,c])=>`<div class="st"><div class="sv3" style="font-size:20px;color:var(--${c})">${esc(String(v))}</div><div class="sl">${l}</div></div>`).join("");
+$("packList").innerHTML=PACKS.length?PACKS.slice().sort((a,b)=>b.ts-a.ts).map(p=>
+`<div class="sv"><span class="gr2"><svg class="ic"><use href="#i-clock"/></svg></span>
+<div style="flex:1;min-width:0"><div style="font-weight:750;font-size:13px">${esc(p.id)}</div>
+<div class="mi">${dtT(p.ts)} · +${p.added.m} motorisations · +${p.added.f} fiches · +${p.added.r} révisions</div></div>
+<span class="pl si">appliqué</span></div>`).join(""):ey("i-clock","Aucun pack appliqué","Cliquez sur « Intégrer le pack 2024-2027 ».");}
+/* ═══ TIROIRS / NOTIFS / TIERS / SESSIONS ═══ */
 function openDw(){$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");$("dwX").focus()}
 function closeDw(){$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");
 if(!$("notifDw").classList.contains("on"))$("scrim").classList.remove("on")}
@@ -638,7 +796,7 @@ if(r.status==="pending"){const b=el("button","bt",'<svg class="ic"><use href="#i
 if(r.status==="denied"||r.status==="revoked"){const b=el("button","bt te",'<svg class="ic"><use href="#i-send"/></svg>Nouvelle demande');
 b.onclick=()=>{TIERS=TIERS.filter(t=>t.id!==r.id);saveAcc();waitMode=false;renderLaunch()};act.appendChild(b)}}
 function renderLaunch(){const eng=engines();
-$("lStats").innerHTML=[["Motorisations",nf(eng.length)],["Marques",CAT.length],["Fiches",nf(FAULTS.length+DR.length)],["Domaines",DOM.length],["Révisions",allRevs().length]]
+$("lStats").innerHTML=[["Motorisations",nf(eng.length)],["Marques",CAT.length],["Fiches",nf(FAULTS.length+DRALL.length)],["Domaines",DOM.length],["Révisions",allRevs().length],["Modèles 2024+",CAT.reduce((a,b)=>a+b.models.filter(m=>m.y0>=2024).length,0)]]
 .map(([l,v])=>`<span class="ch in"><b>${v}</b> ${l}</span>`).join("");
 if(waitMode&&myReq()){$("lChoose").style.display="none";$("lWait").style.display="";renderWait()}
 else{$("lChoose").style.display="";$("lWait").style.display="none"}
@@ -686,7 +844,7 @@ const w=!canW();
 ["bSave","bImpOn","bExp","bBk","bWipe","bClearN","bRepair","bRevAllT"].forEach(id=>{const b=$(id);if(b)b.disabled=w});
 document.querySelectorAll("#addEng button[type=submit],#addF button[type=submit],#addRev button[type=submit]").forEach(b=>b.disabled=w);
 if(ROLE==="tiers"&&$("v-adm").classList.contains("on"))showView("diag");
-if(ROLE==="admin")renderTiers()}
+if(ROLE==="admin"){ensurePackPanel();renderTiers();renderPackPanel();}}
 function live(){loadAcc();loadNf();renderBell();
 if(ROLE==="tiers"){const r=myReq();
 if(!r||r.status!=="granted"){ROLE=null;try{localStorage.removeItem(LS.ses)}catch(e){}
@@ -699,11 +857,11 @@ fresh.forEach(t=>{seenPend.add(t.id);toast(`Nouvelle demande d'accès : ${t.name
 lastTierSig=sig;renderTiers();renderBell();}}}
 function renderAdm(){if(!canW())return;
 $("admStats").innerHTML=[["Motorisations",nf(engines().length),"cy"],["Fiches",nf(FAULTS.length),"amH"],
-["Protocoles",DR.length,"vi"],["Révisions",allRevs().length,"mg"]]
+["Protocoles",DRALL.length,"vi"],["Révisions",allRevs().length,"mg"]]
 .map(([l,v,c])=>`<div class="st"><div class="sv3" style="color:var(--${c})">${v}</div><div class="sl">${l}</div></div>`).join("");
-renderTiers();
+renderTiers();ensurePackPanel();renderPackPanel();
 const box=$("bkList");
-if(!BK.length)box.innerHTML=`<div class="nt">Aucune sauvegarde locale. Une sauvegarde est créée automatiquement après chaque import réussi.</div>`;
+if(!BK.length)box.innerHTML=`<div class="nt">Aucune sauvegarde locale. Une sauvegarde est créée automatiquement après chaque import ou mise à jour.</div>`;
 else box.innerHTML=BK.map((b,i)=>`<div class="sv"><span class="gr2"><svg class="ic"><use href="#i-save"/></svg></span>
 <div style="flex:1;min-width:0"><div style="font-weight:750;font-size:13px">${new Date(b.t).toLocaleString("fr-FR")}</div>
 <div class="mi">${esc(b.src)} · ${b.veh} motorisations · ${b.f} fiches · ${Math.round((b.size||0)/1024)} Ko</div></div>
@@ -711,14 +869,14 @@ else box.innerHTML=BK.map((b,i)=>`<div class="sv"><span class="gr2"><svg class="
 box.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>restoreBk(+b.dataset.r));
 box.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{const i=+b.dataset.d;const rm=BK.splice(i,1)[0];saveAux();renderAdm();
 toast("Sauvegarde supprimée","wa",()=>{BK.splice(i,0,rm);saveAux();renderAdm()})})}
-function makeBk(src){const p=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
+function makeBk(src){const p=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});
 BK.unshift({t:Date.now(),src,veh:engines().length,f:FAULTS.length,size:p.length,data:p});
-while(BK.length>3)BK.pop();saveAux();renderAdm()}
+while(BK.length>3)BK.pop();saveAux();if(canW())renderAdm()}
 function restoreBk(i){const b=BK[i];if(!b)return;
 if(!confirm("Restaurer la sauvegarde du "+new Date(b.t).toLocaleString("fr-FR")+" ?"))return;
-const before=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
-try{const d=JSON.parse(b.data);CAT=d.cat;FAULTS=d.faults;REVC=d.revs||[];saveDB();newSearch();audit();renderAudit();renderAdm();
-toast("Sauvegarde restaurée","ok",()=>{const p=JSON.parse(before);CAT=p.cat;FAULTS=p.faults;REVC=p.revs;saveDB();sync();audit();renderDom();renderAll();renderAdm()})}
+const before=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});
+try{const d=JSON.parse(b.data);CAT=d.cat;FAULTS=d.faults;REVC=d.revs||[];PACKS=d.packs||[];saveDB();newSearch();audit();renderAudit();renderAdm();
+toast("Sauvegarde restaurée","ok",()=>{const p=JSON.parse(before);CAT=p.cat;FAULTS=p.faults;REVC=p.revs;PACKS=p.packs;saveDB();sync();audit();renderDom();renderAll();renderAdm()})}
 catch(e){toast("Sauvegarde illisible","ba")}}
 function ovlOn(on){$("ovl").classList.toggle("on",on);if(on){$("ovLog").innerHTML="";$("ovRes").innerHTML="";$("ovX").style.display="none";$("ovBar").style.width="0%";$("ovPct").textContent="0 %"}}
 function olog(m,c="i"){const l=$("ovLog"),d=el("div","l"+c,`[${new Date().toLocaleTimeString("fr-FR")}] ${esc(m)}`);l.appendChild(d);l.scrollTop=l.scrollHeight}
@@ -821,7 +979,7 @@ let data;try{data=JSON.parse(txt);olog("JSON valide","s")}catch(e){throw new Err
 ostep(42,"Analyse du format");await sleep(150);
 const fmt=Array.isArray(data)?"tableau":(data.cat?"export KEV":(data.vehicles?"export véhicules":(data.customs||data.overrides||data.recalls||data.tiers?"sauvegarde auto-diagnostic":"objet")));
 olog("Format détecté : "+fmt,"i");
-const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
+const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});
 ostep(60,"Fusion par identifiants");await sleep(170);
 const r=ingest(data);$("ovA").textContent="+"+r.add;$("ovM").textContent="~"+r.merge;
 olog(`${r.add} motorisation(s), ${r.merge} fusion(s), ${r.fadd} fiche(s), ${r.radd} révision(s)`,"s");
@@ -834,7 +992,7 @@ ostep(100,"Vérification d'intégrité");await sleep(170);audit();olog("Intégri
 $("ovAf").textContent=engines().length;
 $("ovRes").innerHTML=`<div class="nt ok"><b>Import intégré sans blocage.</b><br>Motorisations : ${nf(before)} → <b>${nf(engines().length)}</b> · Fiches : <b>${nf(FAULTS.length)}</b> · Révisions : <b>${allRevs().length}</b><br>Intégrité : <b>${AUDIT.score}%</b> · sauvegarde locale créée.</div>`;
 sync();renderDom();renderAll();renderAudit();renderAdm();notify("import",`Import fichier : +${r.add} motorisations, +${r.fadd} fiches`,"");
-toast("Import réussi : +"+r.add+" motorisations","ok",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;saveDB();sync();audit();renderDom();renderAll();renderAdm();toast("Import annulé","in")})}
+toast("Import réussi : +"+r.add+" motorisations","ok",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();sync();audit();renderDom();renderAll();renderAdm();toast("Import annulé","in")})}
 catch(e){olog("Échec : "+e.message,"e");
 $("ovRes").innerHTML=`<div class="nt ba"><b>Import interrompu.</b> ${esc(e.message)}<br>La base existante n'a pas été modifiée.</div>`;
 toast("Import échoué — base préservée","ba")}
@@ -842,13 +1000,13 @@ $("ovX").style.display="block"}
 const SRC=[["faults2019.js","F2019"],["update2026.js","BATCH_2026_ISSUES"],["premium22.js","PREMIUM_EXPERT"],["app.js","BRAND_EXPERT"]];
 async function importOnline(){if(!canW()){toast("Import réservé au mode administrateur","ba");return}
 if(!navigator.onLine){toast("Connexion requise","ba");return}
-ovlOn(true);$("ovT").textContent="Import massif en ligne";$("ovS").textContent="Sources auto-diagnostic · complément de la base livrée";
+ovlOn(true);$("ovT").textContent="Import massif en ligne";$("ovS").textContent="Sources auto-diagnostic + pack 2024-2027";
 const before=engines().length,beforeF=FAULTS.length;
 $("ovB").textContent=before;$("ovA").textContent="+0";$("ovM").textContent="~0";$("ovAf").textContent=before;
-const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});let ok=0,found=0;
-ostep(6,"Initialisation");olog(`Base livrée : ${before} motorisations, ${beforeF} fiches, ${DR.length} protocoles`,"t");
+const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});let ok=0,found=0;
+ostep(6,"Initialisation");olog(`Base livrée : ${before} motorisations, ${beforeF} fiches, ${DRALL.length} protocoles`,"t");
 for(let i=0;i<SRC.length;i++){const[file,name]=SRC[i];
-ostep(10+i*18,`Source ${i+1}/${SRC.length} : ${file}`);olog("Récupération "+file,"t");
+ostep(8+i*16,`Source ${i+1}/${SRC.length} : ${file}`);olog("Récupération "+file,"t");
 try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),11000);
 const r=await fetch("https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/"+file,{signal:ctl.signal,cache:"no-store"});
 clearTimeout(to);if(!r.ok){olog("HTTP "+r.status+" — source ignorée","w");continue}
@@ -873,18 +1031,20 @@ org:org||"",dtc:String(dtc||"").split(/[,\/\s]+/).map(s=>s.trim()).filter(s=>/^[
 src:src||"Source auto-diagnostic",dom:dom.length?dom:["moteur"]});found++})}
 catch(e){olog("Source indisponible : "+(e.name==="AbortError"?"délai dépassé":e.message),"w")}
 $("ovM").textContent="~"+found;await sleep(110)}
-ostep(80,"Sauvegarde locale");await sleep(140);
-if(found){makeBk("import massif en ligne");olog("Sauvegarde automatique créée","s")}
-ostep(92,"Écriture");saveDB();ostep(100,"Vérification d'intégrité");await sleep(170);audit();
+ostep(78,"Application du pack local 2024-2027");await sleep(140);
+const pr=applyPack(true);found+=pr.f;
+olog(`Pack local : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`,"s");
+ostep(88,"Sauvegarde locale");makeBk("import massif en ligne + pack 2024");olog("Sauvegarde automatique créée","s");
+ostep(94,"Écriture");saveDB();ostep(100,"Vérification d'intégrité");await sleep(170);audit();
 $("ovAf").textContent=engines().length;olog("Intégrité : "+AUDIT.score+"%","s");
-if(!found){$("ovRes").innerHTML=`<div class="nt wa"><b>Aucune donnée rapatriée.</b> ${ok}/${SRC.length} source(s) joignable(s).<br>La base livrée (<b>${nf(before)}</b> motorisations, <b>${nf(beforeF)}</b> fiches, <b>${DR.length}</b> protocoles) reste <b>intégralement disponible hors ligne</b>.</div>`;
-toast("Sources sans donnée — base livrée conservée","wa")}
-else{$("ovRes").innerHTML=`<div class="nt ok"><b>Import massif terminé sans blocage.</b><br>Sources : ${ok}/${SRC.length} · <b>+${found}</b> fiche(s)<br>Fiches : ${nf(beforeF)} → <b>${nf(FAULTS.length)}</b> · Intégrité : <b>${AUDIT.score}%</b></div>`;
+if(!found){$("ovRes").innerHTML=`<div class="nt wa"><b>Aucune donnée rapatriée.</b> ${ok}/${SRC.length} source(s) joignable(s).<br>La base livrée + pack 2024 (<b>${nf(engines().length)}</b> motorisations, <b>${nf(FAULTS.length)}</b> fiches) reste <b>intégralement disponible hors ligne</b>.</div>`;
+toast("Sources sans donnée — base locale conservée","wa")}
+else{$("ovRes").innerHTML=`<div class="nt ok"><b>Import massif terminé sans blocage.</b><br>Sources : ${ok}/${SRC.length} · <b>+${found}</b> fiche(s) (distant + pack 2024)<br>Fiches : ${nf(beforeF)} → <b>${nf(FAULTS.length)}</b> · Intégrité : <b>${AUDIT.score}%</b></div>`;
 notify("import",`Import massif : +${found} fiches`,"");
-toast("+"+found+" fiches importées","ok",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;saveDB();sync();audit();renderDom();renderAll();renderAdm();toast("Import annulé","in")})}
+toast("+"+found+" fiches importées","ok",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();sync();audit();renderDom();renderAll();renderAdm();toast("Import annulé","in")})}
 sync();renderDom();renderAll();renderAudit();renderAdm();$("ovX").style.display="block"}
 function exportDB(){if(!canW()){toast("Export réservé au mode administrateur","ba");return}
-const p={app:"KEV FUSION 2026",version:11,exported:new Date().toISOString(),
+const p={app:"KEV FUSION 2026",version:12,exported:new Date().toISOString(),packs:PACKS,
 integrity:AUDIT?{score:AUDIT.score,bad:AUDIT.bad,warn:AUDIT.warn}:null,
 domains:DOM.map(d=>({id:d[0],name:d[1]})),cat:CAT,faults:FAULTS,protocols:rules(null),
 revisions:RV,revisionsCustom:REVC,tiers:TIERS,notes:NOTES,views:VIEWS,dtc:DTC};
@@ -892,7 +1052,7 @@ const b=new Blob([JSON.stringify(p,null,1)],{type:"application/json"}),a=el("a")
 a.href=URL.createObjectURL(b);a.download="kev-fusion-2026-"+new Date().toISOString().slice(0,10)+".json";
 document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},400);toast("Export complet téléchargé","ok")}
 function renderAll(){$("nBase").textContent=nf(engines().length);
-$("nFault").textContent=nf(FAULTS.length+(FIL.rules?DR.length:0));
+$("nFault").textContent=nf(FAULTS.length+(FIL.rules?DRALL.length:0));
 renderDiag();renderFaults();renderServ();renderCov();renderCat();if(canW())renderAdm();reveal()}
 function showView(v){document.querySelectorAll(".vw").forEach(s=>s.classList.toggle("on",s.id==="v-"+v));
 document.querySelectorAll(".tb").forEach(t=>t.setAttribute("aria-selected",String(t.dataset.v===v)));
@@ -1027,9 +1187,9 @@ src:$("arS").value.trim(),note:$("arN").value.trim(),y0:2017,y1:2027});
 saveDB();audit();renderAll();renderAdm();e.target.reset();$("arOK").value=240000;$("arNK").value=160000;$("arOM").value=120;$("arNM").value=96;
 toast("Révision enregistrée","ok")};
 $("bWipe").onclick=()=>{if(!canW()){toast("Mode administrateur requis","ba");return}
-if(!confirm("Réinitialiser sur la base livrée ? Les ajouts et imports seront perdus (annulable)."))return;
-const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});resetSeed();newSearch();audit();renderAudit();renderAdm();
-toast("Base réinitialisée","wa",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;saveDB();sync();audit();renderDom();renderAll();renderAdm()})};
+if(!confirm("Réinitialiser sur la base livrée + pack 2024 ? Les ajouts et imports seront perdus (annulable)."))return;
+const snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC,packs:PACKS});resetSeed();applyPack(true);newSearch();audit();renderAudit();renderAdm();
+toast("Base réinitialisée + pack 2024 appliqué","wa",()=>{const d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;PACKS=d.packs;saveDB();sync();audit();renderDom();renderAll();renderAdm()})};
 $("bClearN").onclick=()=>{if(!canW()){toast("Mode administrateur requis","ba");return}
 const snap=JSON.stringify(NOTES);NOTES={};saveAux();renderAll();
 toast("Notes et statuts effacés","wa",()=>{NOTES=JSON.parse(snap);saveAux();renderAll()})};
@@ -1048,8 +1208,10 @@ initAdm();initDevice();loadAux();loadAcc();loadNf();
 if(!loadDB())resetSeed();
 if(!CAT.length||!engines().length)resetSeed();
 if(!FAULTS.length)FAULTS=FR.map(f=>Object.assign({},f));
+const pr=applyPack(true);
 bind();sync();audit();renderDom();renderAll();renderBell();
 $("nInt").textContent=AUDIT.score+"%";
+if(pr&&pr.added>0)toast(`Pack millésimes 2024-2027 intégré : +${pr.m} motorisations, +${pr.f} fiches, +${pr.r} révisions`,"ok");
 let ses=null;try{ses=JSON.parse(localStorage.getItem(LS.ses)||"null")}catch(e){}
 const r=myReq();
 if(ses&&ses.role==="tiers"&&r&&r.status==="granted"){enter("tiers")}
@@ -1057,6 +1219,6 @@ else{waitMode=!!r;$("launch").classList.remove("off");document.body.classList.ad
 setTimeout(()=>{clearGate();const t=$("nNet");if(t&&t.textContent==="…"){$("chN").className="ch "+(navigator.onLine?"ok":"ba");t.textContent=navigator.onLine?"En ligne":"Hors ligne"}},900);
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 }catch(err){console.error(err);
-try{resetSeed();bind();sync();audit();renderDom();renderAll()}catch(e2){}
+try{resetSeed();applyPack(true);bind();sync();audit();renderDom();renderAll()}catch(e2){}
 toast("Récupération automatique effectuée","wa")}}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
