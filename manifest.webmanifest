@@ -1,12 +1,12 @@
 {
-  "id": "/newprojet2026/",
+  "id": "./",
   "name": "KEV FUSION 2026 — Banc de diagnostic expert",
   "short_name": "KEV FUSION",
-  "description": "Corrélation stricte marque → modèle → année → cylindrée/type → puissance. 29 domaines de défaillance, rappels, campagnes, TSB, intervalles d'entretien révisés (km + temps). Accès administrateur et gestion des tiers en temps réel. Utilisable hors ligne.",
-  "start_url": "/newprojet2026/",
-  "scope": "/newprojet2026/",
+  "description": "Corrélation stricte marque → modèle → année → cylindrée/type → puissance. 29 domaines de défaillance, rappels, campagnes, TSB, intervalles révisés (km + temps). Accès administrateur et tiers en temps réel. Hors ligne.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#0A1017",
   "theme_color": "#0A1017",
@@ -19,10 +19,10 @@
     { "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230A1017'/%3E%3Cpath d='M277 118 148 292h80l-13 128 133-194h-80z' fill='%2322D3EE'/%3E%3C/svg%3E", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Diagnostic expert", "url": "/newprojet2026/#diag" },
-    { "name": "Pannes & rappels", "url": "/newprojet2026/#faults" },
-    { "name": "Préconisations & intervalles", "url": "/newprojet2026/#serv" },
-    { "name": "Domaines de défaillance", "url": "/newprojet2026/#dom" },
-    { "name": "Catalogue motorisations", "url": "/newprojet2026/#cat" }
+    { "name": "Diagnostic expert", "url": "./#diag" },
+    { "name": "Pannes & rappels", "url": "./#faults" },
+    { "name": "Préconisations & intervalles", "url": "./#serv" },
+    { "name": "Domaines de défaillance", "url": "./#dom" },
+    { "name": "Catalogue motorisations", "url": "./#cat" }
   ]
 }
