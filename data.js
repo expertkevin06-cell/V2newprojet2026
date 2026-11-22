@@ -1,5 +1,5 @@
 "use strict";
-/* ═══ KEV FUSION 2026 — DONNÉES (catalogue 2017-2027, fiches, protocoles, révisions, DTC) ═══ */
+/* ═══ KEV FUSION 2026 — DONNÉES v11 : catalogue 2017-2027, fiches, protocoles, révisions, DTC ═══ */
 const FUEL={E:"Essence",D:"Diesel",H:"Hybride",P:"PHEV",EV:"Électrique",G:"GPL"};
 const SEV={critique:{n:"Critique",r:0},eleve:{n:"Élevé",r:1},moyen:{n:"Moyen",r:2},info:{n:"Info",r:3}};
 const KIND={rappel:"Rappel",campagne:"Campagne",tsb:"TSB / bulletin",panne:"Panne connue"};
@@ -119,6 +119,8 @@ const RAW=[
 ["jogger","Jogger",2022,2027,"Break 7 places","1.0 TCe|110|H4Dt|E|22-27|Chaîne;1.0 ECO-G|100|H4Dt|G|22-27|GPL;1.6 Hybrid|140|H4M|H|23-27|Full hybrid"],
 ["spring","Spring",2021,2027,"Micro-citadine électrique","Électrique|45:26.8,65:26.8|EV-SPR|EV|21-27|Urbain LFP"],
 ["bigster","Bigster",2025,2027,"SUV familial","1.2 TCe MHEV|140|HR12|H|25-27|Mild hybrid 48V;1.6 Hybrid|155|H4M|H|25-27|Full hybrid;1.0 ECO-G|100|H4Dt|G|25-27|GPL"]]],
+["alpine","Alpine","FR",[["a110","A110",2017,2027,"Coupé sport","1.8 TCe|252,292,300|M5Pt|E|17-27|Chaîne DCT"],
+["a290","A290",2024,2027,"Citadine sport électrique","Électrique|180:52,220:52|EV-R5|EV|24-27|AmpR City"]]],
 ["volkswagen","Volkswagen","DE",[["polo","Polo VI",2017,2027,"Citadine","1.0 MPI|65,80|CHY|E|17-21|Chaîne;1.0 TSI|95,110,115|DKL|E|17-27|Chaîne GPF;1.5 TSI|150|DPCA|E|18-21|Chaîne ACT;2.0 TSI GTI|200,207|CZP|E|18-27|EA888 DSG"],
 ["golf-8","Golf VIII",2019,2027,"Compacte","1.0 TSI|110|DKL|E|19-24|EA211 GPF;1.0 eTSI|110|DKL|H|20-24|MHEV 48V;1.5 TSI|130,150|DPCA|E|19-27|EA211 evo;2.0 TDI|115,150,200|DSU|D|19-27|EA288 evo SCR;2.0 TSI GTI|245,265|DNNA|E|20-27|EA888 evo4;2.0 TSI R|320|DNF|E|20-27|EA888 AWD;1.4 eHybrid|204,245|DGEA|P|20-27|PHEV DSG6"],
 ["troc","T-Roc",2017,2027,"SUV compact","1.0 TSI|110,115|DKL|E|17-27|EA211;1.5 TSI|150|DPCA|E|17-27|EA211 evo ACT;2.0 TSI|190,300|CZP|E|17-27|EA888 4Motion;2.0 TDI|115,150|DSU|D|17-27|EA288 evo"],
@@ -173,6 +175,11 @@ const RAW=[
 ["kia","Kia","KR",[["sportage","Sportage V",2021,2027,"SUV compact","1.6 T-GDi|150,180|G4FT|E|21-27|Chaîne;1.6 T-GDi Hybrid|215,230|G4FT|H|21-27|DCT6 hybride;1.6 T-GDi PHEV|253,265|G4FT|P|21-27|PHEV AWD;1.6 CRDi MHEV|136|D4FE|H|21-25|MHEV 48V diesel"],
 ["ev6","EV6",2021,2027,"SUV électrique E-GMP","Électrique|170:58,229:77.4,325:77.4,585:77.4|EM21|EV|21-27|E-GMP 800V"],
 ["ev9","EV9",2023,2027,"Grand SUV électrique","Électrique|204:99.8,385:99.8,508:99.8|EM23|EV|23-27|E-GMP 800V"]]],
+["mazda","Mazda","JP",[["mazda3","Mazda 3 IV",2019,2027,"Compacte","2.0 Skyactiv-G|122,150|PE-VPS|E|19-27|Chaîne M Hybrid;2.0 Skyactiv-X|180,186|SPCCI|E|19-24|Compression contrôlée"],
+["cx5","CX-5 II",2017,2027,"SUV compact","2.0 Skyactiv-G|165|PE-VPS|E|17-27|Chaîne;2.5 Skyactiv-G|194|PY-VPS|E|17-27|Chaîne;2.2 Skyactiv-D|150,184|SH-VPTS|D|17-22|Diesel calamine"],
+["cx60","CX-60",2022,2027,"SUV premium","3.3 e-Skyactiv D|200,254|T3-VPT|D|22-27|6 cyl. MHEV;2.5 e-Skyactiv PHEV|327|PY-VPS|P|22-27|PHEV AWD"]]],
+["suzuki","Suzuki","JP",[["swift","Swift",2017,2027,"Citadine","1.2 Dualjet|83|K12|H|17-27|SHVS 12V;1.4 Boosterjet|129,140|K14|E|17-21|Sport;1.2 Mild Hybrid|82|Z12E|H|24-27|MHEV 12V"],
+["vitara","Vitara / S-Cross",2015,2027,"SUV","1.4 Boosterjet|140|K14|E|17-21|Chaîne;1.4 Boosterjet Hybrid|129|K14|H|20-27|MHEV 48V;1.5 Dualjet Hybrid|115|K15|H|22-27|Strong hybrid"]]],
 ["ford","Ford","US",[["focus","Focus IV",2018,2027,"Compacte","1.0 EcoBoost MHEV|125,155|B7JA|H|19-27|MHEV 48V;1.5 EcoBlue|95,120|B7DA|D|18-22|SCR;2.0 EcoBlue|150|YLCB|D|18-22|SCR;2.3 EcoBoost ST|280|YVC|E|19-27|Performance"],
 ["puma","Puma",2019,2027,"SUV urbain","1.0 EcoBoost MHEV|125,155|B7JA|H|19-27|MHEV 48V;1.0 EcoBoost ST|200|B3CA|E|21-24|Performance;Électrique|168:43|EV-PUM|EV|25-27|Gen-E"],
 ["kuga","Kuga III",2019,2027,"SUV compact","1.5 EcoBoost|150|B3CB|E|19-24|3 cyl.;2.0 EcoBlue|150,190|YLCB|D|19-24|SCR;2.5 PHEV|225|BGCA|P|20-27|PHEV;2.5 FHEV|190|BGCA|H|21-27|Full hybrid"],
@@ -183,6 +190,8 @@ const RAW=[
 ["volvo","Volvo","SE",[["xc40","XC40",2017,2027,"SUV compact premium","1.5 T3|163|B3154|E|17-22|3 cyl.;2.0 B4 MHEV|197|B4204|H|20-27|MHEV 48V;2.0 D4|190|D4204|D|17-20|Diesel;1.5 T5 PHEV|262|B3154|P|19-24|PHEV"],
 ["ex30","EX30",2023,2027,"SUV urbain électrique","Électrique|272:51,272:69,428:69|EV-EX3|EV|23-27|SEA"],
 ["ex90","EX90",2024,2027,"Grand SUV électrique","Électrique|313:111,408:111,517:111|EV-EX9|EV|24-27|SPA2"]]],
+["polestar","Polestar","SE",[["ps2","Polestar 2",2020,2027,"Fastback électrique","Électrique|231:64,299:82,408:78,476:78|EV-PS2|EV|20-27|CMA"],
+["ps4","Polestar 4",2024,2027,"SUV coupé électrique","Électrique|272:100,544:100|EV-PS4|EV|24-27|SEA"]]],
 ["mg","MG","CN",[["mg4","MG4",2022,2027,"Compacte électrique","Électrique|170:51,204:64,245:77,435:64|EV-MG4|EV|22-27|Nebula"],
 ["hs","HS / EHS",2018,2027,"SUV compact","1.5 T-GDi|162|15E4E|E|20-27|Chaîne;1.5 PHEV|258|15E4E|P|20-25|PHEV;1.5 Hybrid+|194|MG3-HEV|H|24-27|Hybride"]]],
 ["byd","BYD","CN",[["atto3","Atto 3",2022,2027,"SUV compact électrique","Électrique|204:60.5|BYD|EV|22-27|Blade LFP"],
@@ -194,27 +203,21 @@ const RAW=[
 ["ducato","Ducato",2006,2027,"Grand utilitaire","2.2 MultiJet|120,140,180|F1AGL|D|17-27|SCR;Électrique|122:70|EV-DUC|EV|23-27|LFP"]]],
 ["alfa","Alfa Romeo","IT",[["giulia","Giulia",2016,2027,"Berline sport","2.0 Turbo|200,280|GME|E|17-27|Chaîne Q4;2.2 JTDm|150,180,210|552|D|17-22|SCR;2.9 V6 QV|510,520|690T|E|17-27|Biturbo"],
 ["tonale","Tonale",2022,2027,"SUV compact","1.5 Hybrid|130,160|GSE|H|22-27|MHEV 48V TCT7;1.3 PHEV Q4|280|GSE|P|22-27|PHEV AWD"]]],
+["lancia","Lancia","IT",[["ypsilon","Ypsilon",2011,2027,"Citadine premium","1.0 FireFly Hybrid|70|GSE|H|20-24|MHEV 12V;1.2 Hybrid|100,136|EB2LTEDH|H|24-27|e-DCS6;Électrique|156:51|EM0|EV|24-27|e-CMP2"]]],
 ["landrover","Land Rover","GB",[["evoque","Range Rover Evoque",2018,2027,"SUV compact premium","2.0 P200|200|PT204|E|19-27|Ingenium MHEV;2.0 D200|204|204DT|D|19-24|MHEV diesel;1.5 P300e|309|PT15|P|20-27|PHEV 3 cyl."],
 ["defender","Defender",2020,2027,"4x4 premium","3.0 D250|249|AJ200D|D|20-27|6 cyl. MHEV;3.0 P400|400|AJ300|E|20-27|6 cyl. MHEV;2.0 P400e|404|PT204|P|21-27|PHEV"]]],
 ["porsche","Porsche","DE",[["taycan","Taycan",2019,2027,"Berline sport électrique","Électrique|408:79.2,530:93.4,680:93.4,761:93.4,1034:105|J1|EV|19-27|J1 800V"],
 ["macane","Macan Electric",2024,2027,"SUV électrique PPE","Électrique|360:100,408:100,639:100|PPE|EV|24-27|PPE 800V"]]],
 ["mini","MINI","GB",[["minih","MINI 3 portes F56",2014,2024,"Citadine premium","1.5 Cooper|136|B38|E|17-24|3 cyl.;2.0 Cooper S|178,192|B48|E|17-24|4 cyl.;2.0 JCW|231|B48|E|17-24|4 cyl.;Électrique|184:32.6|EV-MIN|EV|19-24|Cooper SE"],
 ["countryman","Countryman U25",2024,2027,"SUV compact premium","1.5 C|170|B38|E|24-27|MHEV 48V;2.0 S ALL4|218,245|B48|E|24-27|AWD;Électrique|204:64.7,313:64.7|EV-CM|EV|24-27|SE ALL4"]]],
-["xpeng","XPeng","CN",[["g6","G6",2024,2027,"SUV électrique","Électrique|258:66,286:87.5,487:87.5|EV-XG6|EV|24-27|SEPA 2.0 800V"]]],
-["nio","NIO","CN",[["et5","ET5",2023,2027,"Berline électrique","Électrique|490:75,490:100|EV-NIO|EV|23-27|NT2 AWD"]]],
-["leapmotor","Leapmotor","CN",[["c10","C10",2024,2027,"SUV électrique","Électrique|218:69.9|EV-LM|EV|24-27|LEAP 3.0;1.5 EREV|218:28.4|LM-RE|P|24-27|Range extender"]]],
-["omoda","Omoda","CN",[["omoda5","5 / C5",2024,2027,"SUV coupé","1.6 T-GDi|147,185|SQRF4J16|E|24-27|Chaîne DCT7;1.5 T-GDi|156|SQRE4T15|E|24-27|Chaîne CVT"]]],
-["jaecoo","Jaecoo","CN",[["jaecoo7","7 / J7",2024,2027,"SUV","1.6 T-GDi|147,185|SQRF4J16|E|24-27|DCT7;1.5 PHEV|347|JC-PHEV|P|24-27|PHEV"]]],
-["lynk","Lynk & Co","CN",[["lynk01","01",2021,2027,"SUV compact","1.5 PHEV|261,276|JLH|P|21-27|PHEV;1.5 HEV|150|JLH|H|23-27|Full hybrid"]]],
-["zeekr","Zeekr","CN",[["zeekrx","X",2024,2027,"SUV compact électrique","Électrique|272:66,428:66|EV-ZK|EV|24-27|SEA"]]],
-["smart","smart","DE",[["smart1","#1",2022,2027,"SUV urbain électrique","Électrique|272:66,428:66|EV-SEA|EV|22-27|SEA"]]],
+["smart","smart","DE",[["smart1","#1 / #3",2022,2027,"SUV urbain électrique","Électrique|272:66,428:66|EV-SEA|EV|22-27|SEA"]]],
 ["mitsubishi","Mitsubishi","JP",[["eclipse","Eclipse Cross",2017,2027,"SUV compact","1.5 MIVEC|163|4B40|E|17-24|Chaîne;2.4 PHEV|188|4B12|P|17-24|PHEV AWD"]]],
 ["subaru","Subaru","JP",[["solterra","Solterra",2022,2027,"SUV électrique","Électrique|218:71.4|1YM|EV|22-27|e-TNGA"]]],
 ["lexus","Lexus","JP",[["ux","UX",2018,2027,"SUV urbain premium","2.0 Hybrid|184,199|M20A-FXS|H|18-27|e-CVT;Électrique|204:54.3|EV-UX|EV|20-26|e-TNGA"],
 ["rz","RZ",2023,2027,"SUV électrique","Électrique|313:71.4|EV-RZ|EV|23-27|e-TNGA"]]]
 ];
 const PSA="peugeot,citroen,ds,opel",VAG="volkswagen,audi,skoda,seat,cupra",HK="hyundai,kia",RN="renault,dacia",BM="bmw,mini",MB="mercedes,smart";
-const ALL="peugeot,renault,citroen,ds,dacia,volkswagen,audi,skoda,seat,cupra,bmw,mini,mercedes,smart,opel,toyota,lexus,nissan,honda,hyundai,kia,mazda,suzuki,ford,tesla,volvo,mg,byd,jeep,fiat,alfa,landrover,porsche,xpeng,nio,leapmotor,omoda,jaecoo,lynk,zeekr,smart,mitsubishi,subaru,lexus";
+const ALL="peugeot,renault,citroen,ds,dacia,alpine,volkswagen,audi,skoda,seat,cupra,bmw,mini,mercedes,smart,opel,toyota,lexus,nissan,honda,hyundai,kia,mazda,suzuki,ford,tesla,volvo,polestar,mg,byd,jeep,fiat,alfa,lancia,landrover,porsche,mitsubishi,subaru";
 const FR=[
 ["F-EB2-BELT","engine",PSA,"1.2 PureTech","rappel","critique",2017,2024,"Courroie humide 1.2 PureTech — dégradation et colmatage crépine","Bruit de courroie à froid, voyant pression huile, perte de puissance, débris dans l'huile.","Vérifier l'éligibilité VIN de la campagne Stellantis|Mesurer la largeur de courroie au gabarit|Déposer le carter et inspecter la crépine|Contrôler la pression d'huile à chaud|Remplacer kit courroie + pompe + crépine, vidange et rinçage","Kit courroie humide, pompe à huile, crépine, tendeur","P0016,P0011,P0521,P0341,P0087","Rappel Conso · Stellantis","distribution,moteur"],
 ["F-EB2-PUMP","engine",PSA,"1.2 PureTech","campagne","critique",2017,2024,"Pompe à huile — crépine colmatée par débris de courroie","Voyant pression huile, mode dégradé, casse turbo possible.","Mesurer la pression d'huile manométrique à chaud|Contrôler crépine et carter|Vérifier turbo et coussinets|Remplacer pompe + crépine + kit courroie|Rincer et vidanger","Pompe à huile, crépine, turbo","P0521,P0087,P0299","Campagne Stellantis EB2","moteur,distribution,suralim"],
@@ -254,9 +257,13 @@ const FR=[
 ["F-VOLVO-BMS","model","volvo","ex30","rappel","eleve",2023,2027,"EX30 — logiciel BMS (surchauffe)","Limitation de puissance, alerte batterie, charge bridée.","Vérifier l'éligibilité VIN|Lire températures et delta cellules|Appliquer la mise à jour BMS|Contrôler la boucle de refroidissement","BMS, pompe LDR, modules","P0AA6,P0C00","Rappel Volvo EX30 · Safety Gate","hv,thermique,charge"],
 ["F-MG-12V","model","mg","mg4,hs","campagne","eleve",2020,2027,"MG — décharge 12 V / DC-DC et écran figé","12 V à plat après 48 h, écrans figés.","Mesurer le courant de repos|Tester la sortie DC-DC|Appliquer la mise à jour|Remplacer la 12 V si dégradée|Contrôler le module télématique","DC-DC, batterie 12 V, télématique","U0111,P0562","Campagne MG","elec12,telematique,tablette"],
 ["F-500E","model","fiat","500e","campagne","eleve",2020,2027,"500e — chargeur embarqué AC","Non-charge AC, charge interrompue.","Lire les codes OBC|Tester sur plusieurs bornes AC|Contrôler le câble mode 2|Remplacer l'OBC selon campagne","OBC, connecteur, faisceau HV","P0D11,P0C00","Campagne Stellantis 500e","charge,hv"],
+["F-MAZDA-D","engine","mazda","2.2 Skyactiv-D","panne","eleve",2017,2022,"Skyactiv-D 2.2 — calamine et dilution d'huile","Perte de puissance, fumée, FAP colmaté.","Lire charge de suie et régénérations|Endoscopie admission|Contrôler les injecteurs|Décalaminage et remplacement FAP si nécessaire|Vidange rapprochée en urbain","Admission, EGR, FAP, injecteurs","P2002,P2463,P0401","Retour terrain Mazda","depol,moteur,injection"],
+["F-SUZ-48","engine","suzuki","1.4 Boosterjet Hybrid","tsb","info",2020,2027,"SHVS 48 V — batterie lithium et à-coups","Stop&start inopérant, à-coups, voyant hybride.","Lire codes SHVS|Contrôler la tension de la 48 V|Vérifier l'ISG|Appliquer la mise à jour logicielle","Batterie 48 V, ISG, DC-DC","P0A7F,P0562","TSB Suzuki SHVS","elec48,acoups,elec12"],
+["F-MJT","engine","jeep,fiat,alfa","1.6 MultiJet","panne","eleve",2017,2022,"MultiJet — injecteurs et FAP","Claquement, fumée, ratés, régénérations fréquentes.","Test des débits de retour injecteurs|Banc injecteurs si hors tolérance|Contrôler le ΔP FAP|Remplacer et coder les injecteurs","Injecteurs, FAP, pompe HP","P0201,P0202,P2002","Retour terrain MultiJet","injection,depol"],
+["F-ALFA-ELEC","model","alfa","giulia,stelvio,tonale","tsb","moyen",2017,2027,"Électronique — 12 V, masses et défauts multiples","Défauts multiples, démarrage aléatoire, direction intermittente.","Contrôler SOH et tension de la 12 V|Vérifier les masses (corrosion)|Lire les défauts CAN|Appliquer les mises à jour calculateurs","Batterie 12 V, masses, faisceau CAN","U0101,U0121,P0562","TSB Alfa Romeo","elec12,geometrie,telematique"],
 ["F-JLR-AIR","brand","landrover","","panne","eleve",2017,2027,"Suspension pneumatique — fuites et compresseur","Véhicule affaissé, message défaut suspension.","Test de fuite au produit moussant|Contrôler le temps de montée du compresseur|Lire les capteurs de hauteur|Remplacer coussin / compresseur|Calibrer les hauteurs","Coussins, compresseur, capteurs, bloc vannes","C1A00,U0121","Retour terrain JLR","train,geometrie"],
 ["F-PORSCHE-800","model","porsche","taycan,macane","campagne","eleve",2019,2027,"Taycan / Macan — charge DC et thermique 800 V","Charge DC bridée, puissance limitée.","Lire l'historique thermique batterie|Contrôler boucle LDR et échangeur|Appliquer la mise à jour gestion de charge|Vérifier l'isolement HV 800 V","BMS, échangeur, OBC 800 V","P0C00,P0AA6","Campagne Porsche 800 V","charge,hv,thermique"],
-["F-CN-OTA","brand","xpeng,nio,zeekr,leapmotor,omoda,jaecoo,lynk,byd,mg","","tsb","moyen",2022,2027,"OTA — mise à jour incomplète, ADAS et écran","Perte ADAS après OTA, écran figé, calibration perdue.","Relever version et journaux OTA|Re-flasher si mise à jour incomplète|Recalibrer caméras et radar|Contrôler la 12 V|Vérifier le module télématique","Calculateur ADAS, 12 V, caméras, TCU","U0121,U0101,P0562","TSB constructeurs CN","telematique,adas,camera,tablette,elec12"],
+["F-CN-OTA","brand","byd,mg","","tsb","moyen",2022,2027,"OTA — mise à jour incomplète, ADAS et écran","Perte ADAS après OTA, écran figé, calibration perdue.","Relever version et journaux OTA|Re-flasher si mise à jour incomplète|Recalibrer caméras et radar|Contrôler la 12 V|Vérifier le module télématique","Calculateur ADAS, 12 V, caméras, TCU","U0121,U0101,P0562","TSB constructeurs CN","telematique,adas,camera,tablette,elec12"],
 ["F-TAKATA","brand",ALL,"","rappel","critique",2017,2021,"Airbags Takata — générateur de gaz susceptible de rupture","Voyant airbag, campagne ouverte au VIN, risque de projection.","Vérifier impérativement l'éligibilité VIN|Ne pas désactiver sans procédure|Remplacer l'inflateur de campagne|Effacer les défauts et contrôler le voyant","Inflateur airbag conducteur/passager","","Rappel Takata · Rappel Conso / NHTSA","airbag,ceinture"],
 ["F-BELT","brand",ALL,"","rappel","eleve",2017,2026,"Ceintures — prétensionneur ou ancrage non conforme","Voyant airbag, ceinture qui ne se verrouille pas.","Vérifier l'éligibilité VIN|Contrôler ancrage et couple|Tester le verrouillage de l'enrouleur|Lire les défauts prétensionneur|Remplacer l'ensemble selon campagne","Prétensionneur, enrouleur, ancrage, boucle","B0072,B1000","Rappel Conso / Safety Gate","ceinture,airbag,siege"],
 ["F-ADAS","brand",ALL,"","tsb","moyen",2017,2027,"ADAS — recalibration obligatoire après intervention","Défaut calibration, freinage intempestif, régulateur inopérant.","Lire les défauts de calibration|Contrôler propreté et fixation du support|Effectuer calibration statique / dynamique|Contrôler géométrie et hauteur de caisse","Caméra pare-brise, radar, support","U0121,U0101,C1A00","TSB multi-constructeurs ADAS","adas,camera,geometrie"],
@@ -307,7 +314,7 @@ const DR=[
 ["DR-LIGHT",["eclairage","elec12"],"panne","info","Éclairage — LED, condensation, modules","Phare embué, LED partiellement éteinte.","Inspecter étanchéité et évents du projecteur|Contrôler connecteurs et module LED|Vérifier alimentation, masses, 12 V|Lire défauts calculateur d'éclairage|Remplacer et calibrer si matriciel","Projecteur, module LED, connectique","B1000,U0100",(e,s)=>true],
 ["DR-BODY",["carrosserie","portes","elec12"],"panne","info","Carrosserie / étanchéité — infiltrations, corrosion","Humidité habitacle, buée persistante, connecteurs oxydés.","Localiser l'infiltration (arrosage, joints, évents)|Contrôler évacuations bas de caisse et toit ouvrant|Inspecter corrosion et soudures|Vérifier connecteurs en zone humide|Traiter, remplacer joints, sécuriser masses","Joints, évents, passe-câbles, connecteurs","B1000,U0101",(e,s)=>true]
 ];
-const EVB="volkswagen,audi,skoda,seat,cupra,bmw,mini,mercedes,smart,tesla,volvo,mg,byd,xpeng,nio,zeekr,leapmotor,omoda,lynk,renault,dacia,peugeot,citroen,ds,opel,fiat,jeep,alfa,landrover,porsche,ford,subaru,mitsubishi,toyota,lexus,nissan,honda,hyundai,kia,mazda,suzuki";
+const EVB="volkswagen,audi,skoda,seat,cupra,bmw,mini,mercedes,smart,opel,tesla,volvo,polestar,mg,byd,peugeot,citroen,ds,renault,dacia,alpine,fiat,jeep,alfa,lancia,landrover,porsche,ford,toyota,lexus,nissan,honda,hyundai,kia,mazda,suzuki,mitsubishi,subaru";
 const RV=[
 ["RV-FORD-EB-CHAIN","ford","2\\.0 EcoBlue|YLCB|BKF","Chaîne de distribution",240000,160000,120,96,"TSB Ford EcoBlue · révision constructeur","Allongement de chaîne et usure du tendeur hydraulique : échéance ramenée à 160 000 km / 8 ans."],
 ["RV-FORD-EB-PUMP","ford","2\\.0 EcoBlue|YLCB|BKF","Courroie de pompe à huile",240000,150000,120,96,"TSB Ford EcoBlue","Débris colmatant la crépine : remplacement anticipé avec la chaîne."],
@@ -341,7 +348,7 @@ const RV=[
 ["RV-CABIN",ALL,"","Filtre d'habitacle charbon actif",30000,15000,24,12,"Protocole atelier · qualité d'air","Urbain / pollué : 15 000 km / 12 mois."],
 ["RV-ACC",ALL,"","Courroie d'accessoires + galets",120000,90000,120,72,"Protocole atelier","Rupture entraînant la distribution : remplacement anticipé."],
 ["RV-VOLVO","volvo","B4204|B3154|D4204|Drive-E","Kit distribution + pompe à eau",240000,160000,120,96,"Révision Volvo Drive-E","Ruptures constatées : 160 000 km / 8 ans."],
-["RV-JLR","landrover,jaguar","PT204|PT15|204DT|Ingenium","Contrôle chaîne de distribution",0,150000,0,96,"TSB JLR Ingenium","Allongement constaté : contrôle à 150 000 km / 8 ans."],
+["RV-JLR","landrover","PT204|PT15|204DT|Ingenium","Contrôle chaîne de distribution",0,150000,0,96,"TSB JLR Ingenium","Allongement constaté : contrôle à 150 000 km / 8 ans."],
 ["RV-MAZDA","mazda","Skyactiv-D|SH-VPTS","Vidange huile + filtre",20000,10000,12,6,"Retour terrain Skyactiv-D","Dilution par régénérations FAP : intervalle divisé par deux en urbain."]
 ].map(r=>({id:r[0],brands:String(r[1]).split(",").map(s=>s.trim()).filter(Boolean),match:r[2],organ:r[3],oldKm:r[4],newKm:r[5],oldMo:r[6],newMo:r[7],src:r[8],note:r[9],y0:2017,y1:2027}));
 const DTC={P0011:["Position AAC A — calage trop avancé","Chaîne/courroie allongée, déphaseur, pression d'huile","Contrôle calage, tendeur, VVT, pression d'huile"],
