@@ -2,7 +2,7 @@
   "id": "./",
   "name": "KEV FUSION 2026 — Banc de diagnostic expert",
   "short_name": "KEV FUSION",
-  "description": "Corrélation stricte marque → modèle → année → cylindrée/type → puissance. 29 domaines de défaillance, rappels, campagnes, TSB, intervalles révisés (km + temps). Accès administrateur et tiers en temps réel. Utilisable hors ligne.",
+  "description": "Corrélation stricte marque → modèle → année → cylindrée/type → puissance. 29 domaines de défaillance, rappels, campagnes, TSB, intervalles d'entretien révisés (km + temps). Accès administrateur et gestion des tiers en temps réel. Utilisable hors ligne.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -15,36 +15,16 @@
   "categories": ["productivity", "utilities", "business"],
   "prefer_related_applications": false,
   "icons": [
-    {
-      "src": "https://cdn-icons-png.flaticon.com/192/3202/3202926.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/3202/3202926.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/3202/3202926.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230A1017'/%3E%3Cpath d='M277 70 122 288h96l-16 154 160-234h-96z' fill='%2322D3EE'/%3E%3C/svg%3E",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "https://cdn-icons-png.flaticon.com/192/3202/3202926.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "https://cdn-icons-png.flaticon.com/512/3202/3202926.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "https://cdn-icons-png.flaticon.com/512/3202/3202926.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230A1017'/%3E%3Cpath d='M277 70 122 288h96l-16 154 160-234h-96z' fill='%2322D3EE'/%3E%3C/svg%3E", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "shortcuts": [
     { "name": "Diagnostic expert", "url": "./#diag" },
     { "name": "Pannes & rappels", "url": "./#faults" },
-    { "name": "Préconisations & intervalles", "url": "./#serv" },
-    { "name": "Domaines de défaillance", "url": "./#dom" },
-    { "name": "Catalogue motorisations", "url": "./#cat" }
+    { "name": "Préconisations", "url": "./#serv" },
+    { "name": "Domaines", "url": "./#dom" },
+    { "name": "Catalogue", "url": "./#cat" }
   ]
 }
