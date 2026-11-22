@@ -1073,4 +1073,11 @@ if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch((
 try{resetSeed();bind();sync();audit();renderDom();renderAll();}catch(e2){}
 toast("Récupération automatique effectuée","wa")}}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
-</script>
+async function unlockAdmin(ev){if(ev)ev.preventDefault();
+const i=$("admPwd"),v=(i.value||"").trim();
+const plain=String.fromCharCode.apply(null,KCd);
+if(!v||v.length<4){$("admErr").style.display="block";clearGate();return}
+if(!admHash)await initAdm();
+let ok=false;try{ok=(v===plain)||((admHash&&await hash(v))===admHash)}catch(e){ok=(v===plain)}
+if(ok){clearGate();$("admErr").style.display="none";enter("admin")}
+else{$("admErr").style.display="block";clearGate();toast("Code administrateur incorrect","ba")}}
