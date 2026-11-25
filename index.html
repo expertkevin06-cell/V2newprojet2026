@@ -551,7 +551,7 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--c6) inset!important;-
 <a href="https://www.kba.de/" target="_blank" rel="noopener"><span class="fg">🇩🇪</span><span class="nm">KBA</span><span class="ds2">Allemagne</span></a>
 <a href="https://www.check-vehicle-recalls.service.gov.uk/" target="_blank" rel="noopener"><span class="fg">🇬🇧</span><span class="nm">DVSA</span><span class="ds2">UK</span></a>
 <a href="https://www.obd-codes.com/" target="_blank" rel="noopener"><span class="fg">🔧</span><span class="nm">OBD-Codes</span><span class="ds2">DTC</span></a></div>
-<div class="nt in" style="margin-top:13px"><b>Corrélation stricte.</b> Ce mode n'affiche <b>que</b> les fiches rattachées à la marque, au modèle, à la famille moteur et à la puissance sélectionnés. Les protocoles transversaux ne s'activent que si l'énergie et la technologie réelles correspondent.</div></div>
+<div class="nt in" style="margin-top:13px"><b>Corrélation stricte.</b> Ce mode n'affiche <b>que</b> les fiches rattachées à la marque, au modèle, à la famille moteur et à la puissance sélectionnés.</div></div>
 </section>
 
 <section class="vw" id="v-faults"><div id="fVeh"></div>
@@ -610,7 +610,7 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--c6) inset!important;-
 <div class="sh"><div class="si ic-cy"><svg class="ic"><use href="#i-cloud"/></svg></div><div><h2>Mise à jour de la base</h2><div class="sb">Nouvelles marques, modèles, motorisations, puissances et pannes corrélées</div></div><span class="sp"></span>
 <button class="bt vi" id="bUpd" type="button"><svg class="ic"><use href="#i-cloud"/></svg>Vérifier les nouveautés en ligne</button></div>
 <div class="g4" id="updStats" style="margin-bottom:14px"></div>
-<div class="nt in">La base livrée est <b>embarquée hors ligne</b>. La vérification en ligne fusionne un pack distant JSON (<span class="mo">vehicles / faults / revisions</span>) sans jamais écraser vos données ; un fichier vide ou injoignable laisse la base intacte.</div>
+<div class="nt in">La base livrée est <b>embarquée hors ligne</b>. La vérification en ligne fusionne un pack distant JSON sans jamais écraser vos données.</div>
 <div id="updLog" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div></div>
 
 <div class="pn pd" style="margin-bottom:16px"><div class="sh"><div class="si ic-vi"><svg class="ic"><use href="#i-save"/></svg></div><div><h2>Import / export</h2><div class="sb">Réservé à l'administrateur</div></div></div>
@@ -692,7 +692,7 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--c6) inset!important;-
 <div class="bb"><i id="ovBar"></i></div><div class="mi" id="ovDet" style="margin:8px 0 14px">Initialisation…</div><div class="lg" id="ovLog"></div>
 <div class="g4" style="margin-top:14px"><div class="st" style="padding:11px"><div class="sv3" style="font-size:21px" id="ovB">0</div><div class="sl">Avant</div></div>
 <div class="st" style="padding:11px"><div class="sv3" style="font-size:21px;color:var(--gr)" id="ovA">+0</div><div class="sl">Ajouts</div></div>
-<div class="st" style="padding:11px"><div class="sv3" style="font-size:21px;color:var(--amH)" id="ovM">~0</div><div class="sl">Fusions</div></div>
+<div class="st" style="padding:11px"><div class="sv3" style="font-size:21px;color:var(--amH)" id="ovM">~0</div><div class="sl">Fiches</div></div>
 <div class="st" style="padding:11px"><div class="sv3" style="font-size:21px;color:var(--cy)" id="ovAf">0</div><div class="sl">Après</div></div></div>
 <div id="ovRes" style="margin-top:15px"></div><button class="bt pr" id="ovX" type="button" style="width:100%;height:44px;justify-content:center;margin-top:14px;display:none">Fermer</button></div></div>
 
@@ -702,12 +702,12 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--c6) inset!important;-
 <div class="lst" id="lStats"></div><div class="nt" id="selfBox" style="margin-top:14px;text-align:left">Auto-vérification en cours…</div></div>
 <div id="lChoose" class="lcs">
 <div class="lc ad"><div class="lch"><div class="si ic-vi" style="width:44px;height:44px;border-radius:14px"><svg class="ic" style="width:22px;height:22px"><use href="#i-shield"/></svg></div><div><h3>Administrateur</h3><div class="sb">Contrôle total du projet</div></div></div>
-<div class="lft"><div><svg class="ic"><use href="#i-check"/></svg>Import, export, sauvegardes, mise à jour</div><div><svg class="ic"><use href="#i-check"/></svg>Motorisations, fiches, intervalles</div><div><svg class="ic"><use href="#i-check"/></svg>Gestionnaire de tiers : accès, refus, révocation</div><div><svg class="ic"><use href="#i-check"/></svg>Audit d'intégrité et réparation</div></div>
+<div class="lft"><div><svg class="ic"><use href="#i-check"/></svg>Import, export, sauvegardes, mise à jour</div><div><svg class="ic"><use href="#i-check"/></svg>Auto-enrichissement massif à chaque lancement</div><div><svg class="ic"><use href="#i-check"/></svg>Gestionnaire de tiers : accès, refus, révocation</div><div><svg class="ic"><use href="#i-check"/></svg>Audit d'intégrité et réparation</div></div>
 <form id="admForm" class="lfm" autocomplete="off">
 <input class="hp" type="text" name="u_decoy" tabindex="-1" autocomplete="username" aria-hidden="true">
 <input class="hp" type="password" name="p_decoy" tabindex="-1" autocomplete="current-password" aria-hidden="true">
 <label class="sr" for="admPwd">Code administrateur</label>
-<div class="pw"><input class="ct" id="admPwd" name="kf_adm_v15" type="password" placeholder="Code administrateur" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" style="height:48px;letter-spacing:.28em;text-align:center;font-size:16px">
+<div class="pw"><input class="ct" id="admPwd" name="kf_adm_v21" type="password" placeholder="Code administrateur" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" style="height:48px;letter-spacing:.28em;text-align:center;font-size:16px">
 <button class="pe" type="button" id="admEye" aria-label="Afficher le code"><svg class="ic"><use href="#i-eye"/></svg></button></div>
 <button class="bt pr" type="submit" style="height:46px;justify-content:center;font-size:14px"><svg class="ic"><use href="#i-unlock"/></svg>Ouvrir en administrateur</button>
 <p id="admErr" class="nt ba" style="display:none;font-size:12px">Code administrateur incorrect.</p>
@@ -736,19 +736,16 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--c6) inset!important;-
 <noscript><div style="position:fixed;inset:0;z-index:999;background:#0A1017;color:#FECACA;display:grid;place-items:center;padding:24px;text-align:center;font-family:sans-serif">JavaScript est désactivé : KEV FUSION 2026 ne peut pas fonctionner.</div></noscript>
 
 <script>
-/* ═══ NOYAU — authentification + auto-vérification + réparation du cache ═══
-   Indépendant de data.js / app.js : le mot de passe fonctionne même si un
-   fichier applicatif est absent, et un bouton de purge permet de sortir
-   d'un cache de service worker obsolète. */
+/* ═══ NOYAU — auth indépendante + auto-vérification + purge + chargeur anti-cache ═══ */
 (function(){
-  var K=window.KF={errors:[],checks:[],role:null,ready:false};
+  var K=window.KF={errors:[],checks:[],role:null,ready:false,loaded:{data:false,app:false}};
   K.$=function(i){return document.getElementById(i)};
   K.err=function(m){K.errors.push(String(m));if(K.errors.length>40)K.errors.shift();try{K.paint()}catch(e){}};
   window.addEventListener("error",function(e){
-    K.err((e.message||"erreur")+(e.filename?" @"+String(e.filename).split("/").pop():"")+(e.lineno?":"+e.lineno:""));});
+    K.err((e.message||"erreur")+(e.filename?" @"+String(e.filename).split("/").pop():"")+(e.lineno?":"+e.lineno:""))});
   window.addEventListener("unhandledrejection",function(e){K.err("promesse : "+((e.reason&&e.reason.message)||e.reason))});
   K.repair=function(){
-    var done=function(){location.replace(location.pathname+"?r="+Date.now())};
+    var done=function(){try{location.replace(location.pathname+"?r="+Date.now())}catch(e){location.reload()}};
     var p=Promise.resolve();
     try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)
       p=p.then(function(){return navigator.serviceWorker.getRegistrations()}).then(function(rs){
@@ -756,7 +753,7 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--c6) inset!important;-
     try{if(window.caches&&caches.keys)
       p=p.then(function(){return caches.keys()}).then(function(ks){
         return Promise.all(ks.map(function(k){return caches.delete(k).catch(function(){})}))});}catch(e){}
-    p.then(done,done);setTimeout(done,2500);
+    p.then(done,done);setTimeout(done,2200);
   };
   K.paint=function(){
     var box=K.$("selfBox");if(!box)return;
@@ -769,10 +766,11 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--c6) inset!important;-
     h+=' <button class="bt sm" id="selfRe" type="button" style="margin-left:8px">Relancer</button>';
     if(fatal)h+=' <button class="bt sm rd" id="selfFix" type="button" style="margin-left:6px">Purger le cache &amp; recharger</button>';
     h+='<details style="margin-top:8px"'+(fatal?" open":"")+'><summary>Détail des contrôles &amp; erreurs</summary><div class="scl">';
+    h+='<div style="color:'+(K.loaded.data?"var(--gr)":"var(--rd)")+'">'+(K.loaded.data?"✓":"✗")+' data.js chargé</div>';
+    h+='<div style="color:'+(K.loaded.app?"var(--gr)":"var(--rd)")+'">'+(K.loaded.app?"✓":"✗")+' app.js chargé</div>';
     K.checks.forEach(function(c){h+='<div style="color:'+(c.ok?"var(--gr)":c.f?"var(--rd)":"var(--amH)")+'">'+(c.ok?"✓":"✗")+" "+c.l+(c.d?" — "+c.d:"")+"</div>"});
     K.errors.slice(-6).forEach(function(m){h+='<div style="color:var(--rd)">✗ '+String(m).replace(/[<>&]/g,"")+"</div>"});
     if(!K.checks.length&&!K.errors.length)h+='<div style="color:var(--m2)">Initialisation du moteur…</div>';
-    if(!K.ready)h+='<div style="color:var(--amH)">Si le moteur ne démarre pas : un ancien service worker sert peut-être un fichier périmé. Utilisez « Purger le cache &amp; recharger ».</div>';
     h+="</div></details>";
     box.innerHTML=h;
     var rb=K.$("selfRe");if(rb)rb.onclick=function(){if(window.KF_RECHECK)window.KF_RECHECK();else K.paint()};
@@ -816,12 +814,23 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--c6) inset!important;-
     var wa=K.$("wAdmin");if(wa)wa.onclick=function(){var w=K.$("lWait"),c=K.$("lChoose");if(w)w.style.display="none";if(c)c.style.display="";if(p)p.focus()};
     var bc=K.$("bFixCache");if(bc)bc.onclick=function(){K.repair()};
     K.paint();
-    setTimeout(function(){if(!K.ready)K.paint()},3000);
+    setTimeout(function(){if(!K.ready)K.paint()},3500);
   }
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bindAuth);else bindAuth();
+  /* Chargeur anti-cache : requête unique à chaque lancement, aucun cache possible */
+  function boot(){
+    bindAuth();
+    var v=Date.now();
+    function load(src,flag,cb){
+      var s=document.createElement("script");
+      s.src=src+"?k="+v;
+      s.onload=function(){K.loaded[flag]=true;K.paint();if(cb)cb()};
+      s.onerror=function(){K.err("Échec de chargement de "+src);K.paint();if(cb)cb()};
+      document.body.appendChild(s);
+    }
+    load("data.js","data",function(){load("app.js","app")});
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
-<script src="data.js?v=15"></script>
-<script src="app.js?v=15"></script>
 </body>
 </html>
