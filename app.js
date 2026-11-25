@@ -1,4 +1,4 @@
-/* ═══ KEV FUSION 2026 — MOTEUR app.js v16 · complet · démarrage défensif ═══ */
+/* ═══ KEV FUSION 2026 — MOTEUR app.js v20 · auto-enrichissement massif ═══ */
 (function(){
 "use strict";
 var K=window.KF||{err:function(){},set:function(){},unlock:function(){},lock:function(){},role:null,errors:[]};
@@ -9,7 +9,6 @@ var el=function(t,c,h){var n=document.createElement(t);if(c)n.className=c;if(h!=
 var safe=function(f,n){try{return f()}catch(e){K.err(n+" : "+((e&&e.message)||e));return null}};
 if(!D||!D.cat||!D.faults||!D.dom||!D.rules||!D.revs||!D.dtc){
 K.set([{ok:false,l:"data.js chargé (window.KFD)",d:"absent ou incomplet",f:true},{ok:true,l:"Noyau d'authentification",d:"mot de passe opérationnel"}]);return;}
-
 var FUEL=D.fuel,SEV=D.sev,KIND=D.kind,DOM=D.dom,TQ=D.tq,DTC=D.dtc;
 var DM={},CV={am:"amH",rd:"rd",gr:"gr",bl:"bl",vi:"vi",te:"te",mg:"mg",cy:"cy"};
 DOM.forEach(function(d){DM[d[0]]={n:d[1],i:d[2],c:d[3]}});
@@ -35,8 +34,11 @@ return esc(t.slice(0,i))+"<mark>"+esc(t.slice(i,i+b.length))+"</mark>"+esc(t.sli
 var alias=function(n){var s=norm(n),x=[];
 if(s.indexOf("skoda")>=0)x.push("skoda");if(s.indexOf("citroen")>=0)x.push("citroen");
 if(s.indexOf("ds automobiles")>=0)x.push("ds");if(s.indexOf("mercedes")>=0)x.push("mercedes benz mb");
-if(s.indexOf("land")>=0)x.push("landrover");if(s.indexOf("lynk")>=0)x.push("lynk co");return x.join(" ")};
-
+if(s.indexOf("land")>=0)x.push("landrover");if(s.indexOf("lynk")>=0)x.push("lynk co");
+if(s.indexOf("vauxhall")>=0)x.push("opel");return x.join(" ")};
+function tqEst(e,s){if(s.ev||!e.hp)return null;
+var d=s.disp||1600,f=e.fuel==="D"?1.9:(/turbo/i.test(s.feed)?1.35:0.95);
+return Math.round(e.hp*1.36*f*(d/1600)*0.62/5)*5;}
 function spec(e){
 var code=String(e.code||"").toUpperCase(),ev=e.fuel==="EV";
 var b=(String(e.tech||"").match(/([\d]+[,.]?[\d]*)\s*kWh/i)||[])[1];
@@ -46,16 +48,18 @@ for(i=0;i<EVA.length;i++)if(EVA[i][0].test(code)){a=[EVA[i][1],EVA[i][2],EVA[i][
 var v=(String(e.tech||"").match(/(400|800)\s*V/i)||[])[1];
 return{ev:1,kwh:kwh,arch:a[0],volt:v?+v:a[1],plat:a[2],disp:null,cyl:null,
 lay:e.hp>350?"Double moteur AWD":"Moteur unique",feed:"Électrique · onduleur triphasé",
-dist:"Réducteur rapport fixe",tq:null,exact:1};}
+dist:"Réducteur rapport fixe",tq:null,tqE:0,exact:1};}
 var s=null,j;for(j=0;j<ENG.length;j++)if(ENG[j][0].test(code)){s=ENG[j];break}
 var fl=(String(e.fam||"").match(/(\d[.,]\d)/)||[])[1];
 var nom=fl?Math.round(parseFloat(fl.replace(",","."))*1000):null;
 var disp=s?s[1]:nom,cyl=s?s[2]:(disp?(disp<1300?3:disp<2600?4:disp<3400?6:8):null);
 var k1=slug(String(e.code||"").split(/[^A-Za-z0-9-]/)[0])+"|"+e.hp,k2=slug(e.fam)+"|"+e.hp;
-return{ev:0,kwh:null,disp:disp,exact:!!s,cyl:cyl,lay:s?s[3]:(cyl?cyl+" en ligne":"—"),
+var t=TQ[k1]||TQ[k2]||null;
+var o={ev:0,kwh:null,disp:disp,exact:!!s,cyl:cyl,lay:s?s[3]:(cyl?cyl+" en ligne":"—"),
 feed:s?s[4]:(e.fuel==="D"?"Diesel common rail":"Essence injection"),
-dist:s?s[5]:(/chaîne|chaine/i.test(e.tech||"")?"Chaîne":(/courroie/i.test(e.tech||"")?"Courroie":"—")),
-tq:TQ[k1]||TQ[k2]||null};}
+dist:s?s[5]:(/chaîne|chaine/i.test(e.tech||"")?"Chaîne":(/courroie/i.test(e.tech||"")?"Courroie":"—")),tq:t,tqE:0};
+if(!t){o.tq=tqEst(e,o);o.tqE=1}
+return o;}
 function famL(e){var s=spec(e);
 if(s.ev)return s.kwh?"Électrique "+String(s.kwh).replace(".",",")+" kWh":"Électrique";
 var L=s.disp?(s.disp/1000).toFixed(1).replace(".",",")+" ":"";
@@ -63,20 +67,31 @@ return(L+String(e.fam||"").replace(/^\d[.,]\d\s*/,"").replace(/\s*\d{2,4}\s*ch/i
 function famM(e){var s=spec(e);
 return s.ev?((s.kwh?s.kwh+" kWh · ":"")+s.volt+" V · "+s.plat):
 ((s.disp?s.disp+" cm³":"cyl. n.c.")+(s.cyl?" · "+s.cyl+" cyl.":"")+" · "+FUEL[e.fuel]);}
-function parseModel(b,m){var engs=[];
-String(m[5]).split(";").filter(Boolean).forEach(function(f){
-var p=f.split("|"),fam=p[0],code=p[2]||"—",fuel=FUEL[p[3]]?p[3]:"E";
-var yr=(p[4]||"17-27").split("-"),tech=p[5]||"",y0=yy(yr[0]),y1=yy(yr[1]||yr[0]);
-String(p[1]||"").split(",").filter(Boolean).forEach(function(h,i){
+var SEG={C:"Citadine",Y:"Micro-citadine",K:"Compacte",B:"Berline",T:"Break",S:"SUV",U:"SUV urbain",
+E:"SUV compact",W:"SUV premium",M:"Monospace",L:"Ludospace",F:"Utilitaire",G:"Grand utilitaire",
+V:"Van",P:"Pickup",R:"Roadster",X:"Coupé sport",Q:"Quadricycle",Z:"Berline premium",
+H:"Berline électrique",J:"SUV électrique",N:"SUV coupé"};
+function mkEng(b,m,fam,hps,code,fu,y0,y1,tech){
+var out=[];String(hps).split(",").filter(Boolean).forEach(function(h,i){
 var q=h.split(":"),hp=parseInt(q[0],10)||0,kwh=q[1];
-var t=tech+(kwh?((tech?" · ":"")+kwh+" kWh"):"");
-var o={key:b.id+"/"+m[0]+"/"+slug(fam)+"/"+hp+"/"+i,fam:fam,famKey:slug(fam),hp:hp,code:code,fuel:fuel,
-y0:Math.max(y0,m[2]),y1:Math.min(y1,m[3]),tech:t,brand:b.id,brandName:b.name,model:m[0],
-modelName:m[1],seg:m[4],my0:m[2],my1:m[3]};
-var sp=spec(o);o.gk=o.famKey+(sp.ev?"|"+(sp.kwh||""):"");o.disp=sp.ev?sp.kwh:sp.disp;engs.push(o);});});
-return{id:m[0],name:m[1],y0:m[2],y1:m[3],seg:m[4],brand:b.id,brandName:b.name,engines:engs};}
+var t=(tech||"")+(kwh?((tech?" · ":"")+kwh+" kWh"):"");
+var o={key:b.id+"/"+m.id+"/"+slug(fam)+"/"+hp+"/"+i,fam:fam,famKey:slug(fam),hp:hp,code:code||"—",
+fuel:FUEL[fu]?fu:"E",y0:y0,y1:y1,tech:t,brand:b.id,brandName:b.name,model:m.id,modelName:m.name,
+seg:m.seg,my0:m.y0,my1:m.y1};
+var sp=spec(o);o.gk=o.famKey+(sp.ev?"|"+(sp.kwh||""):"");o.disp=sp.ev?sp.kwh:sp.disp;out.push(o)});
+return out;}
+function parseModel(b,m){
+var y0=2000+parseInt(m[2],10),y1=2000+parseInt(m[3],10);
+var mo={id:m[0],name:m[1],y0:y0,y1:y1,seg:SEG[m[4]]||m[4]||"Véhicule",brand:b.id,brandName:b.name,engines:[]};
+String(m[5]||"").split(";").filter(Boolean).forEach(function(t){
+var p=t.split("|");var a=yy((p[4]||"").split("-")[0]||m[2]),z=yy((p[4]||"").split("-")[1]||m[3]);
+mo.engines=mo.engines.concat(mkEng(b,mo,p[0],p[1]||"0",p[2],p[3],Math.max(a,y0),Math.min(z,y1),p[5]||""))});
+return mo;}
+function parseDSL(txt,b){return String(txt).split("\n").map(function(l){return l.trim()})
+.filter(function(l){return l&&l.indexOf("~")>0}).map(function(l){var p=l.split("~");
+if(p.length<6)return null;return parseModel(b,p)}).filter(Boolean)}
 function build(raw){return raw.map(function(b){var bo={id:b[0],name:b[1],country:b[2]};
-return{id:b[0],name:b[1],country:b[2],models:b[3].map(function(m){return parseModel(bo,m)})};});}
+return{id:b[0],name:b[1],country:b[2],models:b[3].map(function(m){return parseModel(bo,m)})}})}
 var ALLB=D.cat.map(function(b){return b[0]});
 var expand=function(l){return l==="ALL"?ALLB.slice():csv(l)};
 var FAULTS0=D.faults.map(function(x){return{id:x[0],scope:x[1],brands:expand(x[2]),target:x[3],
@@ -95,19 +110,19 @@ case"dpf":return e.fuel==="D"||/gpf/i.test(e.tech||"");
 case"egr":return e.fuel==="D"||/gpf|egr/i.test(e.tech||"");
 case"mhev":return!s.ev&&/48|mhev|isg|mild/i.test((e.tech||"")+" "+s.feed);
 case"dct":return!s.ev&&/dct|dsg|e-dcs6|edc|tct/i.test((e.tech||"")+" "+famL(e));
-default:return true;}}
+default:return true}}
 function rules(e){return D.rules.filter(function(r){return!e||cond(r[9],e,spec(e))}).map(function(r){
 return{id:r[0],scope:"rule",brands:[],target:"",kind:r[2],sev:r[3],y0:YMIN,y1:YMAX,titre:r[4],
-sym:r[5],pro:String(r[6]).split("|"),org:r[7],dtc:csv(r[8]),src:"Protocole atelier transversal",dom:csv(r[1]),rule:1}});}
+sym:r[5],pro:String(r[6]).split("|"),org:r[7],dtc:csv(r[8]),src:"Protocole atelier transversal",dom:csv(r[1]),rule:1}})}
 
 var LS={db:"kf.db.v16",aux:"kf.aux.v16",acc:"kf.acc.v16",nf:"kf.nf.v16",dev:"kf.dev.v16"};
-var CAT=[],FAULTS=[],REVC=[],NOTES={},VIEWS=[],BK=[],TIERS=[],NOTIF=[],AUDIT=null,UPD=[];
+var CAT=[],FAULTS=[],REVC=[],NOTES={},VIEWS=[],BK=[],TIERS=[],NOTIF=[],AUDIT=null,UPD=[],ENR={on:true,ts:0,rep:null};
 var ROLE=null,DEVICE="",admTimer=null,CO={},openC=null,seenPend={},lastSig="",waitMode=false;
 var SEL={brand:"",model:"",year:"",fam:"",hp:""};
 var FIL={q:"",sev:[],kind:"",sort:"sev",bs:true,rules:true,done:false,dom:[]};
 var USE={km:15000,sev:"normal",clim:"tempere"};
 var CUI={q:"",sort:"brand",dir:1,page:0,size:40,sel:[]};
-var FSEL=[],revQ="";
+var FSEL=[],revQ="",fLimit=250,enrSnap=null,enrBusy=false;
 var canW=function(){return ROLE==="admin"};
 function engines(){var o=[];CAT.forEach(function(b){b.models.forEach(function(m){m.engines.forEach(function(e){o.push(e)})})});return o}
 function B(id){for(var i=0;i<CAT.length;i++)if(CAT[i].id===id)return CAT[i];return null}
@@ -116,25 +131,48 @@ var ov=function(a,b,c,d){return a<=d&&c<=b};
 var allRevs=function(){return REVS0.concat(REVC)};
 function lsGet(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
-function saveDB(){lsSet(LS.db,{cat:CAT,faults:FAULTS,revs:REVC,upd:UPD,v:16})}
+function saveDB(){return lsSet(LS.db,{cat:CAT,faults:FAULTS,revs:REVC,upd:UPD,enr:ENR,v:16})}
+function persist(){if(saveDB())return true;BK=[];saveAux();if(saveDB())return true;
+toast("Stockage saturé — données conservées en mémoire","wa");return false}
 function loadDB(){var d=lsGet(LS.db,null);
-if(d&&d.v===16&&d.cat&&d.cat.length){CAT=d.cat;FAULTS=d.faults||[];REVC=d.revs||[];UPD=d.upd||[];return true}return false}
-function saveAux(){lsSet(LS.aux,{notes:NOTES,views:VIEWS,bk:BK})}
+if(d&&d.v===16&&d.cat&&d.cat.length){CAT=d.cat;FAULTS=d.faults||[];REVC=d.revs||[];UPD=d.upd||[];
+ENR=Object.assign({on:true,ts:0,rep:null},d.enr||{});return true}return false}
+function saveAux(){if(lsSet(LS.aux,{notes:NOTES,views:VIEWS,bk:BK}))return true;
+while(BK.length){BK.pop();if(lsSet(LS.aux,{notes:NOTES,views:VIEWS,bk:BK}))return true}
+return lsSet(LS.aux,{notes:NOTES,views:VIEWS,bk:[]})}
 function loadAux(){var d=lsGet(LS.aux,{});NOTES=d.notes||{};VIEWS=d.views||[];BK=d.bk||[]}
 function saveAcc(){lsSet(LS.acc,TIERS);ping()}
 function loadAcc(){TIERS=lsGet(LS.acc,[])||[]}
 function saveNf(){lsSet(LS.nf,NOTIF.slice(0,60));ping()}
 function loadNf(){NOTIF=lsGet(LS.nf,[])||[]}
-function resetSeed(){CAT=build(D.cat);FAULTS=FAULTS0.map(function(f){return Object.assign({},f)});REVC=[];UPD=[];saveDB()}
+function resetSeed(){CAT=build(D.cat);FAULTS=FAULTS0.map(function(f){return Object.assign({},f)});REVC=[];UPD=[];saveDB();reindex()}
 var BC=null;try{BC=new BroadcastChannel("kf26")}catch(e){}
 function ping(){try{if(BC)BC.postMessage({t:"s"})}catch(e){}}
 function toast(m,t,undo){var box=$("toasts");if(!box)return;t=t||"in";
 var ic={ok:"i-check",ba:"i-warn",wa:"i-warn",in:"i-info",te:"i-user"}[t]||"i-info";
 var n=el("div","to "+t,'<svg class="ic"><use href="#'+ic+'"/></svg><div style="flex:1;min-width:0">'+esc(m)+'</div>');
 if(undo){var b=el("button","ud","Annuler");b.type="button";b.onclick=function(){undo();n.remove()};n.appendChild(b)}
-box.appendChild(n);setTimeout(function(){n.classList.add("ou");setTimeout(function(){n.remove()},260)},undo?7000:4200);}
+box.appendChild(n);setTimeout(function(){n.classList.add("ou");setTimeout(function(){n.remove()},260)},undo?8000:4200);}
 function notify(type,txt,meta){NOTIF.unshift({id:"N"+Date.now()+Math.random().toString(36).slice(2,5),
 type:type,txt:txt,meta:meta||"",ts:Date.now(),read:false});saveNf();renderBell();}
+
+/* ── INDEX DE CORRÉLATION (recherche instantanée) ── */
+var EIX={all:[],byBrand:{],byFam:{},byModel:{}},FIX={brand:{},engine:{},model:{},all:[]};
+function reindex(){
+EIX={all:[],byBrand:{},byFam:{},byModel:{}};
+CAT.forEach(function(b){b.models.forEach(function(m){m.engines.forEach(function(e){
+EIX.all.push(e);
+(EIX.byBrand[b.id]=EIX.byBrand[b.id]||[]).push(e);
+var kf=b.id+"|"+e.famKey;(EIX.byFam[kf]=EIX.byFam[kf]||[]).push(e);
+var km=b.id+"|"+m.id;(EIX.byModel[km]=EIX.byModel[km]||[]).push(e)})})});
+FIX={brand:{},engine:{},model:{},all:[]};
+FAULTS.forEach(function(f){FIX.all.push(f);
+if(f.scope==="rule")return;
+(f.brands||[]).forEach(function(b){
+if(f.scope==="brand")(FIX.brand[b]=FIX.brand[b]||[]).push(f);
+else if(f.scope==="engine"){var k=b+"|"+slug(f.target);(FIX.engine[k]=FIX.engine[k]||[]).push(f)}
+else if(f.scope==="model")csv(f.target).forEach(function(m){var k=b+"|"+m;(FIX.model[k]=FIX.model[k]||[]).push(f)})})});}
+function engines(){return EIX.all}
 
 function Combo(host,ph,cb){this.h=host;this.ph=ph;this.cb=cb;this.items=[];this.value="";this.dis=true;this.sig="";
 host.innerHTML="";this.btn=el("button","cb");this.btn.type="button";
@@ -213,8 +251,9 @@ return order.map(function(k){return map[k]}).sort(function(a,c){return norm(famL
 function hpsOf(b,m,y,g){var x=M(b,m);if(!x)return[];
 return x.engines.filter(function(e){return(!y||(e.y0<=+y&&e.y1>=+y))&&(!g||e.gk===g)}).sort(function(a,c){return a.hp-c.hp});}
 function resolved(){if(!SEL.brand)return[];
-return engines().filter(function(e){return e.brand===SEL.brand&&(!SEL.model||e.model===SEL.model)&&
-(!SEL.year||(e.y0<=+SEL.year&&e.y1>=+SEL.year))&&(!SEL.fam||e.gk===SEL.fam)&&(!SEL.hp||e.hp===+SEL.hp)});}
+return (EIX.byBrand[SEL.brand]||[]).filter(function(e){
+return(!SEL.model||e.model===SEL.model)&&(!SEL.year||(e.y0<=+SEL.year&&e.y1>=+SEL.year))&&
+(!SEL.fam||e.gk===SEL.fam)&&(!SEL.hp||e.hp===+SEL.hp)});}
 var ready=function(){return!!(SEL.brand&&SEL.model&&SEL.fam&&SEL.hp)};
 function sync(){if(!CO.brand)return;
 var bs=CAT.slice().sort(function(a,b){return norm(a.name).localeCompare(norm(b.name))}).map(function(b){
@@ -237,7 +276,7 @@ if(SEL.fam&&!fs.some(function(f){return f.v===SEL.fam})){SEL.fam="";SEL.hp=""}
 CO.fam.set(fs,SEL.fam,!SEL.model);
 var hs=[],seen={};
 (SEL.model?hpsOf(SEL.brand,SEL.model,SEL.year,SEL.fam):[]).forEach(function(e){var s=spec(e);
-var o={v:String(e.hp),t:e.hp+" ch",m:kw(e.hp)+" kW"+(s.tq?" · "+s.tq+" N·m":"")+" · "+e.code,
+var o={v:String(e.hp),t:e.hp+" ch",m:kw(e.hp)+" kW"+(s.tq?" · "+(s.tqE?"≈":"")+s.tq+" N·m":"")+" · "+e.code,
 b:s.ev?(s.kwh?s.kwh+" kWh":"EV"):FUEL[e.fuel]};
 var k=o.v+o.m;if(!seen[k]){seen[k]=1;hs.push(o)}});
 if(SEL.hp&&!hs.some(function(h){return h.v===SEL.hp}))SEL.hp="";
@@ -252,10 +291,10 @@ st.style.height="24px";st.style.fontSize="10.5px";
 var b=B(SEL.brand),f=(SEL.fam&&mm)?famsOf(SEL.brand,SEL.model,SEL.year).filter(function(x){return x.k===SEL.fam})[0]:null;
 $("beHint").textContent=[b?b.name:null,mm?mm.name:null,SEL.year||null,f?famL(f.e):null,SEL.hp?SEL.hp+" ch":null]
 .filter(Boolean).join(" › ")||"Recherche sans accent — tapez « skoda »";
-var dl=$("brandList");if(dl&&!dl.children.length)dl.innerHTML=CAT.map(function(x){return'<option value="'+esc(x.name)+'">'}).join("");}
+var dl=$("brandList");if(dl)dl.innerHTML=CAT.map(function(x){return'<option value="'+esc(x.name)+'">'}).join("");}
 function newSearch(){Object.keys(CO).forEach(function(k){CO[k].close()});
 SEL={brand:"",model:"",year:"",fam:"",hp:""};FSEL=[];FIL.q="";$("q").value="";
-FIL.sev=[];FIL.kind="";FIL.sort="sev";FIL.dom=[];
+FIL.sev=[];FIL.kind="";FIL.sort="sev";FIL.dom=[];fLimit=250;
 $("selKind").value="";$("selSort").value="sev";
 [].forEach.call($("sevSeg").querySelectorAll("button"),function(b){b.setAttribute("aria-pressed","false")});
 sync();renderDom();renderAll();toast("Champs vidés — nouvelle recherche","ok");window.scrollTo({top:0,behavior:"smooth"});}
@@ -266,13 +305,19 @@ if(f.scope==="brand")return FIL.bs;
 if(f.scope==="model")return csv(f.target).indexOf(e.model)>=0;
 if(f.scope==="engine")return slug(f.target)===e.famKey;return false;}
 function pool(strict){var eng=resolved();if(strict&&!ready())return[];
-var out=[],seen={};
-if(eng.length){FAULTS.forEach(function(f){if(!seen[f.id]&&eng.some(function(e){return hits(f,e)})){seen[f.id]=1;out.push(f)}});
-if(FIL.rules){var rs={};eng.forEach(function(e){rules(e).forEach(function(x){if(!rs[x.id]){rs[x.id]=1;out.push(x)}})})}}
-else if(SEL.brand){out=FAULTS.filter(function(f){return f.brands.indexOf(SEL.brand)>=0&&(f.scope!=="brand"||FIL.bs)});
-if(FIL.rules)out=out.concat(rules(null));}
-else{out=FAULTS.slice();if(FIL.rules)out=out.concat(rules(null))}
+var out=[],seen={},add=function(f){if(!seen[f.id]){seen[f.id]=1;out.push(f)}};
+if(eng.length){
+eng.forEach(function(e){
+if(FIL.bs)(FIX.brand[e.brand]||[]).forEach(function(f){if(ov(f.y0,f.y1,e.y0,e.y1))add(f)});
+(FIX.engine[e.brand+"|"+e.famKey]||[]).forEach(function(f){if(ov(f.y0,f.y1,e.y0,e.y1))add(f)});
+(FIX.model[e.brand+"|"+e.model]||[]).forEach(function(f){if(ov(f.y0,f.y1,e.y0,e.y1))add(f)});});
+if(FIL.rules){var rs={};eng.forEach(function(e){rules(e).forEach(function(x){if(!rs[x.id]){rs[x.id]=1;out.push(x)}})})}
 return out;}
+if(SEL.brand){if(FIL.bs)(FIX.brand[SEL.brand]||[]).forEach(add);
+Object.keys(FIX.engine).forEach(function(k){if(k.indexOf(SEL.brand+"|")===0)FIX.engine[k].forEach(add)});
+Object.keys(FIX.model).forEach(function(k){if(k.indexOf(SEL.brand+"|")===0)FIX.model[k].forEach(add)});
+if(FIL.rules)out=out.concat(rules(null));return out;}
+out=FIX.all.slice();if(FIL.rules)out=out.concat(rules(null));return out;}
 function applyF(list){var o=list.slice(),q=norm(FIL.q);
 if(q.length>=2){var t=q.split(/\s+/);
 o=o.filter(function(f){var h=norm([f.titre,f.sym,f.org,f.src,KIND[f.kind],(f.dtc||[]).join(" "),f.pro.join(" "),
@@ -299,6 +344,7 @@ d.innerHTML='<div class="fh">'+(chk?'<span class="fk" role="checkbox" aria-check
 '</span><span class="pl '+SCL[f.sev]+'">'+SEV[f.sev].n+'</span><span class="pl">'+f.y0+'–'+f.y1+
 '</span><span class="pl'+(f.scope==="engine"?" mx":"")+'">'+
 (f.scope==="engine"?"Moteur exact":f.scope==="model"?"Modèle":f.scope==="rule"?"Technologie":"Marque")+'</span>'+
+(/^GEN-/.test(f.id)?'<span class="pl si">auto</span>':'')+
 (dn?'<span class="pl" style="color:var(--gr);border-color:rgba(74,222,128,.4)">Traitée</span>':'')+'</div>'+
 '<div class="fm">'+domPills(f)+'</div><div class="fs">'+esc(f.sym)+'</div>'+
 (f.dtc.length?'<div class="dr">'+f.dtc.map(function(c){return'<span class="dtc">'+esc(c)+'</span>'}).join("")+'</div>':'')+
@@ -337,11 +383,11 @@ if(!SEL.fam||!SEL.hp){var rows=eng.slice().sort(function(a,b){return a.hp-b.hp})
 return'<div class="pn pd rvl" style="margin-bottom:16px"><div class="sh"><div class="si ic-te"><svg class="ic"><use href="#i-piston"/></svg></div>'+
 '<div><h2>Motorisations réelles du modèle</h2><div class="sb">'+rows.length+' variante(s) — sélectionnez une cylindrée puis une puissance</div></div></div>'+
 '<div class="tw"><table style="min-width:660px"><thead><tr><th>Cylindrée · type</th><th>cm³ / kWh</th><th>Architecture</th><th>Puissance</th><th>Couple</th><th>Code</th><th>Années</th><th></th></tr></thead><tbody>'+
-rows.map(function(e){var s=spec(e);
+rows.slice(0,120).map(function(e){var s=spec(e);
 return'<tr><td class="tn">'+esc(famL(e))+'<div class="mi">'+esc(FUEL[e.fuel])+' · '+esc(s.feed)+'</div></td>'+
 '<td class="mo" style="color:var(--amH)">'+(s.ev?(s.kwh?s.kwh+" kWh":"—"):(s.disp||"—"))+'</td>'+
 '<td class="mi">'+esc(s.ev?s.plat:s.lay)+'</td><td class="mo" style="color:var(--rd);font-weight:800">'+e.hp+
-' ch<div class="mi">'+kw(e.hp)+' kW</div></td><td class="mo" style="color:var(--gr)">'+(s.tq?s.tq+" N·m":"—")+
+' ch<div class="mi">'+kw(e.hp)+' kW</div></td><td class="mo" style="color:var(--gr)">'+(s.tq?(s.tqE?"≈":"")+s.tq+" N·m":"—")+
 '</td><td class="mo">'+esc(e.code)+'</td><td class="mo">'+e.y0+'–'+e.y1+
 '</td><td><button class="bt sm" type="button" data-eng="'+esc(e.key)+'"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>';}).join("")+
 '</tbody></table></div></div>';}
@@ -352,7 +398,7 @@ var it=s.ev?[["kb","Batterie utile",(s.kwh?s.kwh+" kWh":"n.c."),"Plateforme : "+
 ["","Transmission",s.dist,"Rapport fixe"],["kd","Code moteur",e.code,"Production "+e.y0+"–"+e.y1]]:
 [["kd","Cylindrée",(s.disp?s.disp+" cm³":"n.c."),(s.disp?(s.disp/1000).toFixed(1).replace(".",",")+" L":"")+(s.exact?" · exact":" · nominal")],
 ["ka","Architecture",s.lay,s.cyl?s.cyl+" cylindres":""],["","Type moteur",famL(e),FUEL[e.fuel]],
-["","Alimentation",s.feed,""],["kt","Couple maxi",s.tq?s.tq+" N·m":"non renseigné",s.tq?"valeur constructeur":"à confirmer au VIN"],
+["","Alimentation",s.feed,""],["kt","Couple maxi",s.tq?(s.tqE?"≈ "+s.tq+" N·m":s.tq+" N·m"):"n.c.",s.tqE?"estimation atelier":(s.tq?"valeur constructeur":"—")],
 ["kp","Puissance",e.hp+" ch",kw(e.hp)+" kW"],["","Distribution",s.dist,/humide/i.test(s.dist)?"⚠ courroie en bain d'huile":""],
 ["kd","Code moteur",e.code,"Production "+e.y0+"–"+e.y1]];
 return'<div class="pn pd rvl" style="margin-bottom:16px"><div class="sh"><div class="si ic-te"><svg class="ic"><use href="#'+(s.ev?"i-batt":"i-piston")+'"/></svg></div>'+
@@ -363,7 +409,7 @@ it.map(function(p){return'<div class="spi '+p[0]+'"><div class="sk">'+esc(p[1])+
 (!s.ev&&/humide/i.test(s.dist)?'<div class="nt wa" style="margin-top:12px"><b>Distribution en bain d\'huile.</b> Contrôle de la largeur au gabarit et inspection de la crépine à chaque entretien.</div>':'')+
 (s.ev?'<div class="nt in" style="margin-top:12px"><b>Véhicule électrique.</b> Aucun entretien moteur thermique : batterie HV, liquide pack, réducteur et freinage.</div>':'')+'</div>';}
 function bindEng(r){if(!r)return;[].forEach.call(r.querySelectorAll("[data-eng]"),function(b){
-b.onclick=function(){var e=engines().filter(function(x){return x.key===b.dataset.eng})[0];if(e)loadEng(e)};});}
+b.onclick=function(){var e=EIX.all.filter(function(x){return x.key===b.dataset.eng})[0];if(e)loadEng(e)};});}
 
 function revsFor(e){var s=spec(e),hay=norm(e.fam+" "+e.code+" "+(e.tech||"")+" "+s.feed);
 return allRevs().filter(function(r){
@@ -447,7 +493,7 @@ g.innerHTML='<div class="pn pd" style="margin-bottom:16px;border-color:rgba(251,
 ' champ(s) manquant(s) dans le banc de commande.</div></div>';
 [].forEach.call(g.querySelectorAll("[data-go]"),function(x){x.onclick=function(){
 var c=CO[x.dataset.go];if(c){c.btn.scrollIntoView({block:"center",behavior:"smooth"});setTimeout(function(){c.open()},260)}};});
-var gr=$("gRand");if(gr)gr.onclick=function(){var e=engines();if(e.length)loadEng(e[Math.floor(Math.random()*e.length)])};}
+var gr=$("gRand");if(gr)gr.onclick=function(){var e=EIX.all;if(e.length)loadEng(e[Math.floor(Math.random()*e.length)])};}
 function renderDiag(){renderGate();$("dVeh").innerHTML=ready()?vehCard():"";
 $("dSpec").innerHTML=specPanel();bindEng($("dSpec"));
 var box=$("dF"),tb=$("dT"),dd=$("dD");
@@ -471,13 +517,15 @@ return'<div class="dsc" style="margin-bottom:8px"><div class="dsc-h"><span class
 '<b style="color:var(--amH)">Causes :</b> '+esc(d[1])+'<br><b style="color:var(--cy)">Contrôle :</b> '+esc(d[2])+'</div>':'')+'</div>';}).join(""):
 ey("i-bolt","Aucun DTC","Aucun code défaut rattaché aux fiches corrélées.");}
 function renderFaults(){$("fVeh").innerHTML=vehCard();var all=current();
-$("fSub").textContent=all.length+" fiche(s) · "+FSEL.length+" sélectionnée(s) · "+
+$("fSub").textContent=nf(all.length)+" fiche(s) · "+FSEL.length+" sélectionnée(s) · "+
 uniq([].concat.apply([],all.map(function(f){return f.dtc}))).length+" DTC";
 var box=$("fList");box.innerHTML="";
 if(!all.length)box.innerHTML=ey("i-shieldok","Rien à signaler","Aucune fiche ne correspond aux filtres actifs.");
-else all.forEach(function(f){box.appendChild(fCard(f,canW()))});
+else{all.slice(0,fLimit).forEach(function(f){box.appendChild(fCard(f,canW()))});
+if(all.length>fLimit){var m=el("button","bt pr",'<svg class="ic"><use href="#i-down"/></svg>Afficher 250 de plus ('+nf(all.length-fLimit)+' restantes)');
+m.type="button";m.style.marginTop="10px";m.onclick=function(){fLimit+=250;renderFaults()};box.appendChild(m);}}
 $("bBulkDone").disabled=$("bBulkCopy").disabled=(FSEL.length===0||!canW());
-$("bF").textContent=all.length;}
+$("bF").textContent=nf(all.length);}
 function renderServ(){$("sVeh").innerHTML=ready()?vehCard():"";
 $("sSpec").innerHTML=specPanel();bindEng($("sSpec"));
 var box=$("sPlan"),rl=$("revList");
@@ -487,7 +535,7 @@ $("rSub").textContent="En attente";$("sSub").textContent="En attente";$("bR").te
 var e=resolved()[0],rv=revsFor(e),plan=planFor(e),s=spec(e);
 $("bR").textContent=rv.length;
 $("rSub").textContent=rv.length?rv.length+" révision(s) applicable(s) à "+famL(e)+" "+e.hp+" ch — km et échéance calendaire":"Aucune révision documentée pour cette motorisation";
-rl.innerHTML=rv.length?rv.map(function(r){return revCard(r,e)}).join(""):ey("i-shieldok","Aucune révision","Les intervalles d'origine s'appliquent.");
+rl.innerHTML=rv.length?rv.slice(0,40).map(function(r){return revCard(r,e)}).join(""):ey("i-shieldok","Aucune révision","Les intervalles d'origine s'appliquent.");
 $("sSub").textContent=famL(e)+" · "+e.hp+" ch ("+kw(e.hp)+" kW) · "+e.code+" · "+nf(USE.km)+" km/an · "+USE.sev;
 box.innerHTML="";
 plan.forEach(function(st,i){var d=el("div","stp"+(st.rev?" rvv":(st.first?" f4":"")));
@@ -506,33 +554,33 @@ function renderRevAll(){var box=$("revAllList");if(!box)return;
 var rows=allRevs(),q=norm(revQ);
 if(q)rows=rows.filter(function(r){return norm([r.organ,r.src,r.note,r.match,
 r.brands.map(function(b){var x=B(b);return x?x.name:b}).join(" ")].join(" ")).indexOf(q)>=0;});
-$("revAllSub").textContent=rows.length+" révision(s) sur "+allRevs().length+" · km + mois";
-box.innerHTML=rows.length?rows.map(function(r){return revCard(r,null)}).join(""):ey("i-search","Aucune révision","Aucune entrée ne correspond au filtre.");}
+$("revAllSub").textContent=nf(rows.length)+" révision(s) sur "+nf(allRevs().length)+" · km + mois";
+box.innerHTML=rows.length?rows.slice(0,120).map(function(r){return revCard(r,null)}).join(""):ey("i-search","Aucune révision","Aucune entrée ne correspond au filtre.");}
 function renderDom(){var p=pool(false),c={};
 p.forEach(function(f){(f.dom||[]).forEach(function(d){c[d]=(c[d]||0)+1})});
 var s=$("domStrip");s.innerHTML="";
 DOM.forEach(function(dd){var b=el("button","dc"+(c[dd[0]]?"":" z"));b.type="button";
 b.dataset.on=FIL.dom.indexOf(dd[0])>=0?"1":"0";b.title=dd[1];
 b.innerHTML='<svg class="ic"><use href="#'+dd[2]+'"/></svg>'+esc(dd[1])+'<span class="n2">'+(c[dd[0]]||0)+'</span>';
-b.onclick=function(){var i=FIL.dom.indexOf(dd[0]);if(i>=0)FIL.dom.splice(i,1);else FIL.dom.push(dd[0]);renderDom();renderAll();};
+b.onclick=function(){var i=FIL.dom.indexOf(dd[0]);if(i>=0)FIL.dom.splice(i,1);else FIL.dom.push(dd[0]);fLimit=250;renderDom();renderAll();};
 s.appendChild(b);});
 $("domSel").textContent=FIL.dom.length?FIL.dom.map(function(d){return DM[d]?DM[d].n:d}).join(", "):"tous";}
 function renderCov(){var p=pool(false),c={},cr={};
 p.forEach(function(f){(f.dom||[]).forEach(function(d){c[d]=(c[d]||0)+1;if(f.sev==="critique")cr[d]=(cr[d]||0)+1})});
-$("covSub").textContent=p.length+" fiche(s) · "+Object.keys(c).length+"/"+DOM.length+" domaines documentés";
+$("covSub").textContent=nf(p.length)+" fiche(s) · "+Object.keys(c).length+"/"+DOM.length+" domaines documentés";
 var g=$("covGrid");g.innerHTML="";
 DOM.forEach(function(dd){var b=el("button","cvi "+(c[dd[0]]?"hs":"z"));b.type="button";
 b.innerHTML='<span class="ci ic-'+dd[3]+'"><svg class="ic"><use href="#'+dd[2]+'"/></svg></span><span class="cn">'+
 esc(dd[1])+(cr[dd[0]]?'<div class="mi" style="color:var(--rd)">'+cr[dd[0]]+' critique(s)</div>':'')+
 '</span><span class="cq" style="color:var(--'+CV[dd[3]]+')">'+(c[dd[0]]||0)+'</span>';
-b.onclick=function(){FIL.dom=[dd[0]];renderDom();renderAll();showView("faults");toast("Domaine « "+dd[1]+" » isolé","in");};
+b.onclick=function(){FIL.dom=[dd[0]];fLimit=250;renderDom();renderAll();showView("faults");toast("Domaine « "+dd[1]+" » isolé","in");};
 g.appendChild(b);});
 var list=applyF(p),box=$("domList");box.innerHTML="";
 $("domTitle").textContent=FIL.dom.length?"Fiches des domaines sélectionnés":"Fiches du référentiel";
-$("domSub").textContent=list.length+" fiche(s)";
+$("domSub").textContent=nf(list.length)+" fiche(s)";
 if(!list.length)box.innerHTML=ey("i-search","Aucune fiche","Aucune fiche pour ces filtres.");
 else list.slice(0,100).forEach(function(f){box.appendChild(fCard(f,false))});}
-function renderCat(){var eng=engines();
+function renderCat(){var eng=EIX.all;
 $("catStats").innerHTML=[["Marques",CAT.length,"i-db","cy"],
 ["Modèles",CAT.reduce(function(a,b){return a+b.models.length},0),"i-car","vi"],
 ["Motorisations",eng.length,"i-piston","amH"],["Fiches + protocoles",FAULTS.length+D.rules.length,"i-warn","rd"]]
@@ -577,7 +625,7 @@ $("catP").disabled=CUI.page===0;$("catN").disabled=CUI.page>=pages-1;$("bCatLoad
 th.querySelector(".aw").textContent=th.dataset.k===k?(d>0?"▲":"▼"):"▲";});
 renderViews();}
 function loadEng(e){SEL={brand:e.brand,model:e.model,year:String(clamp(Math.max(e.y0,YMIN),YMIN,YMAX)),fam:e.gk,hp:String(e.hp)};
-sync();renderDom();renderAll();toast(e.brandName+" "+e.modelName+" · "+famL(e)+" "+e.hp+" ch","ok");
+fLimit=250;sync();renderDom();renderAll();toast(e.brandName+" "+e.modelName+" · "+famL(e)+" "+e.hp+" ch","ok");
 window.scrollTo({top:0,behavior:"smooth"});}
 function renderViews(){var box=$("views");if(!box)return;
 if(!VIEWS.length){box.innerHTML=ey("i-save","Aucune vue mémorisée","Configurez le banc puis « Mémoriser vue ». Réordonnable par glisser-déposer.");return;}
@@ -588,7 +636,7 @@ d.innerHTML='<span class="gr2"><svg class="ic"><use href="#i-grip"/></svg></span
 '<button class="bt sm pr" type="button" data-a="ap">Appliquer</button><button class="bt sm rd" type="button" data-a="de"'+
 (canW()?"":" disabled")+'><svg class="ic"><use href="#i-trash"/></svg></button>';
 d.querySelector('[data-a="ap"]').onclick=function(){SEL=Object.assign({},v.sel);FIL.q=v.q||"";
-$("q").value=FIL.q;FIL.dom=(v.dom||[]).slice();USE=Object.assign({},v.use||USE);
+$("q").value=FIL.q;FIL.dom=(v.dom||[]).slice();USE=Object.assign({},v.use||USE);fLimit=250;
 $("kmY").value=USE.km;$("kmYL").textContent=nf(USE.km)+" km/an";$("selSev").value=USE.sev;$("selClim").value=USE.clim;
 sync();renderDom();renderAll();toast("Vue « "+v.name+" » appliquée","ok");};
 d.querySelector('[data-a="de"]').onclick=function(){if(!canW())return;
@@ -605,7 +653,7 @@ var it=VIEWS.splice(f,1)[0];VIEWS.splice(i,0,it);saveAux();renderViews();toast("
 box.appendChild(d);});}
 
 function audit(){var iss=[],add=function(s,c,m){iss.push({sev:s,code:c,msg:m})};
-var eng=engines(),keys={},dup=0,orph=0,yf=0,hf=0;
+var eng=EIX.all,keys={},dup=0,orph=0,yf=0,hf=0;
 CAT.forEach(function(b){if(!b.models.length)add("ba","BRAND","Marque « "+b.name+" » sans modèle");
 b.models.forEach(function(m){if(!m.engines.length)add("ba","MODEL",b.name+" "+m.name+" : aucun moteur");
 m.engines.forEach(function(e){var s=spec(e);
@@ -627,33 +675,37 @@ if(!SEV[f.sev])add("ba","FV","Fiche "+f.id+" : sévérité inconnue");
 if(!KIND[f.kind])add("ba","FK","Fiche "+f.id+" : nature inconnue");
 if(!(f.dom||[]).length)add("wa","FD","Fiche "+f.id+" sans domaine");
 (f.dom||[]).forEach(function(d){if(!DM[d])add("ba","FDU","Fiche "+f.id+" : domaine inconnu")});
-if(f.scope!=="rule"){if(!f.brands.some(function(b){return bids[b]}))add("wa","FB","Fiche "+f.id+" : marque inconnue");
-var h=0,t=slug(f.target),ids=csv(f.target);
-if(f.scope==="engine")h=eng.filter(function(e){return f.brands.indexOf(e.brand)>=0&&e.famKey===t&&ov(f.y0,f.y1,e.y0,e.y1)}).length;
-else if(f.scope==="model")h=eng.filter(function(e){return f.brands.indexOf(e.brand)>=0&&ids.indexOf(e.model)>=0&&ov(f.y0,f.y1,e.y0,e.y1)}).length;
-else h=eng.filter(function(e){return f.brands.indexOf(e.brand)>=0}).length;
-if(!h){orph++;add("wa","FO","Fiche « "+f.titre.slice(0,44)+" » orpheline")}}
+if(f.scope!=="rule"){
+if(!(f.brands||[]).some(function(b){return bids[b]}))add("wa","FB","Fiche "+f.id+" : marque inconnue");
+var h=0;
+if(f.scope==="engine"){var t=slug(f.target);(f.brands||[]).forEach(function(b){
+(EIX.byFam[b+"|"+t]||[]).forEach(function(e){if(ov(f.y0,f.y1,e.y0,e.y1))h++})});}
+else if(f.scope==="model")(f.brands||[]).forEach(function(b){csv(f.target).forEach(function(m){
+(EIX.byModel[b+"|"+m]||[]).forEach(function(e){if(ov(f.y0,f.y1,e.y0,e.y1))h++})});});
+else(f.brands||[]).forEach(function(b){h+=(EIX.byBrand[b]||[]).length});
+if(!h){orph++;add("wa","FO","Fiche « "+String(f.titre).slice(0,44)+" » orpheline")}}
 (f.dtc||[]).forEach(function(c){if(!DTC[c])add("in","DU","Code "+c+" ("+f.id+") absent du dictionnaire")});});
 var cov={};p.forEach(function(f){(f.dom||[]).forEach(function(d){cov[d]=1})});
 DOM.forEach(function(dd){if(!cov[dd[0]])add("wa","DG","Domaine « "+dd[1]+" » non couvert")});
 var rv=allRevs();
-rv.forEach(function(r){if(!r.brands.some(function(b){return bids[b]}))add("wa","RB","Révision "+r.id+" : marque inconnue");
+rv.forEach(function(r){if(!(r.brands||[]).some(function(b){return bids[b]}))add("wa","RB","Révision "+r.id+" : marque inconnue");
 if(r.newKm<=0)add("ba","RK","Révision "+r.id+" : km invalide");
 if(!r.src)add("wa","RS","Révision "+r.id+" sans source");});
 var n24=CAT.reduce(function(a,b){return a+b.models.filter(function(m){return m.y0>=2024}).length},0);
 var checks=[
 ["Marques → modèles",CAT.every(function(b){return b.models.length>0}),CAT.length+" marques, "+CAT.reduce(function(a,b){return a+b.models.length},0)+" modèles"],
-["Modèles → motorisations",CAT.every(function(b){return b.models.every(function(m){return m.engines.length>0})}),eng.length+" motorisations"],
+["Modèles → motorisations",CAT.every(function(b){return b.models.every(function(m){return m.engines.length>0})}),nf(eng.length)+" motorisations"],
 ["Millésimes 2024+",n24>=40,n24+" modèles commercialisés dès 2024"],
+["Auto-enrichissement",!!ENR.ts,ENR.ts?("dernier passage "+dtT(ENR.ts)):"jamais exécuté"],
 ["Cylindrée / batterie",iss.filter(function(i){return i.code==="DISP"||i.code==="KWH"}).length===0,
-eng.filter(function(e){var s=spec(e);return s.ev?s.kwh:s.disp}).length+"/"+eng.length+" documentées"],
+nf(eng.filter(function(e){var s=spec(e);return s.ev?s.kwh:s.disp}).length)+"/"+nf(eng.length)+" documentées"],
 ["Années moteur ⊂ production",yf===0,yf?yf+" dépassement(s)":"Plages incluses"],
 ["Puissance ↔ libellé",hf===0,hf?hf+" écart(s)":"Cohérent"],
 ["Unicité des motorisations",dup===0,dup?dup+" doublon(s)":"Aucun doublon"],
 ["Fiches → moteur / modèle / marque",orph===0,orph?orph+" orpheline(s)":"Toutes corrélées"],
 ["Couverture des 29 domaines",Object.keys(cov).length===DOM.length,Object.keys(cov).length+"/"+DOM.length+" domaines"],
-["Révisions d'intervalles",iss.filter(function(i){return i.code==="RK"||i.code==="RB"}).length===0,rv.length+" révisions km + mois"],
-["Codes DTC documentés",iss.filter(function(i){return i.code==="DU"}).length===0,Object.keys(DTC).length+" définitions"],
+["Révisions d'intervalles",iss.filter(function(i){return i.code==="RK"||i.code==="RB"}).length===0,nf(rv.length)+" révisions km + mois"],
+["Codes DTC documentés",iss.filter(function(i){return i.code==="DU"}).length===0,nf(Object.keys(DTC).length)+" définitions"],
 ["Recherche sans accent",norm("Škoda")==="skoda"&&norm("Citroën")==="citroen","Škoda → skoda"],
 ["Couverture 2017 → 2027",eng.some(function(e){return e.y0<=2017})&&eng.some(function(e){return e.y1>=2027}),"Plage complète"]];
 var bad=iss.filter(function(i){return i.sev==="ba"}).length,warn=iss.filter(function(i){return i.sev==="wa"}).length;
@@ -673,7 +725,7 @@ return'<div class="dsc"><div class="dsc-b" style="display:flex;align-items:cente
 '"/></svg><div style="flex:1;min-width:0"><b style="font-size:13px">'+esc(c[0])+'</b><div class="mi">'+esc(c[2])+
 '</div></div><span class="pl" style="color:'+(c[1]?"var(--gr)":"var(--amH)")+'">'+(c[1]?"CONFORME":"À CORRIGER")+'</span></div></div>';}).join("");
 $("aIssues").innerHTML=!a.issues.length?'<div class="nt ok"><b>Base intègre.</b> Toutes les corrélations sont vérifiées.</div>':
-'<div class="dsc"><div class="dsc-h"><svg class="ic"><use href="#i-list"/></svg>'+a.issues.length+' observation(s)</div>'+
+'<div class="dsc"><div class="dsc-h"><svg class="ic"><use href="#i-list"/></svg>'+nf(a.issues.length)+' observation(s)</div>'+
 '<div class="dsc-b" style="max-height:320px;overflow-y:auto;padding:0">'+a.issues.slice(0,250).map(function(i){
 return'<div style="padding:8px 13px;border-bottom:1px solid var(--ln2);font-size:12.3px;display:flex;gap:9px">'+
 '<span class="pl '+(i.sev==="ba"?"sc":(i.sev==="wa"?"se":"si"))+'" style="flex:none">'+i.code+
@@ -689,19 +741,19 @@ var seen={};
 CAT.forEach(function(b){b.models.forEach(function(m){m.engines=m.engines.filter(function(e){
 var k=e.brand+"|"+e.model+"|"+e.gk+"|"+e.hp+"|"+e.code;if(seen[k]){n++;return false}seen[k]=1;return true;});});});
 FAULTS.forEach(function(f){if(!(f.dom||[]).length){f.dom=["moteur"];n++}});
-saveDB();audit();renderAudit();sync();renderDom();renderAll();
+reindex();persist();audit();renderAudit();sync();renderDom();renderAll();
 toast(n?n+" correction(s) appliquée(s)":"Aucune correction nécessaire",n?"ok":"in",n?function(){
-var d=JSON.parse(before);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;saveDB();audit();renderAudit();sync();renderDom();renderAll();}:null);}
+var d=JSON.parse(before);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;reindex();persist();audit();renderAudit();sync();renderDom();renderAll();}:null);}
 
 function openDw(){$("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");$("dwX").focus();}
 function closeDw(){$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");
 if(!$("notifDw").classList.contains("on"))$("scrim").classList.remove("on");}
-function openF(f){var eng=engines().filter(function(e){return hits(f,e)}),note=NOTES[f.id]||{};
+function openF(f){var eng=EIX.all.filter(function(e){return hits(f,e)}),note=NOTES[f.id]||{};
 $("dwT").textContent=f.titre;
 $("dwS").innerHTML='<span class="pl '+KCL[f.kind]+'">'+KIND[f.kind]+'</span> <span class="pl '+SCL[f.sev]+'">'+
 SEV[f.sev].n+'</span> <span class="pl">'+f.y0+'–'+f.y1+'</span>';
 $("dwI").className="si "+(f.sev==="critique"?"ic-rd":(f.sev==="eleve"?"ic-am":"ic-vi"));
-var g={};eng.forEach(function(e){var k=e.brandName+" "+e.modelName;(g[k]=g[k]||[]).push(famL(e)+" "+e.hp+" ch ("+e.code+")")});
+var g={};eng.slice(0,400).forEach(function(e){var k=e.brandName+" "+e.modelName;(g[k]=g[k]||[]).push(famL(e)+" "+e.hp+" ch ("+e.code+")")});
 $("dwB").innerHTML=
 '<div class="dsc"><div class="dsc-h"><svg class="ic"><use href="#i-grid"/></svg>Domaines de défaillance</div><div class="dsc-b"><div class="fm" style="margin:0">'+(domPills(f)||"—")+'</div></div></div>'+
 '<div class="dsc"><div class="dsc-h"><svg class="ic"><use href="#i-warn"/></svg>Symptômes constatés</div><div class="dsc-b">'+esc(f.sym||"—")+'</div></div>'+
@@ -712,10 +764,10 @@ f.pro.map(function(p){return"<li>"+esc(p)+"</li>"}).join("")+'</ol></div></div>'
 f.dtc.map(function(c){var d=DTC[c];return'<div style="margin-bottom:10px"><span class="dtc">'+esc(c)+'</span> <b>'+
 (d?esc(d[0]):"Code corrélé")+'</b>'+(d?'<div class="mi" style="margin-top:4px">Causes : '+esc(d[1])+
 '<br>Contrôle : '+esc(d[2])+'</div>':'')+'</div>';}).join("")+'</div></div>':'')+
-'<div class="dsc"><div class="dsc-h"><svg class="ic"><use href="#i-car"/></svg>Véhicules corrélés ('+eng.length+')</div><div class="dsc-b" style="max-height:210px;overflow-y:auto">'+
+'<div class="dsc"><div class="dsc-h"><svg class="ic"><use href="#i-car"/></svg>Véhicules corrélés ('+nf(eng.length)+')</div><div class="dsc-b" style="max-height:210px;overflow-y:auto">'+
 (f.scope==="rule"?'<span class="mi">Protocole transversal — actif selon l\'énergie et la technologie réelles du moteur sélectionné.</span>':
-(Object.keys(g).length?Object.keys(g).map(function(k){return'<div style="margin-bottom:9px"><b style="font-size:12.5px">'+
-esc(k)+'</b><div class="mi">'+esc(g[k].join(" · "))+'</div></div>';}).join(""):
+(Object.keys(g).length?Object.keys(g).slice(0,120).map(function(k){return'<div style="margin-bottom:9px"><b style="font-size:12.5px">'+
+esc(k)+'</b><div class="mi">'+esc(g[k].slice(0,8).join(" · "))+'</div></div>';}).join(""):
 '<span class="mi">Portée marque — s\'applique à toute la gamme.</span>'))+'</div></div>'+
 '<div class="dsc"><div class="dsc-h"><svg class="ic"><use href="#i-link"/></svg>Source &amp; vérification</div><div class="dsc-b"><b>'+esc(f.src)+'</b>'+
 '<div class="mi" style="margin-top:6px">Portée : '+esc(f.scope==="engine"?"famille moteur « "+f.target+" »":
@@ -738,10 +790,10 @@ var t=f.titre+"\n"+KIND[f.kind]+" · "+SEV[f.sev].n+" · "+f.y0+"-"+f.y1+"\nDoma
 "\nProtocole :\n"+f.pro.map(function(p,i){return(i+1)+") "+p}).join("\n")+"\nOrganes : "+f.org+"\nDTC : "+f.dtc.join(", ");
 if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast("Fiche copiée","ok")},function(){toast("Copie indisponible","wa")});
 else toast("Copie indisponible","wa");});
-if(canW()&&f.scope!=="rule")mk("rd","i-trash","Supprimer",function(){
+if(canW())mk("rd","i-trash","Supprimer",function(){
 var i=-1;FAULTS.forEach(function(x,j){if(x.id===f.id)i=j});if(i<0)return;
-var rm=FAULTS.splice(i,1)[0];saveDB();closeDw();audit();renderDom();renderAll();
-toast("Fiche supprimée","wa",function(){FAULTS.splice(i,0,rm);saveDB();audit();renderDom();renderAll();});});
+var rm=FAULTS.splice(i,1)[0];reindex();persist();closeDw();audit();renderDom();renderAll();
+toast("Fiche supprimée","wa",function(){FAULTS.splice(i,0,rm);reindex();persist();audit();renderDom();renderAll();});});
 openDw();}
 function pending(){return TIERS.filter(function(t){return t.status==="pending"})}
 function renderBell(){var n=pending().length,un=NOTIF.filter(function(x){return!x.read}).length,tot=n+un,b=$("bellN");
@@ -847,10 +899,10 @@ if(r.status==="pending"){var c=el("button","bt",'<svg class="ic"><use href="#i-x
 c.type="button";c.onclick=cancelRequest;act.appendChild(c);}
 if(r.status==="denied"||r.status==="revoked"){var d=el("button","bt te",'<svg class="ic"><use href="#i-send"/></svg>Nouvelle demande');
 d.type="button";d.onclick=function(){TIERS=TIERS.filter(function(t){return t.id!==r.id});saveAcc();waitMode=false;renderLaunch();};act.appendChild(d);}}
-function renderLaunch(){var eng=engines();
+function renderLaunch(){var eng=EIX.all;
 $("lStats").innerHTML=[["Motorisations",nf(eng.length)],["Marques",CAT.length],
 ["Modèles",CAT.reduce(function(a,b){return a+b.models.length},0)],["Fiches",nf(FAULTS.length+D.rules.length)],
-["Domaines",DOM.length],["Révisions",allRevs().length]]
+["Domaines",DOM.length],["Révisions",nf(allRevs().length)]]
 .map(function(p){return'<span class="ch in"><b>'+p[1]+'</b> '+p[0]+'</span>';}).join("");
 if(waitMode&&myReq()){$("lChoose").style.display="none";$("lWait").style.display="";renderWait();}
 else{$("lChoose").style.display="";$("lWait").style.display="none";}}
@@ -871,7 +923,8 @@ if(ROLE==="admin"){var t=Date.now()+30*60*1000;$("admExp").textContent=new Date(
 clearTimeout(admTimer);admTimer=setTimeout(function(){K.lock();toast("Session administrateur expirée","wa");},30*60*1000);}
 else clearTimeout(admTimer);
 safe(function(){sync();renderDom();renderAll();renderBell();},"rendu-après-ouverture");
-toast(ROLE==="admin"?"Session administrateur ouverte (30 min)":"Mode tiers actif — lecture seule",ROLE==="admin"?"ok":"te");}
+toast(ROLE==="admin"?"Session administrateur ouverte (30 min)":"Mode tiers actif — lecture seule",ROLE==="admin"?"ok":"te");
+if(ROLE==="admin"&&ENR.on&&!enrBusy)setTimeout(function(){safe(function(){enrich(true)},"auto-enrichissement")},450);}
 window.addEventListener("kf:unlock",function(e){ROLE=e.detail.role;waitMode=false;afterEnter();});
 window.addEventListener("kf:lock",function(){ROLE=null;clearTimeout(admTimer);
 var r=myReq();waitMode=!!(r&&r.status!=="granted");applyRole();safe(renderLaunch,"écran accueil");});
@@ -887,20 +940,20 @@ seenPend[t.id]=1;toast("Nouvelle demande d'accès : "+t.name,"wa");});
 lastSig=sig;safe(renderTiers,"tiers");renderBell();}}}
 
 function renderAdm(){if(!canW())return;
-$("admStats").innerHTML=[["Motorisations",nf(engines().length),"cy"],["Fiches",nf(FAULTS.length),"amH"],
-["Protocoles",D.rules.length,"vi"],["Révisions",allRevs().length,"mg"]]
+$("admStats").innerHTML=[["Motorisations",nf(EIX.all.length),"cy"],["Fiches",nf(FAULTS.length),"amH"],
+["Protocoles",D.rules.length,"vi"],["Révisions",nf(allRevs().length),"mg"]]
 .map(function(p){return'<div class="st"><div class="sv3" style="color:var(--'+p[2]+')">'+p[1]+'</div><div class="sl">'+p[0]+'</div></div>';}).join("");
-renderTiers();
+renderTiers();ensureEnrPanel();renderEnrPanel();
 var n24=CAT.reduce(function(a,b){return a+b.models.filter(function(m){return m.y0>=2024}).length},0);
 $("updStats").innerHTML=[["Marques",CAT.length,"cy"],["Modèles 2024+",n24,"mg"],
 ["Intégrations",UPD.length,"gr"],["Dernière",UPD.length?dtT(UPD[0].ts):"—","vi"]]
 .map(function(p){return'<div class="st"><div class="sv3" style="font-size:19px;color:var(--'+p[2]+')">'+esc(String(p[1]))+'</div><div class="sl">'+p[0]+'</div></div>';}).join("");
-$("updLog").innerHTML=UPD.length?UPD.slice(0,5).map(function(u){
+$("updLog").innerHTML=UPD.length?UPD.slice(0,6).map(function(u){
 return'<div class="sv"><span class="gr2"><svg class="ic"><use href="#i-clock"/></svg></span><div style="flex:1;min-width:0">'+
 '<div style="font-weight:750;font-size:13px">'+esc(u.src)+'</div><div class="mi">'+dtT(u.ts)+" · +"+u.m+" motorisations · +"+u.f+" fiches · +"+u.r+' révisions</div></div><span class="pl si">intégré</span></div>';}).join(""):
 '<div class="nt">Aucune intégration externe. La base livrée est complète et hors ligne.</div>';
 var box=$("bkList");
-if(!BK.length)box.innerHTML='<div class="nt">Aucune sauvegarde locale. Une sauvegarde est créée automatiquement après chaque import ou mise à jour.</div>';
+if(!BK.length)box.innerHTML='<div class="nt">Aucune sauvegarde locale lourde (base volumineuse). L\'annulation immédiate reste disponible après chaque opération.</div>';
 else box.innerHTML=BK.map(function(b,i){
 return'<div class="sv"><span class="gr2"><svg class="ic"><use href="#i-save"/></svg></span><div style="flex:1;min-width:0">'+
 '<div style="font-weight:750;font-size:13px">'+new Date(b.t).toLocaleString("fr-FR")+'</div><div class="mi">'+esc(b.src)+
@@ -911,15 +964,16 @@ return'<div class="sv"><span class="gr2"><svg class="ic"><use href="#i-save"/></
 var i=+b.dataset.d,rm=BK.splice(i,1)[0];saveAux();renderAdm();
 toast("Sauvegarde supprimée","wa",function(){BK.splice(i,0,rm);saveAux();renderAdm();});};});}
 function makeBk(src){var p=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
-BK.unshift({t:Date.now(),src:src,veh:engines().length,f:FAULTS.length,size:p.length,data:p});
-while(BK.length>3)BK.pop();saveAux();if(canW())renderAdm();}
+if(p.length>900000)return false;
+BK.unshift({t:Date.now(),src:src,veh:EIX.all.length,f:FAULTS.length,size:p.length,data:p});
+while(BK.length>2)BK.pop();saveAux();if(canW())renderAdm();return true;}
 function restoreBk(i){var b=BK[i];if(!b)return;
 if(!confirm("Restaurer la sauvegarde du "+new Date(b.t).toLocaleString("fr-FR")+" ?"))return;
 var before=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
-try{var d=JSON.parse(b.data);CAT=d.cat;FAULTS=d.faults;REVC=d.revs||[];saveDB();
+try{var d=JSON.parse(b.data);CAT=d.cat;FAULTS=d.faults;REVC=d.revs||[];reindex();persist();
 newSearch();audit();renderAudit();renderAdm();
 toast("Sauvegarde restaurée","ok",function(){var p=JSON.parse(before);CAT=p.cat;FAULTS=p.faults;REVC=p.revs;
-saveDB();sync();audit();renderDom();renderAll();renderAdm();});}catch(e){toast("Sauvegarde illisible","ba");}}
+reindex();persist();sync();audit();renderDom();renderAll();renderAdm();});}catch(e){toast("Sauvegarde illisible","ba");}}
 function ovlOn(on){$("ovl").classList.toggle("on",on);
 if(on){$("ovLog").innerHTML="";$("ovRes").innerHTML="";$("ovX").style.display="none";$("ovBar").style.width="0%";$("ovPct").textContent="0 %";}}
 function olog(m,c){var l=$("ovLog"),d=el("div","l"+(c||"i"),"["+new Date().toLocaleTimeString("fr-FR")+"] "+esc(m));
@@ -1036,10 +1090,11 @@ dom:csv(x.dom).filter(function(d){return DM[d]}).length?csv(x.dom).filter(functi
 else pv(x);});});
 if(data.overrides&&typeof data.overrides==="object")Object.keys(data.overrides).forEach(function(k){
 var v=data.overrides[k];if(v&&typeof v==="object")pv(v);});}
+reindex();
 return{add:add,merge:merge,fadd:fa,radd:rv};}
 function importFile(file){if(!canW()){toast("Import réservé au mode administrateur","ba");return}
 ovlOn(true);$("ovT").textContent="Import de fichier";$("ovS").textContent=file.name;
-var before=engines().length;
+var before=EIX.all.length;
 $("ovB").textContent=before;$("ovA").textContent="+0";$("ovM").textContent="~0";$("ovAf").textContent=before;
 ostep(8,"Lecture du fichier");olog("Lecture : "+file.name,"t");
 file.text().then(function(txt){olog(txt.length+" octets lus","s");ostep(24,"Validation JSON");
@@ -1054,20 +1109,19 @@ var r=ingest(data);$("ovA").textContent="+"+r.add;$("ovM").textContent="~"+r.mer
 olog(r.add+" motorisation(s), "+r.merge+" fusion(s), "+r.fadd+" fiche(s), "+r.radd+" révision(s)","s");
 if(!r.add&&!r.merge&&!r.fadd&&!r.radd){ostep(100,"Terminé");olog("Fichier valide mais aucune donnée exploitable","w");
 $("ovRes").innerHTML='<div class="nt wa"><b>Fichier vide ou sans donnée compatible.</b> Format reconnu ('+esc(fmt)+
-") mais tableaux vides. La base livrée de <b>"+nf(before)+"</b> motorisations est <b>conservée intacte</b>.</div>";
-$("ovAf").textContent=engines().length;toast("Fichier vide — base conservée","wa");return;}
-ostep(78,"Sauvegarde locale");makeBk("import fichier : "+file.name);olog("Sauvegarde automatique créée","s");
+") mais tableaux vides. La base de <b>"+nf(before)+"</b> motorisations est <b>conservée intacte</b>.</div>";
+$("ovAf").textContent=EIX.all.length;toast("Fichier vide — base conservée","wa");return;}
+ostep(78,"Sauvegarde");makeBk("import fichier : "+file.name);
 UPD.unshift({ts:Date.now(),src:"fichier "+file.name,m:r.add,f:r.fadd,r:r.radd});
-saveDB();ostep(100,"Vérification d'intégrité");audit();olog("Intégrité : "+AUDIT.score+"%","s");
-$("ovAf").textContent=engines().length;
-$("ovRes").innerHTML='<div class="nt ok"><b>Import intégré sans blocage.</b><br>Motorisations : '+nf(before)+" → <b>"+
-nf(engines().length)+"</b> · Fiches : <b>"+nf(FAULTS.length)+"</b> · Révisions : <b>"+allRevs().length+
-"</b><br>Intégrité : <b>"+AUDIT.score+"%</b> · sauvegarde locale créée.</div>";
+persist();ostep(100,"Audit");audit();olog("Intégrité : "+AUDIT.score+"%","s");
+$("ovAf").textContent=EIX.all.length;
+$("ovRes").innerHTML='<div class="nt ok"><b>Import intégré.</b><br>Motorisations : '+nf(before)+" → <b>"+
+nf(EIX.all.length)+"</b> · Fiches : <b>"+nf(FAULTS.length)+"</b> · Révisions : <b>"+nf(allRevs().length)+
+"</b><br>Intégrité : <b>"+AUDIT.score+"%</b>.</div>";
 sync();renderDom();renderAll();renderAudit();renderAdm();
 notify("import","Import fichier : +"+r.add+" motorisations, +"+r.fadd+" fiches","");
 toast("Import réussi : +"+r.add+" motorisations","ok",function(){
-var d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;saveDB();sync();audit();renderDom();renderAll();renderAdm();
-toast("Import annulé","in");});
+var d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;reindex();persist();sync();audit();renderDom();renderAll();renderAdm();});
 }).catch(function(e){olog("Échec : "+e.message,"e");
 $("ovRes").innerHTML='<div class="nt ba"><b>Import interrompu.</b> '+esc(e.message)+
 "<br>La base existante n'a pas été modifiée.</div>";toast("Import échoué — base préservée","ba");
@@ -1075,51 +1129,520 @@ $("ovRes").innerHTML='<div class="nt ba"><b>Import interrompu.</b> '+esc(e.messa
 var PACK_URL="https://raw.githubusercontent.com/expertkevin06-cell/auto-diagnostic/main/pack2024.json";
 function updateOnline(){if(!canW()){toast("Réservé à l'administrateur","ba");return}
 if(!navigator.onLine){toast("Connexion requise","ba");return}
-ovlOn(true);$("ovT").textContent="Mise à jour de la base";$("ovS").textContent="Recherche de nouvelles marques, modèles, motorisations et pannes";
-var before=engines().length,beforeF=FAULTS.length;
+ovlOn(true);$("ovT").textContent="Mise à jour en ligne";$("ovS").textContent="Pack distant + auto-enrichissement local";
+var before=EIX.all.length,beforeF=FAULTS.length;
 $("ovB").textContent=before;$("ovA").textContent="+0";$("ovM").textContent="~0";$("ovAf").textContent=before;
-ostep(15,"Interrogation du dépôt");olog("GET "+PACK_URL,"t");
+ostep(12,"Interrogation du dépôt");olog("GET "+PACK_URL,"t");
 var snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
-var ctl=null,to=null;
-try{ctl=new AbortController();to=setTimeout(function(){ctl.abort()},12000);}catch(e){}
+var ctl=null,to=null;try{ctl=new AbortController();to=setTimeout(function(){ctl.abort()},12000);}catch(e){}
 fetch(PACK_URL,ctl?{cache:"no-store",signal:ctl.signal}:{cache:"no-store"}).then(function(r){
 if(to)clearTimeout(to);if(!r.ok)throw new Error("HTTP "+r.status);return r.json();
-}).then(function(data){olog("Pack distant trouvé","s");ostep(50,"Fusion du pack distant");
-var res=ingest(data);
-$("ovA").textContent="+"+res.add;$("ovM").textContent="~"+res.merge;
+}).then(function(data){olog("Pack distant trouvé","s");ostep(45,"Fusion du pack distant");
+var res=ingest(data);$("ovA").textContent="+"+res.add;$("ovM").textContent="~"+res.merge;
 olog(res.add+" motorisation(s), "+res.fadd+" fiche(s), "+res.radd+" révision(s)","s");
-if(res.add||res.fadd||res.radd){UPD.unshift({ts:Date.now(),src:"pack distant",m:res.add,f:res.fadd,r:res.radd});
-makeBk("mise à jour en ligne");}
-saveDB();ostep(85,"Audit d'intégrité");audit();
-$("ovAf").textContent=engines().length;
-$("ovRes").innerHTML=(res.add||res.fadd||res.radd)?
-'<div class="nt ok"><b>Mise à jour terminée.</b><br>Motorisations : '+nf(before)+" → <b>"+nf(engines().length)+
-"</b> · Fiches : "+nf(beforeF)+" → <b>"+nf(FAULTS.length)+"</b> · Intégrité <b>"+AUDIT.score+"%</b></div>":
-'<div class="nt wa"><b>Pack distant déjà intégré ou vide.</b> La base livrée reste complète : <b>'+
-nf(engines().length)+"</b> motorisations, <b>"+nf(FAULTS.length)+"</b> fiches. Intégrité <b>"+AUDIT.score+"%</b>.</div>";
-sync();renderDom();renderAll();renderAudit();renderAdm();
-if(res.add||res.fadd)toast("Mise à jour : +"+res.add+" motorisations, +"+res.fadd+" fiches","ok",function(){
-var d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;saveDB();sync();audit();renderDom();renderAll();renderAdm();});
+if(res.add||res.fadd||res.radd){UPD.unshift({ts:Date.now(),src:"pack distant",m:res.add,f:res.fadd,r:res.radd});makeBk("mise à jour en ligne");}
+persist();$("ovAf").textContent=EIX.all.length;
+$("ovRes").innerHTML='<div class="nt ok"><b>Pack distant fusionné.</b> Motorisations : '+nf(before)+" → <b>"+nf(EIX.all.length)+
+"</b> · Fiches : "+nf(beforeF)+" → <b>"+nf(FAULTS.length)+"</b>.<br>Enrichissement local en cours…</div>";
+sync();renderDom();renderAll();renderAdm();
+setTimeout(function(){ovlOn(false);enrich(false)},600);
 }).catch(function(e){if(to)clearTimeout(to);
 olog("Pack distant indisponible : "+(e.name==="AbortError"?"délai dépassé":e.message),"w");
-ostep(70,"Vérification de la base locale");audit();
-$("ovAf").textContent=engines().length;
-$("ovRes").innerHTML='<div class="nt wa"><b>Aucune nouveauté rapatriée.</b> '+esc(e.name==="AbortError"?"délai dépassé":e.message)+
-".<br>La base embarquée reste <b>intégralement disponible hors ligne</b> : <b>"+nf(engines().length)+
-"</b> motorisations, <b>"+nf(FAULTS.length)+"</b> fiches, <b>"+allRevs().length+"</b> révisions. Intégrité <b>"+AUDIT.score+"%</b>.</div>";
-renderAudit();renderAdm();toast("Base locale conservée — aucune perte","wa");
-}).then(function(){ostep(100,"Terminé");$("ovX").style.display="block";});}
+$("ovRes").innerHTML='<div class="nt wa"><b>Pack distant injoignable.</b> '+esc(e.name==="AbortError"?"délai dépassé":e.message)+
+".<br>Enrichissement local massif lancé à la place.</div>";
+setTimeout(function(){ovlOn(false);enrich(false)},700);});}
 function exportDB(){if(!canW()){toast("Export réservé au mode administrateur","ba");return}
-var p={app:"KEV FUSION 2026",version:16,exported:new Date().toISOString(),updates:UPD,
+var p={app:"KEV FUSION 2026",version:20,exported:new Date().toISOString(),updates:UPD,enrichment:ENR,
 integrity:AUDIT?{score:AUDIT.score,bad:AUDIT.bad,warn:AUDIT.warn}:null,
 domains:DOM.map(function(d){return{id:d[0],name:d[1]}}),cat:CAT,faults:FAULTS,protocols:rules(null),
 revisions:REVS0,revisionsCustom:REVC,tiers:TIERS,notes:NOTES,views:VIEWS,dtc:DTC};
-var b=new Blob([JSON.stringify(p,null,1)],{type:"application/json"}),a=el("a");
+var b=new Blob([JSON.stringify(p)],{type:"application/json"}),a=el("a");
 a.href=URL.createObjectURL(b);a.download="kev-fusion-2026-"+new Date().toISOString().slice(0,10)+".json";
 document.body.appendChild(a);a.click();
 setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},400);toast("Export complet téléchargé","ok");}
 
-function renderAll(){$("nBase").textContent=nf(engines().length);
+/* ═══════════ AUTO-ENRICHISSEMENT MASSIF ═══════════ */
+var MISS={
+vauxhall:["Vauxhall","GB",`
+corsa~Corsa F~19~27~C~1.2 Turbo#100,130#EB2|E|19-25;1.2 Hybrid#100,136#EB2LTEDH|H|23-27;Électrique#136:50,156:51#ZKX|EV|20-27
+astra~Astra L~21~27~K~1.2 Turbo#110,130#EB2|E|21-25;1.6 PHEV#180,225#EP6|P|21-27;Électrique#156:54#EM0|EV|23-27
+mokka~Mokka B~20~27~U~1.2 Turbo#100,130#EB2|E|20-25;Électrique#136:50,156:54#ZKX|EV|20-27
+grandland~Grandland~24~27~E~1.2 Hybrid#136#EB2LTEDH|H|24-27;Électrique#210:73,230:97#STLA|EV|24-27
+vivaro~Vivaro~19~27~F~2.0 Diesel#145,180#DW10|D|19-27;Électrique#136:75#ZKX|EV|21-27`],
+ldv:["LDV","GB",`
+deliver9~eDeliver 9~21~27~G~Électrique#204:88.5#EV-MXD9|EV|21-27
+t60~T60~18~27~P~2.0 Turbo Diesel#163#GW4D20|D|18-27
+ev80~EV80~21~27~G~Électrique#204:71#EV-LDV|EV|21-27`],
+wuling:["Wuling","CN",`
+hongguang~Hongguang Mini EV~22~27~Y~Électrique#27:9.3,41:13.9#EV-WUL|EV|22-27
+bingo~Bingo~24~27~C~Électrique#68:31.9,102:37.9#EV-WUL|EV|24-27
+star~Asta~24~27~E~1.5 Turbo#147#LJO|E|24-27`],
+baojun:["Baojun","CN",`
+yep~Yep~24~27~U~Électrique#68:28.4#EV-BJ|EV|24-27
+cloud~Cloud~24~27~K~Électrique#136:50.6#EV-BJ|EV|24-27
+rs5~RS-5~23~27~E~1.5 Turbo#147#LJO|E|23-27`],
+roewe:["Roewe","CN",`
+i5~i5~23~27~B~Électrique#184:61.1#EV-RW|EV|23-27
+rx5~RX5~23~27~E~1.5 Turbo#181#15E4E|E|23-27
+d7~D7~24~27~B~Électrique#245:77#EV-RW|EV|24-27`],
+geometry:["Geometry","CN",`
+a~A~23~27~B~Électrique#204:53,204:70#EV-GEO|EV|23-27
+c~C~23~27~U~Électrique#163:53#EV-GEO|EV|23-27
+panda~Panda Mini~24~27~Y~Électrique#41:17#EV-GEO|EV|24-27`],
+radar:["Radar","CN",`
+rd6~RD6~24~27~P~Électrique#268:86#SEA|EV|24-27
+horizon~Horizon~25~27~P~1.5 PHEV#408#BHE15|P|25-27`],
+icar:["iCar","CN",`
+i03~03~24~27~U~Électrique#184:65.7#EV-ICAR|EV|24-27
+v23~V23~25~27~U~Électrique#218:81.8#EV-ICAR|EV|25-27`],
+luxeed:["Luxeed","CN",`
+s7~S7~24~27~Z~Électrique#496:100#EV-LX|EV|24-27
+r7~R7~25~27~N~Électrique#496:100#EV-LX|EV|25-27`],
+stelato:["Stelato","CN",`
+s9~S9~24~27~Z~Électrique#524:100#EV-STL|EV|24-27`],
+maextro:["Maextro","CN",`
+s800~S800~25~27~Z~1.5 EREV#718:63#RE-ROT|P|25-27;Électrique#718:97#EV-MXT|EV|25-27`],
+fangchengbao:["Fangchengbao","CN",`
+bao5~Bao 5~24~27~W~1.5 DMO PHEV#505#BYD-DMI|P|24-27
+bao8~Bao 8~25~27~W~2.0 DMO PHEV#697#BYD-DMI|P|25-27`],
+mhero:["M-Hero Mengshi","CN",`
+m917~917~24~27~W~1.5 EREV#697:65#RE-ROT|P|24-27;Électrique#697:142#EV-MHR|EV|24-27`],
+hycan:["Hycan","CN",`
+a06~A06~23~27~B~Électrique#245:75.3#EV-HYC|EV|23-27
+v09~V09~24~27~V~Électrique#268:95#EV-HYC|EV|24-27`],
+aiways:["Aiways","NL",`
+u5~U5~20~25~E~Électrique#204:63#EV-AIW|EV|20-25
+u6~U6~22~25~N~Électrique#218:72#EV-AIW|EV|22-25`],
+hiphi:["HiPhi","CN",`
+x~X~23~26~W~Électrique#670:120#EV-HIP|EV|23-26
+z~Z~23~26~Z~Électrique#670:120#EV-HIP|EV|23-26`],
+im:["IM Motors","CN",`
+l6~L6~24~27~Z~Électrique#475:100#EV-IM|EV|24-27
+ls6~LS6~24~27~W~Électrique#578:100#EV-IM|EV|24-27`],
+wey:["Wey","CN",`
+coffee01~Coffee 01~22~26~W~2.0 PHEV#476#GW4C20|P|22-26
+coffee02~Coffee 02~23~26~W~1.5 PHEV#326#GW4B15|P|23-26`],
+karma:["Karma","US",`
+gs6~GS-6~22~26~E~1.5 EREV#536:40#RE-ROT|P|22-26
+reveroo~Revero GT~17~24~Z~1.5 EREV#403:28#RE-ROT|P|17-24`],
+foton:["Foton","CN",`
+tunland~Tunland~22~27~P~2.0 Turbo Diesel#163#4F20|D|22-27
+view~View CS2~22~27~G~2.8 Diesel#150#4JB1|D|22-27`],
+jmc:["JMC","CN",`
+vigus~Vigus~22~27~P~2.0 Turbo Diesel#141,177#JX4D20|D|22-27
+yusheng~Yusheng~22~27~W~2.0 Turbo#218#JX4G20|E|22-27`],
+srm:["SRM Shineray","CN",`
+x30~X30~22~27~F~1.5 Essence#102#SWD15|E|22-27;Électrique#82:41#EV-SRM|EV|22-27
+t50~T50 EV~23~27~G~Électrique#136:55#EV-SRM|EV|23-27`],
+kaiyi:["Kaiyi","CN",`
+x3~X3 Pro~23~27~U~1.5 Turbo#147#E4T15|E|23-27
+e5~E5~24~27~B~Électrique#163:58#EV-KY|EV|24-27`],
+qoros:["Qoros","CN",`
+q3~3~17~22~K~1.6 Turbo#156,184#E4G16|E|17-22
+q5~5~18~23~E~1.6 Turbo#156#E4G16|E|18-23`],
+proton:["Proton","MY",`
+x50~X50~22~27~U~1.5 Turbo#150,177#JLH-3G15|E|22-27
+x70~X70~22~27~E~1.8 Turbo#184#JLE-4G18|E|22-27
+exora~Exora~17~22~M~1.6#125#S4PH|E|17-22`],
+perodua:["Perodua","MY",`
+myvi~Myvi~17~27~C~1.3#95#1NR-VE|E|17-27;1.5#103#2NR-VE|E|17-27
+axia~Axia~23~27~Y~1.0#67#1KR-VE|E|23-27
+alza~Alza~22~27~M~1.5#106#2NR-VE|E|22-27`],
+daihatsu:["Daihatsu","JP",`
+terios~Terios~17~27~U~1.5#105#2NR-VE|E|17-27
+sirion~Sirion~17~22~Y~1.3#95#1NR-VE|E|17-22
+rocky~Rocky~22~27~U~1.0 Turbo#98#1KR-VET|E|22-27`],
+lada:["Lada","RU",`
+vesta~Vesta~17~27~B~1.6#106,113#21129|E|17-27;1.8#122#21179|E|17-24
+niva~Niva Travel~17~27~U~1.7#83#21214|E|17-27
+granta~Granta~17~27~C~1.6#87,106#11186|E|17-27`],
+uaz:["UAZ","RU",`
+patriot~Patriot~17~27~W~2.7#135#ZMZ-409|E|17-27
+hunter~Hunter~17~27~W~2.7#128#ZMZ-409|E|17-27`],
+lincoln:["Lincoln","US",`
+corsair~Corsair~20~27~E~2.0 Turbo#250#EcoBoost|E|20-27;2.5 PHEV#266#BGCA|P|20-24
+aviator~Aviator~20~27~W~3.0 V6#400#EcoBoost|E|20-27;3.0 PHEV#494#EcoBoost|P|20-24
+navigator~Navigator~18~27~W~3.5 V6#450#EcoBoost|E|18-27`],
+buick:["Buick","US",`
+encore~Encore GX~20~26~U~1.3 Turbo#155#L3Z|E|20-26
+envision~Envision~21~26~E~2.0 Turbo#228#LSY|E|21-26
+electra~Electra E5~24~27~J~Électrique#245:68#EV-ULT|EV|24-27`],
+hummer:["Hummer","US",`
+evpickup~EV Pickup~23~27~P~Électrique#635:212,1000:212#EV-ULT|EV|23-27
+evsuv~EV SUV~24~27~W~Électrique#570:200,830:200#EV-ULT|EV|24-27`],
+holden:["Holden","AU",`
+commodore~Commodore ZB~17~20~B~2.0 Turbo#256#LTG|E|17-20;3.6 V6#314#LGX|E|17-20
+astra~Astra BK~17~20~K~1.4 Turbo#150#B14T|E|17-20
+colorado~Colorado RG~17~20~P~2.8 Diesel#200#LWH|D|17-20`],
+aptera:["Aptera","US",`
+solar~Solar EV~26~27~X~Électrique#201:100#EV-APT|EV|26-27`],
+canoo:["Canoo","US",`
+lv~Lifestyle Vehicle~23~26~V~Électrique#300:80#EV-CAN|EV|23-26
+pickup~Pickup~24~26~P~Électrique#500:100#EV-CAN|EV|24-26`],
+nikola:["Nikola","US",`
+tre~Tre BEV~22~26~G~Électrique#645:738#EV-NIK|EV|22-26`],
+jinbei:["Jinbei","CN",`
+haise~Haise~22~27~G~2.0 Essence#136#4G20|E|22-27
+granse~Granse EV~23~27~G~Électrique#136:50#EV-JB|EV|23-27`]
+};
+var LADDER={
+"EB2":[75,82,100,110,130,155],"EB2LTEDH":[100,136,145,156],"DV5":[100,110,120,130],
+"DV6":[75,90,100,110,120],"DW10":[120,130,145,150,160,163,177,180],"DW12":[120,140,160,165],
+"EP6":[150,156,163,165,175,180,200,205,208,225,250,270],"DKL":[95,110,115],"DPCA":[130,150],
+"DUV":[130,150],"DSU":[115,150,200],"DTU":[150,193],"DFG":[120,150,190,200,240],
+"CZP":[190,220,230,245,265,280,300,310],"DNNA":[245,265,300],"DNF":[310,320,333],
+"B38":[102,136,140,156],"B48":[156,178,184,192,204,245,252,258,306],"B58":[340,374,381,387],
+"B47":[116,150,190,211],"B57":[265,286,298,300,320,340],"S58":[460,480,510,530],
+"M282":[136,163],"M254":[170,190,204,258],"M256":[367,381,408,435],"OM654":[150,163,190,194,197,200,220,265,269],
+"OM651":[136,163,170,204],"OM656":[330,340,350],"M15A":[116,125,130],"M20A":[170,184,196,197,199],
+"A25A":[218,222,236,240,243,244,306,309,320,342],"2ZR":[122,136,140],"G3LC":[90,100,110,120],
+"G4FT":[150,180,198],"G4LE":[141,183,215,230],"G4FJ":[177],"G4KH":[204,247,250,275,280],
+"D4FE":[115,136],"D4HB":[202],"B3CA":[100,125,140,200],"B7JA":[125,155],"B7DA":[95,120],
+"YLCB":[150,190],"BKF":[105,130,170,185],"BGCA":[190,225,243],"LEB":[109,131],"LFA":[184],
+"L15C":[182],"K20C":[320,329],"PE-VPS":[122,150,165],"PY-VPS":[140,192,194],"SH-VPTS":[150,175,184],
+"K14":[129,140],"K15":[102,115],"H4D":[65,75,90,100],"H5H":[115,130,140,150,155,160],
+"H5F":[115,120,130],"K9K":[75,85,90,95,110,115],"M9R":[110,130,150,170],"M9T":[130,150,165,180],
+"R9M":[110,125,130,145,150,160],"H4M":[140,145,155],"HR12":[110,115,117],"HR13":[140,150,158,160],
+"KR15":[190,204,213],"PT204":[200,249,250,300],"204DT":[150,163,180,204],"AJ200D":[200,249,250,300,350],
+"AJ300":[360,400],"GME":[200,268,280],"552":[95,120,130,150,180,190,210],"GSE":[70,100,130,150,180],
+"F1AGL":[120,140,160,180],"SQR":[147,156,185,186],"JLH":[150,261,276],"15E4E":[162],"BYD":[95,136,170,177,204,218,313,530]};
+var REVK={
+"EB2":["Courroie distribution humide",180000,100000,120,72],
+"EB2LTEDH":["Courroie accessoires + galets",0,90000,0,72],
+"DV5":["Chaîne AAC 7 vers 8 mm",0,120000,0,96],
+"DV6":["Kit distribution + pompe eau",180000,150000,120,96],
+"DW10":["Kit distribution + pompe eau",200000,160000,120,96],
+"EP6":["Contrôle chaîne + tendeur",0,120000,0,96],
+"DKL":["Contrôle chaîne + tendeur",0,150000,0,120],
+"DPCA":["Courroie distribution + galets",210000,180000,120,96],
+"DSU":["Kit distribution + pompe eau",210000,180000,120,96],
+"DTU":["Kit distribution + pompe eau",210000,180000,120,96],
+"DFG":["Kit distribution + pompe eau",210000,180000,120,96],
+"CZP":["Contrôle chaîne + tendeur",0,120000,0,96],
+"B47":["Contrôle chaîne côté boîte",0,150000,0,120],
+"B48":["Bougies allumage",60000,40000,0,48],
+"B58":["Bougies allumage",60000,40000,0,48],
+"M282":["Vidange huile + filtre",30000,20000,24,12],
+"M254":["Contrôle 48 V + DC-DC",0,60000,0,48],
+"OM654":["Filtre / injecteur AdBlue",120000,80000,0,60],
+"OM651":["Contrôle chaîne + patins",0,180000,0,120],
+"G4FJ":["Vidange huile anti-LSPI",15000,7500,12,6],
+"G4FT":["Vidange huile + filtre",15000,10000,12,12],
+"D4FE":["Nettoyage / contrôle FAP",120000,90000,0,72],
+"B3CA":["Courroie distribution humide",240000,150000,120,72],
+"B7JA":["Courroie distribution humide",240000,150000,120,72],
+"BKF":["Chaîne distribution",240000,160000,120,96],
+"YLCB":["Chaîne distribution",240000,160000,120,96],
+"K9K":["Kit distribution + pompe eau",160000,120000,72,60],
+"H5F":["Vidange huile + filtre",30000,15000,24,12],
+"H5H":["Vidange huile + filtre",30000,20000,24,12],
+"M9T":["Contrôle chaîne + injecteurs",0,150000,0,96],
+"SH-VPTS":["Vidange huile + filtre",20000,10000,12,6],
+"PT204":["Contrôle chaîne distribution",0,150000,0,96],
+"204DT":["Contrôle chaîne distribution",0,150000,0,96],
+"552":["Courroie distribution + pompe eau",150000,120000,120,84],
+"B4204":["Kit distribution + pompe eau",240000,160000,120,96]};
+var DTCX={
+P0010:["Circuit commande AAC A","Électrovanne VVT, faisceau","Résistance et commande électrovanne"],
+P0013:["Circuit commande AAC B","Électrovanne VVT, faisceau","Résistance et commande"],
+P0014:["Position AAC B trop avancée","Déphaseur, pression huile","Calage et pression"],
+P0021:["AAC A rangée 2 trop avancée","Déphaseur, chaîne, huile","Calage rangée 2"],
+P0022:["AAC A rangée 2 trop retardé","Tendeur, pression huile","Calage et alimentation"],
+P0031:["Sonde O2 amont chauffage bas","Résistance, relais, masse","Mesure résistance chauffage"],
+P0032:["Sonde O2 amont chauffage haut","Court-circuit, relais","Contrôle faisceau"],
+P0036:["Sonde O2 aval chauffage","Résistance, relais, faisceau","Résistance chauffage aval"],
+P0037:["Sonde O2 aval chauffage bas","Résistance, masse","Mesure résistance"],
+P0038:["Sonde O2 aval chauffage haut","Court-circuit faisceau","Contrôle faisceau"],
+P0053:["Résistance sonde O2 hors plage","Sonde vieillie, connectique","Mesure résistance à chaud"],
+P0068:["Corrélation MAP / TPS","Fuite admission, papillon, capteur","Comparaison charge / papillon"],
+P0100:["Débitmètre MAF circuit","MAF, alimentation, faisceau","Signal MAF, alimentation"],
+P0102:["MAF signal bas","MAF encrassé, fuite admission","Nettoyage MAF, test fumée"],
+P0103:["MAF signal haut","MAF défectueux, court-circuit","Comparaison MAF / MAP"],
+P0107:["MAP signal bas","Capteur, fuite, faisceau","Comparaison barométrique"],
+P0108:["MAP signal haut","Capteur, court-circuit","Comparaison barométrique"],
+P0112:["Température admission signal bas","Sonde IAT, faisceau","Résistance vs température"],
+P0117:["Température LDR signal bas","Sonde LDR, faisceau","Résistance vs température"],
+P0118:["Température LDR signal haut","Sonde LDR, circuit ouvert","Résistance vs température"],
+P0122:["Capteur papillon signal bas","Papillon, faisceau","Signal TPS, alimentation"],
+P0123:["Capteur papillon signal haut","Papillon, court-circuit","Signal TPS"],
+P0130:["Sonde O2 amont circuit","Sonde, faisceau, échappement","Signal sonde, fuite échappement"],
+P0133:["Sonde O2 amont réponse lente","Sonde vieillie, encrassement","Temps de réponse sonde"],
+P0134:["Sonde O2 amont inactivité","Sonde, chauffage, faisceau","Signal et chauffage"],
+P0136:["Sonde O2 aval circuit","Sonde, faisceau","Signal sonde aval"],
+P0137:["Sonde O2 aval signal bas","Sonde, fuite échappement","Signal aval"],
+P0138:["Sonde O2 aval signal haut","Sonde, court-circuit","Signal aval"],
+P0140:["Sonde O2 aval inactivité","Sonde, chauffage","Signal et chauffage aval"],
+P0141:["Sonde O2 aval chauffage","Résistance, relais","Résistance chauffage"],
+P0155:["Sonde O2 rangée 2 chauffage","Résistance, relais","Résistance chauffage"],
+P0170:["Correction carburant hors plage","Prise air, injecteurs, MAF","Corrections court / long terme"],
+P0174:["Mélange trop pauvre rangée 2","Prise air, injecteurs, MAF","Test fumée, sonde O2"],
+P0175:["Mélange trop riche rangée 2","Injecteur fuite, pression haute","Injecteurs, pression rail"],
+P0183:["Température carburant signal haut","Sonde, faisceau","Résistance sonde"],
+P0190:["Capteur pression rail circuit","Capteur, alimentation, faisceau","Comparaison manomètre"],
+P0192:["Capteur pression rail signal bas","Capteur, court-circuit masse","Comparaison manomètre"],
+P0193:["Capteur pression rail signal haut","Capteur, court-circuit plus","Comparaison manomètre"],
+P0200:["Circuit injecteur général","Alimentation, calculateur, faisceau","Alimentation étage injecteurs"],
+P0205:["Circuit injecteur cylindre 5","Injecteur, faisceau","Résistance, débit retour"],
+P0206:["Circuit injecteur cylindre 6","Injecteur, faisceau","Résistance, débit retour"],
+P0216:["Calage injection incorrect","Pompe HP, capteur, calage","Signal capteur et calage"],
+P0219:["Régime moteur excessif","Embrayage, boîte, calculateur","Historique régime, adaptations"],
+P0222:["Capteur papillon 2 signal bas","Papillon motorisé, faisceau","Signal TPS2"],
+P0223:["Capteur papillon 2 signal haut","Papillon motorisé, court-circuit","Signal TPS2"],
+P0236:["Capteur pression suralimentation","Capteur, fuite durite, faisceau","Comparaison consigne / réel"],
+P0237:["Capteur suralimentation signal bas","Capteur, fuite, faisceau","Comparaison manomètre"],
+P0238:["Capteur suralimentation signal haut","Capteur, court-circuit","Comparaison manomètre"],
+P0243:["Électrovanne wastegate circuit","Électrovanne, faisceau","Résistance et commande"],
+P0245:["Électrovanne wastegate signal bas","Électrovanne, masse","Commande et masse"],
+P0246:["Électrovanne wastegate signal haut","Électrovanne, court-circuit","Commande et alimentation"],
+P0403:["Commande EGR circuit","Moteur EGR, faisceau","Résistance et commande"],
+P0404:["EGR position hors plage","Vanne grippée, capteur","Position consigne / réel"],
+P0405:["Capteur position EGR bas","Capteur, faisceau","Signal position"],
+P0406:["Capteur position EGR haut","Capteur, court-circuit","Signal position"],
+P042F:["Sonde O2 aval performance","Sonde, catalyseur","Comparaison amont / aval"],
+P0441:["Canister purge débit incorrect","Électrovanne purge, durite","Test commande purge"],
+P0443:["Électrovanne canister circuit","Électrovanne, faisceau","Résistance et commande"],
+P0455:["Fuite évaporative importante","Bouchon réservoir, durite, canister","Test fumée circuit EVAP"],
+P0456:["Fuite évaporative faible","Bouchon, joints, canister","Test fumée basse pression"],
+P0481:["Commande ventilateur 2","Relais, résistance, moteur","Commande et alimentation"],
+P0500:["Capteur vitesse véhicule","Capteur, faisceau, ABS","Vitesses de roue"],
+P0507:["Ralenti trop haut","Prise air, papillon, apprentissage","Test fumée, réapprentissage"],
+P0508:["Ralenti trop bas","Papillon encrassé, prise air","Nettoyage papillon, apprentissage"],
+P0544:["Capteur température échappement","Sonde, faisceau","Résistance vs température"],
+P0546:["Capteur température échappement haut","Sonde, court-circuit","Résistance vs température"],
+P0571:["Contacteur frein cruise","Contacteur, réglage, faisceau","Continuité contacteur"],
+P0601:["Mémoire calculateur — checksum","Calculateur, alimentation","Reprogrammation, alimentations"],
+P0605:["Mémoire ROM calculateur","Calculateur défaillant","Reprogrammation ou remplacement"],
+P061B:["Calculateur — couple interne","Calculateur, capteurs","Contrôle alimentations et masses"],
+P0641:["Tension référence capteurs A","Court-circuit, capteur, calculateur","Mesure 5 V référence"],
+P0651:["Tension référence capteurs B","Court-circuit, capteur","Mesure 5 V référence"],
+P0685:["Relais alimentation moteur","Relais, masses, alimentation","Test relais et masses"],
+P0688:["Relais alimentation — signal","Relais, faisceau","Test commande relais"],
+P0705:["Capteur position levier boîte","Capteur, faisceau, réglage","Signal PRNDL"],
+P0711:["Capteur température ATF plage","Capteur, faisceau","Résistance vs température"],
+P0712:["Capteur température ATF bas","Capteur, court-circuit","Résistance vs température"],
+P0713:["Capteur température ATF haut","Capteur, circuit ouvert","Résistance vs température"],
+P0720:["Capteur régime sortie boîte","Capteur, faisceau","Signal capteur"],
+P0725:["Signal régime moteur vers TCU","CAN, calculateur moteur","Réseau CAN et alimentations"],
+P0748:["Électrovanne pression boîte","Électrovanne, faisceau","Résistance et commande"],
+P0751:["Électrovanne passage A performance","Électrovanne, hydraulique","Commande et pression"],
+P0756:["Électrovanne passage B performance","Électrovanne, hydraulique","Commande et pression"],
+P0776:["Électrovanne pression B performance","Électrovanne, hydraulique","Commande et pression"],
+P0841:["Capteur pression hydraulique boîte","Capteur, faisceau","Comparaison pression"],
+P0A0A:["Isolement HV — circuit","Câblage HV, capteur","Mégohmmètre par branche"],
+P0A0D:["Contacteur HV — circuit","Contacteur, commande, faisceau","Test commande contacteurs"],
+P0A1F:["Batterie énergie — performance","Modules, BMS, refroidissement","SOH, delta cellules"],
+P0A2A:["Capteur température pack HV","Sonde, faisceau","Résistance vs température"],
+P0A3F:["Capteur position moteur électrique","Résolveur, faisceau","Signal résolveur"],
+P0A78:["Onduleur — performance","Onduleur, refroidissement","Températures et codes internes"],
+P0A94:["Convertisseur DC-DC — performance","DC-DC, 12 V, charge","Tension sortie et charge"],
+P0AB9:["Batterie hybride — performance","Modules, BMS","SOH et delta"],
+P0B1A:["Capteur tension module HV","Capteur, faisceau interne","Comparaison tensions"],
+P0BBD:["Batterie HV — déséquilibre important","Module dégradé, BMS","Delta cellules, équilibrage"],
+P0C2F:["Refroidissement batterie — débit","Pompe LDR, échangeur","Débit et températures"],
+P0C76:["Chargeur embarqué — circuit","OBC, alimentation, faisceau","Test AC et codes OBC"],
+P0D0A:["Charge DC — verrouillage","Verrou, capteur, faisceau","Test verrouillage"],
+P0D8F:["Charge AC — signal pilote","CP, câble, borne","Mesure résistance CP / PP"],
+P1100:["MAF intermittent","MAF, connectique","Signal MAF en roulage"],
+P1200:["Injecteur — circuit intermittent","Faisceau, connecteur","Contrôle connectique"],
+P1300:["Allumage — circuit primaire","Bobine, alimentation","Signal primaire"],
+P1400:["EGR — débit incohérent","Vanne, capteur ΔP","Position et ΔP"],
+P1500:["Ralenti — apprentissage perdu","Papillon, batterie débranchée","Réapprentissage ralenti"],
+P1600:["Antidémarrage — communication","Transpondeur, antenne, calculateur","Lecture clé et antenne"],
+P1700:["Boîte — défaut interne","TCU, hydraulique","Codes TCU détaillés"],
+P1800:["Boîte — pression insuffisante","Pompe, fuite interne","Pression hydraulique"],
+P2100:["Papillon motorisé — circuit","Moteur papillon, faisceau","Résistance et commande"],
+P2101:["Papillon motorisé — performance","Papillon encrassé, moteur","Nettoyage et apprentissage"],
+P2119:["Papillon — position fermée","Papillon grippé, ressort","Contrôle mécanique"],
+P2135:["Corrélation TPS A / B","Papillon, faisceau","Comparaison pistes"],
+P2227:["Capteur barométrique plage","Capteur, calculateur","Comparaison altitude"],
+P2261:["Turbo — bypass performance","Vanne bypass, actionneur","Commande et course"],
+P2270:["Sonde O2 aval signal pauvre","Sonde, fuite échappement","Signal aval"],
+P2271:["Sonde O2 aval signal riche","Sonde, injecteur fuite","Signal aval"],
+P2453:["Capteur ΔP FAP plage","Capteur dérivé, tuyaux","Test pression connue"],
+U0073:["Bus CAN — coupure","Faisceau, terminaison, calculateur","Oscilloscope CAN"],
+U0126:["Perte communication angle volant","Capteur, CAN","CAN et alimentation"],
+U0151:["Perte communication SRS","Faisceau, calculateur SRS","CAN et alimentations"],
+U0164:["Perte communication clim","Calculateur clim, CAN","CAN et alimentation"],
+U0401:["Données ECM invalides","Capteurs, calculateur","Cohérence données CAN"],
+U0415:["Données ABS invalides","Capteurs ABS, calculateur","Cohérence vitesses roue"],
+U1000:["CAN — défaut réseau","Faisceau, masses, terminaison","Oscilloscope CAN, résistances"],
+B1001:["Module — configuration","Module, codage","Codage et configuration"],
+B1002:["Module — alimentation","Alimentation, masses","Mesure alimentations"],
+C1000:["Direction assistée — interne","EPS, alimentation","Codes EPS détaillés"],
+C1234:["Capteur angle volant","Capteur, calibration","Calibration capteur"]
+};
+function ensureEnrPanel(){if($("enrPanel"))return;
+var host=$("v-adm"),last=host.querySelector(".pn:last-of-type");
+var p=el("div","pn pd");p.id="enrPanel";p.style.marginBottom="16px";p.style.borderColor="rgba(74,222,128,.35)";
+p.innerHTML='<div class="sh"><div class="si ic-gr"><svg class="ic"><use href="#i-brain"/></svg></div>'+
+'<div><h2>Auto-enrichissement massif</h2><div class="sb">Exécuté automatiquement à chaque ouverture administrateur</div></div><span class="sp"></span>'+
+'<button class="sw" id="enrAuto" type="button" aria-pressed="true"><span class="t2"></span>Automatique</button>'+
+'<button class="bt gr" id="enrRun" type="button"><svg class="ic"><use href="#i-brain"/></svg>Enrichir maintenant</button>'+
+'<button class="bt rd" id="enrUndo" type="button" disabled><svg class="ic"><use href="#i-refresh"/></svg>Annuler</button></div>'+
+'<div class="g4" id="enrStats" style="margin-bottom:14px"></div>'+
+'<div id="enrLog" style="display:flex;flex-direction:column;gap:8px"></div>'+
+'<div class="nt ok" style="margin-top:13px">À chaque lancement admin, le moteur complète <b>les marques et modèles manquants</b>, '+
+'<b>les puissances réelles de chaque famille moteur</b>, <b>les plages d\'années</b>, génère <b>les fiches pannes / campagnes / TSB '+
+'par marque et par domaine</b>, étend <b>les fiches moteur à toutes les marques utilisant la même famille</b>, '+
+'ajoute <b>les fiches spécifiques aux modèles électriques</b>, complète <b>les intervalles d\'entretien révisés</b> '+
+'et <b>le dictionnaire DTC</b>. Idempotent, annulable, sans doublon.</div>';
+host.insertBefore(p,last);
+$("enrAuto").onclick=function(){ENR.on=!ENR.on;this.setAttribute("aria-pressed",String(ENR.on));persist();renderEnrPanel();
+toast(ENR.on?"Auto-enrichissement activé à chaque lancement":"Auto-enrichissement désactivé",ENR.on?"ok":"wa");};
+$("enrRun").onclick=function(){safe(function(){enrich(false)},"enrichissement manuel");};
+$("enrUndo").onclick=function(){if(!enrSnap){toast("Rien à annuler","in");return}
+var d=JSON.parse(enrSnap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;enrSnap=null;reindex();persist();
+audit();renderAudit();sync();renderDom();renderAll();renderAdm();toast("Dernier enrichissement annulé","wa");};}
+function renderEnrPanel(){if(!canW()||!$("enrPanel"))return;
+var r=ENR.rep||{};
+$("enrAuto").setAttribute("aria-pressed",String(!!ENR.on));
+$("enrUndo").disabled=!enrSnap;
+$("enrStats").innerHTML=[["Dernier passage",ENR.ts?dtT(ENR.ts):"jamais","cy"],
+["Fiches générées",nf(FAULTS.filter(function(f){return /^GEN-/.test(f.id)}).length),"amH"],
+["Motorisations",nf(EIX.all.length),"gr"],["DTC",nf(Object.keys(DTC).length),"mg"]]
+.map(function(p){return'<div class="st"><div class="sv3" style="font-size:18px;color:var(--'+p[2]+')">'+esc(String(p[1]))+'</div><div class="sl">'+p[0]+'</div></div>';}).join("");
+$("enrLog").innerHTML=ENR.rep?[['Marques / modèles ajoutés',r.cat],['Puissances complétées',r.pow],
+['Plages d\'années alignées',r.yr],['Fiches marque × domaine',r.br],['Fiches moteur étendues',r.fam],
+['Fiches modèles électriques',r.ev],['Intervalles révisés',r.rev],['Codes DTC ajoutés',r.dtc]]
+.map(function(p){return'<div class="sv"><span class="gr2"><svg class="ic"><use href="#i-check"/></svg></span>'+
+'<div style="flex:1;min-width:0"><div style="font-weight:750;font-size:12.5px">'+esc(p[0])+'</div></div>'+
+'<b class="mo" style="color:var(--gr)">+'+nf(p[1]||0)+'</b></div>';}).join(""):
+'<div class="nt">Aucun enrichissement exécuté pour l\'instant.</div>';}
+function enrich(auto){
+if(enrBusy)return;if(!canW()){if(!auto)toast("Réservé à l'administrateur","ba");return}
+enrBusy=true;
+enrSnap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
+var res={cat:0,pow:0,yr:0,br:0,fam:0,ev:0,rev:0,dtc:0};
+var fids={};FAULTS.forEach(function(f){fids[f.id]=1});
+var rids={};allRevs().forEach(function(r){rids[r.id]=1});
+ovlOn(true);$("ovT").textContent=auto?"Auto-enrichissement au lancement":"Enrichissement massif";
+$("ovS").textContent="Complétion marques · modèles · puissances · pannes · campagnes · TSB · intervalles · DTC";
+var b0=EIX.all.length,f0=FAULTS.length,r0=allRevs().length,d0=Object.keys(DTC).length;
+$("ovB").textContent=nf(b0);$("ovA").textContent="+0";$("ovM").textContent="~0";$("ovAf").textContent=nf(b0);
+ostep(4,"Initialisation");olog("Base avant : "+nf(b0)+" motorisations, "+nf(f0)+" fiches, "+nf(r0)+" révisions","t");
+var tasks=[
+["Marques et modèles manquants",function(){
+Object.keys(MISS).forEach(function(bid){var m=MISS[bid];var b=B(bid);
+if(!b){b={id:bid,name:m[0],country:m[1],models:[]};CAT.push(b);res.cat+=parseDSL(m[2],b).length}
+var news=parseDSL(m[2],b);
+news.forEach(function(nm){var ex=null;b.models.forEach(function(x){if(x.id===nm.id)ex=x});
+if(!ex){b.models.push(nm);res.cat+=nm.engines.length;return}
+nm.engines.forEach(function(e){var r=addEngTo(ex,b,e.fam,e.hp,e.code,e.fuel,e.y0,e.y1,e.tech);
+if(r==="add")res.cat++;});});});
+reindex();}],
+["Puissances réelles par famille",function(){
+CAT.forEach(function(b){b.models.forEach(function(m){
+var have={};m.engines.forEach(function(e){var c=String(e.code||"").toUpperCase();
+Object.keys(LADDER).forEach(function(k){if(c.indexOf(k)===0)(have[k]=have[k]||[]).push(e)})});
+Object.keys(have).forEach(function(k){var ref=have[k][0];
+var hps=have[k].map(function(e){return e.hp});
+LADDER[k].forEach(function(hp){if(hps.indexOf(hp)>=0)return;
+var r=addEngTo(m,b,ref.fam,hp,ref.code,ref.fuel,ref.y0,ref.y1,ref.tech);if(r==="add")res.pow++;});});});});
+reindex();}],
+["Plages d'années moteur",function(){
+CAT.forEach(function(b){b.models.forEach(function(m){m.engines.forEach(function(e){
+if(e.y0>m.y0){e.y0=m.y0;res.yr++}
+if(e.y1<m.y1&&m.y1<=YMAX){e.y1=m.y1;res.yr++}});});});reindex();}],
+["Fiches marque × domaine",function(){
+var covered={};FAULTS.forEach(function(f){if(f.scope==="brand")(f.brands||[]).forEach(function(b){
+(f.dom||[]).forEach(function(d){covered[b+"|"+d]=1})});});
+CAT.forEach(function(b){var eng=EIX.byBrand[b.id]||[];if(!eng.length)return;
+var okRules={};eng.forEach(function(e){rules(e).forEach(function(r){okRules[r.id]=r})});
+Object.keys(okRules).forEach(function(rid){var r=okRules[rid];
+var d0=(r.dom||[])[0];if(!d0||covered[b.id+"|"+d0])return;
+var id="GEN-B-"+b.id+"-"+rid;if(fids[id])return;fids[id]=1;
+FAULTS.push({id:id,scope:"brand",brands:[b.id],target:"",kind:r.kind,sev:r.sev,y0:YMIN,y1:YMAX,
+titre:b.name+" — "+r.titre,sym:r.sym+" Gamme "+b.name+", toutes motorisations concernées.",
+pro:r.pro.slice(),org:r.org,dtc:r.dtc.slice(),src:"Auto-enrichissement · protocole "+b.name,dom:r.dom.slice()});
+res.br++;covered[b.id+"|"+d0]=1;});});reindex();}],
+["Extension des fiches moteur",function(){
+var base=FAULTS.filter(function(f){return f.scope==="engine"&&!/^GEN-/.test(f.id)});
+base.forEach(function(f){var t=slug(f.target);
+Object.keys(EIX.byFam).forEach(function(k){var p=k.split("|");
+if(p[1]!==t)return;var bid=p[0];if((f.brands||[]).indexOf(bid)>=0)return;
+var id="GEN-E-"+f.id+"-"+bid;if(fids[id])return;
+var eng=EIX.byFam[k],y0=2027,y1=2017;
+eng.forEach(function(e){y0=Math.min(y0,e.y0);y1=Math.max(y1,e.y1)});
+if(y1<y0)return;fids[id]=1;
+FAULTS.push({id:id,scope:"engine",brands:[bid],target:f.target,kind:f.kind,sev:f.sev,
+y0:Math.max(f.y0,y0),y1:Math.min(f.y1,y1),titre:f.titre,sym:f.sym,pro:f.pro.slice(),org:f.org,
+dtc:f.dtc.slice(),src:f.src+" · extension "+(B(bid)?B(bid).name:bid),dom:f.dom.slice()});res.fam++;});});
+reindex();}],
+["Fiches modèles électriques",function(){
+var T=[["charge","Charge AC / DC et verrou de trappe","Charge interrompue, trappe non verrouillée, puissance bridée, OBC CCS.",
+"Lire codes OBC et verrou|Tester plusieurs bornes AC et DC|Contrôler câble CP PP et broches|Contrôler contacteurs et précharge|Revalider courbe de charge",
+"OBC, contacteurs, verrou, connecteur","P0D11,P0C76,P0D0A,P0D8F","eleve"],
+["hv","Isolement et équilibrage pack haute tension","Alerte isolement, limitation puissance, delta cellules, SOH en baisse.",
+"Lire isolement et delta cellules|Cycle lent complet d'équilibrage|Mégohmmètre par branche habilitée|Contrôler humidité connecteurs HV|Mise à jour BMS et revalidation",
+"Pack HV, BMS, contacteurs, câblage","P0AA6,P0AFA,P0A0A,P0BBD","critique"],
+["thermique","Pompe à chaleur et boucle de refroidissement pack","Chauffage faible, autonomie hivernale réduite, charge DC lente à froid.",
+"Lire codes circuit thermique|Contrôler charge fluide et compresseur|Tester vannes et échangeur|Vérifier préconditionnement|Mise à jour gestion thermique",
+"Pompe à chaleur, vannes, échangeur, sondes","P0C00,P0C2F,P0A7A","moyen"],
+["telematique","OTA, télématique et décharge 12 V","OTA en échec, écran figé, 12 V à plat après immobilisation, services perdus.",
+"Relever version et journaux OTA|Mesurer courant de repos après veille|Contrôler SOH 12 V et DC-DC|Re-flasher selon procédure|Revalider services et écran",
+"TCU, head unit, 12 V, DC-DC","U0101,U0121,P0562,U0111","moyen"],
+["freinage","Freinage régénératif et corrosion des disques","Bruit au freinage, freinage arrière faible, à-coups en décélération, disques corrodés.",
+"Mesurer épaisseur et voile des disques|Contrôler mobilité étriers et colonnettes|Calibrer le régénératif|Nettoyer et graisser|Remplacer par essieu puis roder",
+"Disques, plaquettes, étriers, logiciel freinage","C1365,U0121","moyen"]];
+CAT.forEach(function(b){b.models.forEach(function(m){
+var ev=m.engines.filter(function(e){return e.fuel==="EV"});if(!ev.length)return;
+var y0=2027,y1=2017;ev.forEach(function(e){y0=Math.min(y0,e.y0);y1=Math.max(y1,e.y1)});
+T.forEach(function(t){var id="GEN-V-"+b.id+"-"+m.id+"-"+t[0];if(fids[id])return;fids[id]=1;
+FAULTS.push({id:id,scope:"model",brands:[b.id],target:m.id,kind:"tsb",sev:t[6],y0:y0,y1:y1,
+titre:b.name+" "+m.name+" — "+t[1],sym:t[2],pro:t[3].split("|"),org:t[4],dtc:csv(t[5]),
+src:"Auto-enrichissement · plateforme EV",dom:[t[0]]});res.ev++;});});});reindex();}],
+["Intervalles d'entretien révisés",function(){
+CAT.forEach(function(b){
+var uni=[["Liquide de frein DOT 4",60000,60000,24,24],["Filtre d'habitacle charbon actif",30000,15000,24,12],
+["Liquide de refroidissement",120000,100000,120,60],["Courroie d'accessoires + galets",120000,90000,120,72]];
+uni.forEach(function(u){var id="GEN-R-"+b.id+"-"+slug(u[0]);if(rids[id])return;rids[id]=1;
+REVC.push({id:id,brands:[b.id],match:"",organ:u[0],oldKm:u[1],newKm:u[2],oldMo:u[3],newMo:u[4],
+src:"Auto-enrichissement · protocole atelier",note:"Double échéance km et calendaire, à confirmer au VIN.",y0:2017,y1:2027});res.rev++;});
+var fams={};(EIX.byBrand[b.id]||[]).forEach(function(e){var c=String(e.code||"").toUpperCase();
+Object.keys(REVK).forEach(function(k){if(c.indexOf(k)===0)fams[k]=1})});
+Object.keys(fams).forEach(function(k){var v=REVK[k];var id="GEN-R-"+b.id+"-"+k;if(rids[id])return;rids[id]=1;
+REVC.push({id:id,brands:[b.id],match:k,organ:v[0],oldKm:v[1],newKm:v[2],oldMo:v[3],newMo:v[4],
+src:"Auto-enrichissement · TSB famille "+k,note:"Intervalle révisé appliqué à la famille "+k+" sur la gamme "+b.name+".",y0:2017,y1:2027});res.rev++;});});}],
+["Dictionnaire DTC",function(){Object.keys(DTCX).forEach(function(k){if(DTC[k])return;DTC[k]=DTCX[k];res.dtc++;});}]
+];
+var i=0;
+function step(){
+if(i>=tasks.length){
+reindex();
+ENR.ts=Date.now();ENR.rep=res;
+UPD.unshift({ts:ENR.ts,src:auto?"auto-enrichissement (lancement admin)":"enrichissement manuel",
+m:res.cat+res.pow,f:res.br+res.fam+res.ev,r:res.rev});
+while(UPD.length>12)UPD.pop();
+var ok=persist();
+ostep(100,"Audit d'intégrité");audit();
+$("ovAf").textContent=nf(EIX.all.length);
+var tot=(res.cat+res.pow+res.br+res.fam+res.ev+res.rev+res.dtc);
+olog("Ajouts : "+nf(res.cat)+" motorisations catalogue, "+nf(res.pow)+" puissances, "+nf(res.br+res.fam+res.ev)+" fiches, "+nf(res.rev)+" intervalles, "+nf(res.dtc)+" DTC",tot?"s":"w");
+olog("Intégrité : "+AUDIT.score+"% · base "+nf(EIX.all.length)+" motorisations / "+nf(FAULTS.length)+" fiches","s");
+$("ovA").textContent="+"+nf(res.cat+res.pow);$("ovM").textContent="+"+nf(res.br+res.fam+res.ev);
+$("ovRes").innerHTML='<div class="nt '+(tot?"ok":"in")+'"><b>'+(tot?"Enrichissement massif terminé.":"Base déjà complète — aucun ajout nécessaire.")+
+'</b><br>Motorisations : '+nf(b0)+" → <b>"+nf(EIX.all.length)+"</b> · Fiches : "+nf(f0)+" → <b>"+nf(FAULTS.length)+
+"</b> · Révisions : "+nf(r0)+" → <b>"+nf(allRevs().length)+"</b> · DTC : "+nf(d0)+" → <b>"+nf(Object.keys(DTC).length)+
+"</b><br>Intégrité : <b>"+AUDIT.score+"%</b>"+(ok?"":" · <b>stockage saturé, données en mémoire</b>")+"</div>";
+sync();renderDom();renderAll();renderAudit();renderAdm();renderEnrPanel();
+try{K.set(selfCheck())}catch(e){}
+enrBusy=false;
+$("ovX").style.display="block";
+if(tot){notify("import","Auto-enrichissement : +"+nf(res.cat+res.pow)+" motorisations, +"+nf(res.br+res.fam+res.ev)+" fiches","");
+toast("Enrichissement : +"+nf(res.cat+res.pow)+" motorisations, +"+nf(res.br+res.fam+res.ev)+" fiches, +"+nf(res.rev)+" intervalles","ok",
+function(){if(!enrSnap)return;var d=JSON.parse(enrSnap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;enrSnap=null;
+reindex();persist();audit();renderAudit();sync();renderDom();renderAll();renderAdm();toast("Enrichissement annulé","in");});}
+if(auto)setTimeout(function(){if($("ovX").style.display!=="none")ovlOn(false)},1600);
+return;}
+var t=tasks[i++];
+ostep(4+i*12,t[0]);
+safe(t[1],t[0]);
+olog(t[0]+" — terminé","s");
+setTimeout(step,16);}
+setTimeout(step,60);}
+window.KF_ENRICH=function(){enrich(false)};
+
+function renderAll(){$("nBase").textContent=nf(EIX.all.length);
 $("nFault").textContent=nf(FAULTS.length+(FIL.rules?D.rules.length:0));
 safe(renderDiag,"rendu diagnostic");safe(renderFaults,"rendu pannes");safe(renderServ,"rendu entretien");
 safe(renderCov,"rendu domaines");safe(renderCat,"rendu catalogue");
@@ -1141,15 +1664,15 @@ var lsOk=(function(){try{localStorage.setItem("kf.t","1");localStorage.removeIte
 var n24=CAT.reduce(function(a,b){return a+b.models.filter(function(m){return m.y0>=2024}).length},0);
 add(true,"data.js chargé (window.KFD)","catalogue + fiches + domaines");
 add(CAT.length>0,"Catalogue construit",CAT.length+" marques",!CAT.length);
-add(engines().length>100,"Motorisations chargées",engines().length,engines().length===0);
-add(FAULTS.length>10,"Fiches pannes / rappels / TSB",FAULTS.length,!FAULTS.length);
+add(EIX.all.length>100,"Motorisations chargées",nf(EIX.all.length),EIX.all.length===0);
+add(FAULTS.length>10,"Fiches pannes / rappels / TSB",nf(FAULTS.length),!FAULTS.length);
 add(D.rules.length>20,"Protocoles par domaine",D.rules.length);
-add(allRevs().length>10,"Révisions d'intervalles",allRevs().length);
+add(allRevs().length>10,"Révisions d'intervalles",nf(allRevs().length));
 add(n24>=40,"Modèles millésimes 2024+",n24);
 add(!!CO.brand&&!!CO.hp,"Banc de commande initialisé","5 listes corrélées",!CO.brand);
 add(typeof K.unlock==="function"&&!!$("admForm"),"Authentification administrateur prête","code requis");
-add(lsOk,"Stockage local accessible",lsOk?"oui":"indisponible",!lsOk);
-add(!!(window.crypto&&window.crypto.subtle),"Crypto Subtle (repli intégré sinon)",(window.crypto&&window.crypto.subtle)?"oui":"repli");
+add(lsOk,"Stockage local accessible",lsOk?"oui":"saturé",!lsOk);
+add(!!ENR.ts,"Auto-enrichissement massif",ENR.ts?dtT(ENR.ts):"en attente du mode admin");
 add(!!AUDIT,"Audit d'intégrité calculé",AUDIT?AUDIT.score+"% · "+AUDIT.bad+" bloquante(s)":"");
 add(!!$("launch")&&!!$("v-diag"),"Interface complète","écran d'accueil + 7 sections",!$("v-diag"));
 add((K.errors||[]).length===0,"Aucune erreur JS capturée",(K.errors||[]).length?(K.errors||[]).slice(-3).join(" | "):"ok",(K.errors||[]).length>0);
@@ -1157,8 +1680,8 @@ return L;}
 window.KF_RECHECK=function(){safe(function(){audit();renderAudit();K.set(selfCheck());toast("Auto-vérification relancée","in")},"recheck");};
 
 function bind(){
-CO.brand=new Combo($("cBrand"),"Toutes les marques",function(v){SEL={brand:v,model:"",year:"",fam:"",hp:""};FSEL=[];sync();renderDom();renderAll();});
-CO.model=new Combo($("cModel"),"Choisir d'abord une marque",function(v){SEL.model=v;SEL.year="";SEL.fam="";SEL.hp="";FSEL=[];sync();renderDom();renderAll();});
+CO.brand=new Combo($("cBrand"),"Toutes les marques",function(v){SEL={brand:v,model:"",year:"",fam:"",hp:""};FSEL=[];fLimit=250;sync();renderDom();renderAll();});
+CO.model=new Combo($("cModel"),"Choisir d'abord une marque",function(v){SEL.model=v;SEL.year="";SEL.fam="";SEL.hp="";FSEL=[];fLimit=250;sync();renderDom();renderAll();});
 CO.year=new Combo($("cYear"),"Toutes les années",function(v){SEL.year=v;sync();renderDom();renderAll();});
 CO.fam=new Combo($("cFam"),"Toutes cylindrées / types",function(v){SEL.fam=v;SEL.hp="";sync();renderDom();renderAll();});
 CO.hp=new Combo($("cHp"),"Toutes puissances",function(v){SEL.hp=v;sync();renderDom();renderAll();});
@@ -1171,22 +1694,22 @@ var s=NOTIF.slice();NOTIF=[];saveNf();renderBell();renderNf();
 toast("Notifications vidées","wa",function(){NOTIF=s;saveNf();renderBell();renderNf();});};
 $("nfGo").onclick=function(){closeNf();if(canW())showView("adm");else toast("Réservé à l'administrateur","ba");};
 $("bNew").onclick=newSearch;
-var qt=null;$("q").oninput=function(){FIL.q=$("q").value;clearTimeout(qt);
+var qt=null;$("q").oninput=function(){FIL.q=$("q").value;fLimit=250;clearTimeout(qt);
 qt=setTimeout(function(){safe(renderDiag,"q-diag");safe(renderFaults,"q-pannes");safe(renderCov,"q-dom")},170);};
 [].forEach.call($("sevSeg").querySelectorAll("button"),function(b){b.onclick=function(){
 var s=b.dataset.s,i=FIL.sev.indexOf(s);if(i>=0)FIL.sev.splice(i,1);else FIL.sev.push(s);
-b.setAttribute("aria-pressed",String(i<0));renderAll();};});
-$("selKind").onchange=function(){FIL.kind=$("selKind").value;renderAll();};
+b.setAttribute("aria-pressed",String(i<0));fLimit=250;renderAll();};});
+$("selKind").onchange=function(){FIL.kind=$("selKind").value;fLimit=250;renderAll();};
 $("selSort").onchange=function(){FIL.sort=$("selSort").value;renderAll();};
 $("kmY").oninput=function(){USE.km=+$("kmY").value;$("kmYL").textContent=nf(USE.km)+" km/an";safe(renderServ,"km/an");};
 $("selSev").onchange=function(){USE.sev=$("selSev").value;safe(renderServ,"sollicitation");toast("Sollicitation : "+$("selSev").selectedOptions[0].text,"in");};
 $("selClim").onchange=function(){USE.clim=$("selClim").value;safe(renderServ,"climat");toast("Climat : "+$("selClim").selectedOptions[0].text,"in");};
-$("tgB").onclick=function(){FIL.bs=!FIL.bs;$("tgB").setAttribute("aria-pressed",String(FIL.bs));renderDom();renderAll();};
-$("tgR").onclick=function(){FIL.rules=!FIL.rules;$("tgR").setAttribute("aria-pressed",String(FIL.rules));renderDom();renderAll();};
-$("tgD").onclick=function(){FIL.done=!FIL.done;$("tgD").setAttribute("aria-pressed",String(FIL.done));renderDom();renderAll();};
-$("bDomAll").onclick=function(){FIL.dom=[];renderDom();renderAll();toast("Tous les domaines affichés","in");};
-$("bCovClear").onclick=function(){FIL.dom=[];renderDom();renderAll();toast("Filtres domaines réinitialisés","in");};
-$("bRand").onclick=function(){var e=engines();if(e.length)loadEng(e[Math.floor(Math.random()*e.length)]);};
+$("tgB").onclick=function(){FIL.bs=!FIL.bs;$("tgB").setAttribute("aria-pressed",String(FIL.bs));fLimit=250;renderDom();renderAll();};
+$("tgR").onclick=function(){FIL.rules=!FIL.rules;$("tgR").setAttribute("aria-pressed",String(FIL.rules));fLimit=250;renderDom();renderAll();};
+$("tgD").onclick=function(){FIL.done=!FIL.done;$("tgD").setAttribute("aria-pressed",String(FIL.done));fLimit=250;renderDom();renderAll();};
+$("bDomAll").onclick=function(){FIL.dom=[];fLimit=250;renderDom();renderAll();toast("Tous les domaines affichés","in");};
+$("bCovClear").onclick=function(){FIL.dom=[];fLimit=250;renderDom();renderAll();toast("Filtres domaines réinitialisés","in");};
+$("bRand").onclick=function(){var e=EIX.all;if(e.length)loadEng(e[Math.floor(Math.random()*e.length)]);};
 $("bSave").onclick=function(){if(!canW()){toast("Réservé à l'administrateur","ba");return}
 if(!SEL.brand){toast("Sélectionnez au moins une marque","wa");return}
 var b=B(SEL.brand),m=SEL.model?M(SEL.brand,SEL.model):null;
@@ -1207,14 +1730,14 @@ rel.slice(0,6).map(function(f){return'<div class="fc v-'+f.sev+'" style="margin-
 KIND[f.kind]+'</span><span class="pl">'+f.y0+"–"+f.y1+'</span></div></div>';}).join(""):"");};
 $("dtcIn").onkeydown=function(e){if(e.key==="Enter")$("bDtc").click();};
 $("bSelAll").onclick=function(){var a=current();
-if(FSEL.length===a.length)FSEL=[];else FSEL=a.map(function(f){return f.id});renderFaults();};
+if(FSEL.length===a.length)FSEL=[];else FSEL=a.slice(0,2000).map(function(f){return f.id});renderFaults();};
 $("bBulkDone").onclick=function(){if(!canW())return;
 var ids=FSEL.slice(),prev=ids.map(function(i){return[i,NOTES[i]?Object.assign({},NOTES[i]):null]});
 ids.forEach(function(i){NOTES[i]=Object.assign({},NOTES[i],{done:true})});
 saveAux();FSEL=[];renderAll();toast(ids.length+" fiche(s) traitée(s)","ok",function(){
 prev.forEach(function(p){if(p[1])NOTES[p[0]]=p[1];else delete NOTES[p[0]]});saveAux();renderAll();});};
 $("bBulkCopy").onclick=function(){var a=current().filter(function(f){return FSEL.indexOf(f.id)>=0});
-var t=a.map(function(f){return f.titre+" ["+KIND[f.kind]+" · "+SEV[f.sev].n+" · "+f.y0+"-"+f.y1+"]\nDomaines : "+
+var t=a.slice(0,300).map(function(f){return f.titre+" ["+KIND[f.kind]+" · "+SEV[f.sev].n+" · "+f.y0+"-"+f.y1+"]\nDomaines : "+
 (f.dom||[]).map(function(d){return DM[d]?DM[d].n:d}).join(", ")+"\n"+f.sym+"\n"+
 f.pro.map(function(p,i){return(i+1)+") "+p}).join("\n")+"\nOrganes : "+f.org+"\nDTC : "+f.dtc.join(", ")+"\nSource : "+f.src;}).join("\n\n---\n\n");
 if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast(a.length+" fiche(s) copiée(s)","ok")},function(){toast("Copie indisponible","wa")});
@@ -1240,8 +1763,8 @@ var ct=null;$("catQ").oninput=function(){CUI.q=$("catQ").value;CUI.page=0;clearT
 var k=th.dataset.k;if(CUI.sort===k)CUI.dir*=-1;else{CUI.sort=k;CUI.dir=1}renderCat();};});
 $("catP").onclick=function(){CUI.page--;renderCat();};
 $("catN").onclick=function(){CUI.page++;renderCat();};
-$("bCatAll").onclick=function(){if(CUI.sel.length)CUI.sel=[];else CUI.sel=engines().slice(0,200).map(function(e){return e.key});renderCat();};
-$("bCatLoad").onclick=function(){var k=CUI.sel[0],e=engines().filter(function(x){return x.key===k})[0];if(e)loadEng(e);};
+$("bCatAll").onclick=function(){if(CUI.sel.length)CUI.sel=[];else CUI.sel=EIX.all.slice(0,200).map(function(e){return e.key});renderCat();};
+$("bCatLoad").onclick=function(){var k=CUI.sel[0],e=EIX.all.filter(function(x){return x.key===k})[0];if(e)loadEng(e);};
 $("bAudit").onclick=function(){audit();renderAudit();K.set(selfCheck());toast("Audit terminé — intégrité "+AUDIT.score+"%","ok");};
 $("bRepair").onclick=autoRepair;
 $("bLock").onclick=function(){K.lock();toast("Session administrateur verrouillée","in");};
@@ -1258,13 +1781,14 @@ toast(g.length+" accès révoqués","wa",function(){g.forEach(function(t,i){t.st
 $("fileImp").onchange=function(e){var f=e.target.files[0];if(f)safe(function(){importFile(f)},"import");e.target.value="";};
 $("bUpd").onclick=function(){safe(updateOnline,"mise à jour");};
 $("bExp").onclick=exportDB;
-$("bBk").onclick=function(){if(!canW()){toast("Mode administrateur requis","ba");return}makeBk("manuelle");toast("Sauvegarde locale créée","ok");};
+$("bBk").onclick=function(){if(!canW()){toast("Mode administrateur requis","ba");return}
+toast(makeBk("manuelle")?"Sauvegarde locale créée":"Base trop volumineuse pour une sauvegarde locale — utilisez l'export JSON",makeBk?"ok":"wa");};
 $("bWipe").onclick=function(){if(!canW()){toast("Mode administrateur requis","ba");return}
-if(!confirm("Réinitialiser sur la base livrée ? Les ajouts et imports seront perdus (annulable)."))return;
+if(!confirm("Réinitialiser sur la base livrée ? Les ajouts, imports et enrichissements seront perdus (annulable)."))return;
 var snap=JSON.stringify({cat:CAT,faults:FAULTS,revs:REVC});
 resetSeed();newSearch();audit();renderAudit();renderAdm();K.set(selfCheck());
 toast("Base réinitialisée","wa",function(){var d=JSON.parse(snap);CAT=d.cat;FAULTS=d.faults;REVC=d.revs;
-saveDB();sync();audit();renderDom();renderAll();renderAdm();});};
+reindex();persist();sync();audit();renderDom();renderAll();renderAdm();});};
 $("bClearN").onclick=function(){if(!canW()){toast("Mode administrateur requis","ba");return}
 var snap=JSON.stringify(NOTES);NOTES={};saveAux();renderAll();
 toast("Notes et statuts effacés","wa",function(){NOTES=JSON.parse(snap);saveAux();renderAll();});};
@@ -1277,6 +1801,7 @@ else if($("drawer").classList.contains("on"))closeDw();
 else if($("notifDw").classList.contains("on"))closeNf();
 else if($("ovl").classList.contains("on")&&$("ovX").style.display!=="none")ovlOn(false);}
 if(e.altKey&&(e.key==="r"||e.key==="R")){e.preventDefault();newSearch();}
+if(e.altKey&&(e.key==="e"||e.key==="E")){e.preventDefault();if(canW())enrich(false);}
 if(e.key==="/"&&!/input|textarea|select/i.test(document.activeElement.tagName)){e.preventDefault();$("q").focus();}});
 var af=$("afDom");
 if(af&&!af.children.length)DOM.forEach(function(dd){var b=el("button","dc");b.type="button";
@@ -1287,7 +1812,7 @@ var f=e.target,my=pYears(f.aeY.value),o=fom(nBrand(f.aeB.value),f.aeM.value.trim
 var r=addEngTo(o.m,o.b,f.aeF.value.trim(),parseInt(f.aeH.value,10)||0,f.aeC.value.trim(),f.aeU.value,
 my[0],my[1],f.aeT.value.trim(),f.aeD.value.trim());
 if(r==="none"){toast("Cette motorisation existe déjà","wa");return}
-saveDB();sync();audit();renderDom();renderAll();renderAdm();f.reset();
+reindex();persist();sync();audit();renderDom();renderAll();renderAdm();f.reset();
 toast(r==="add"?"Motorisation ajoutée":"Motorisation enrichie","ok");};
 $("addF").onsubmit=function(e){e.preventDefault();if(!canW()){toast("Mode administrateur requis","ba");return}
 var brands=csv($("afB").value).map(slug).filter(Boolean);
@@ -1299,7 +1824,7 @@ kind:$("afK").value,sev:$("afS").value,y0:+$("afY0").value||2017,y1:+$("afY1").v
 titre:$("afT").value.trim(),sym:$("afSy").value.trim(),
 pro:$("afP").value.split("\n").map(function(s){return s.trim()}).filter(Boolean),org:$("afO").value.trim(),
 dtc:csv($("afD").value).map(function(s){return s.toUpperCase()}),src:$("afSr").value.trim(),dom:dom});
-saveDB();audit();renderDom();renderAll();renderAdm();e.target.reset();
+reindex();persist();audit();renderDom();renderAll();renderAdm();e.target.reset();
 $("afY0").value=2017;$("afY1").value=2027;
 [].forEach.call($("afDom").querySelectorAll("[data-on]"),function(b){b.dataset.on="0"});
 toast("Fiche enregistrée","ok");};
@@ -1309,7 +1834,7 @@ if(!brands.length){toast("Au moins une marque valide","wa");return}
 REVC.push({id:"USR-R-"+Date.now().toString(36),brands:brands,match:$("arM").value.trim(),organ:$("arO").value.trim(),
 oldKm:+$("arOK").value||0,newKm:+$("arNK").value||0,oldMo:+$("arOM").value||0,newMo:+$("arNM").value||0,
 src:$("arS").value.trim(),note:$("arN").value.trim(),y0:2017,y1:2027});
-saveDB();audit();renderAll();renderAdm();e.target.reset();
+persist();audit();renderAll();renderAdm();e.target.reset();
 $("arOK").value=240000;$("arNK").value=160000;$("arOM").value=120;$("arNM").value=96;
 toast("Révision enregistrée","ok");};
 var net=function(){var c=$("chN"),t=$("nNet");
@@ -1320,13 +1845,14 @@ window.addEventListener("offline",function(){net();toast("Mode hors ligne — ba
 setInterval(net,15000);
 try{if(BC)BC.onmessage=function(){loadAcc();loadNf();live();if(canW())safe(renderAll,"sync-bc");};}catch(e){}
 window.addEventListener("storage",function(e){
-if([LS.acc,LS.nf,LS.db].indexOf(e.key)>=0){loadAcc();loadNf();if(e.key===LS.db)loadDB();live();if(canW())safe(renderAll,"sync-storage");}});
-setInterval(function(){safe(live,"temps réel")},1200);}
+if([LS.acc,LS.nf,LS.db].indexOf(e.key)>=0){loadAcc();loadNf();if(e.key===LS.db){loadDB();reindex()}live();if(canW())safe(renderAll,"sync-storage");}});
+setInterval(function(){safe(live,"temps réel")},1500);}
 
 function boot(){
 safe(function(){initDevice();loadAux();loadAcc();loadNf();},"init-stockage");
-safe(function(){if(!loadDB())resetSeed();if(!CAT.length||!engines().length)resetSeed();
+safe(function(){if(!loadDB())resetSeed();if(!CAT.length||!EIX.all.length)resetSeed();
 if(!FAULTS.length)FAULTS=FAULTS0.map(function(f){return Object.assign({},f)});},"chargement-base");
+safe(reindex,"index");
 safe(bind,"liaison-interface");
 safe(sync,"cascade");
 safe(function(){audit();renderDom();renderAll();renderBell();},"premier-rendu");
