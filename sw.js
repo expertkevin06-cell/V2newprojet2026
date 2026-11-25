@@ -1,5 +1,5 @@
-/* KEV FUSION 2026 — SW v18 · network-first · purge des caches obsolètes */
-const CACHE = "kevfusion26-v18";
+/* KEV FUSION 2026 — SW v20 · network-first · purge des caches obsolètes */
+const CACHE = "kevfusion26-v20";
 const SHELL = ["./", "./index.html", "./data.js?v=15", "./app.js?v=15", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {
