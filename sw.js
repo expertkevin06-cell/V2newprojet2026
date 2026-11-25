@@ -1,6 +1,6 @@
-/* KEV FUSION 2026 — SW v20 · network-first · purge des caches obsolètes */
-const CACHE = "kevfusion26-v20";
-const SHELL = ["./", "./index.html", "./data.js?v=15", "./app.js?v=15", "./manifest.webmanifest"];
+/* KEV FUSION 2026 — SW v21 · scripts toujours réseau · purge totale */
+const CACHE = "kevfusion26-v21";
+const SHELL = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {
   e.waitUntil((async () => {
@@ -35,11 +35,12 @@ self.addEventListener("fetch", e => {
   if (r.method !== "GET") return;
   const u = new URL(r.url);
   if (u.origin !== self.location.origin) return;
+  const isScript = /\.js(\?|$)/i.test(u.pathname + u.search);
   e.respondWith((async () => {
     const c = await caches.open(CACHE);
     try {
       const f = await fetch(r, { cache: "no-store" });
-      if (f && f.status === 200 && f.type === "basic") c.put(r, f.clone()).catch(() => {});
+      if (f && f.status === 200 && f.type === "basic" && !isScript) c.put(r, f.clone()).catch(() => {});
       return f;
     } catch (_) {
       const hit = (await c.match(r)) || (await c.match(r, { ignoreSearch: true }));
